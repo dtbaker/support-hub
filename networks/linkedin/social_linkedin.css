@@ -1,0 +1,120 @@
+#linkedin_edit_form a{
+    text-decoration: none;
+}
+.linkedin_message_full{
+    display: none;
+    background: #edeff4;
+    border-radius: 5px;
+    padding: 0 5px;
+}
+.linkedin_comment_picture{
+    float: left;
+    width: 35px;
+    margin: 0 5px 0 0;
+}
+.linkedin_comment_picture img{
+    max-width: 100%;
+    height: auto;
+}
+.linkedin_comment_reply{
+    margin-left: 40px;
+}
+.linkedin_comment_reply button{
+    float: left;
+    height:2em;
+    border:1px solid #bdc7d8;
+    margin:0 0 0 5px;
+}
+.linkedin_comment_compose textarea{
+    background: #FFF;
+    border:1px solid #bdc7d8;
+    width:88%;
+    min-height:2em;
+    resize: none;
+}
+.linkedin_comment_reply textarea{
+    float: left;
+    background: #FFF;
+    border:1px solid #bdc7d8;
+    width:88%;
+    min-height:2em;
+    resize: none;
+}
+.linkedin_comment_body{
+    margin-left: 40px;
+}
+.linkedin_comment_actions{
+    clear: both;
+    font-size: 0.9em;
+    margin-left: 40px;
+    padding: 0 0 5px 0;
+}
+.linkedin_comment_header{
+    /*display: inline;
+    float: left;*/
+    padding: 0 5px 0 0;
+    font-weight: bold;
+}
+.linkedin_comment_header span{
+    font-weight: normal;
+    color:#CCC;
+}
+.linkedin_comment{
+    border-bottom: 1px solid #d0d4e4;
+    padding: 5px 0 0 5px;
+}
+#linkedin_edit_form > .linkedin_comment_replies{
+    margin-left: 0;
+    border-left: none;
+}
+.linkedin_comment_reply_box{
+    display: none;
+}
+.linkedin_comment_reply_box_level1{
+    display: block;
+}
+.linkedin_comment_replies{
+    margin-left: 40px;
+    border-left: 1px solid #d0d4e4;
+}
+.linkedin_picture{
+    background: #FFF;
+    padding: 4px;
+    display: inline-block;
+}
+.linkedin_picture img{
+    max-width: 100%;
+    height:auto;
+}
+.linkedin_icon{
+    height:27px;
+    width: auto;
+    margin: 5px 5px 0 0;
+    float: left;
+}
+.linkedin_icon.small{
+    height:15px;
+    float: none;
+    vertical-align: middle;
+    margin:0 5px 0 0;
+}
+
+#linkedin_message_header{
+    border:1px solid #d0d4e4;
+    background: #FFF;
+    margin:5px;
+    padding: 8px 5px 14px 10px;
+}
+#linkedin_message_holder{
+}
+
+.linkedin_message_summary.unread,
+.message_row_unread .linkedin_message_summary{
+    font-weight: bold;
+}
+.linkedin_compose_account_select img{
+    width:20px;
+    height:auto;
+    vertical-align: middle;
+    margin:0 5px;
+}

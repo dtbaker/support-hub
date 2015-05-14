@@ -1,0 +1,4 @@
+=== Support Hub ===
+
+use this plugin to create the translation files:
+http://wordpress.org/extend/plugins/codestyling-localization/

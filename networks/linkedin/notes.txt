@@ -1,0 +1,26 @@
+https://apigee.com/console/linkedin?req=%7B%22resource%22%3A%22getmysharesstream%22%2C%22params%22%3A%7B%22query%22%3A%7B%22type%22%3A%22SHAR%22%7D%2C%22template%22%3A%7B%7D%2C%22headers%22%3A%7B%7D%2C%22body%22%3A%7B%22attachmentFormat%22%3A%22mime%22%2C%22attachmentContentDisposition%22%3A%22form-data%22%7D%7D%2C%22verb%22%3A%22get%22%7D
+
+Social Streams > Get My Share Stream
+> Add Share
+> Get Comments
+> Post Comments
+
+
+----------------
+
+
+https://api.linkedin.com/v1/people/~/group-memberships
+
+Get Groups
+
+Get Group Posts
+Get Group Member Posts
+
+Get Post
+Get Post Comments
+
+Add Post Comment
+Create Group Post
+
+Similar to Facebook ^^
+

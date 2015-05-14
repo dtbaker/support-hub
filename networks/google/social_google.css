@@ -1,0 +1,134 @@
+#google_edit_form a{
+    text-decoration: none;
+}
+.google_message_full{
+    display: none;
+    background: #edeff4;
+    border-radius: 5px;
+    padding: 0 5px;
+}
+.google_comment_picture{
+    float: left;
+    width: 35px;
+    margin: 0 5px 0 0;
+}
+.google_comment_picture img{
+    max-width: 100%;
+    height: auto;
+}
+.google_comment_reply{
+    margin-left: 40px;
+}
+.google_comment_reply button{
+    float: left;
+    height:2em;
+    border:1px solid #bdc7d8;
+    margin:0 0 0 5px;
+}
+.google_comment_compose textarea{
+    background: #FFF;
+    border:1px solid #bdc7d8;
+    width:88%;
+    min-height:2em;
+    resize: none;
+}
+.google_comment_reply textarea{
+    float: left;
+    background: #FFF;
+    border:1px solid #bdc7d8;
+    width:88%;
+    min-height:2em;
+    resize: none;
+}
+.google_comment_body{
+    margin-left: 40px;
+}
+.google_comment_actions{
+    clear: both;
+    font-size: 0.9em;
+    margin-left: 40px;
+    padding: 0 0 5px 0;
+}
+.google_comment_header{
+    /*display: inline;
+    float: left;*/
+    padding: 0 5px 0 0;
+    font-weight: bold;
+}
+.google_comment_header span{
+    font-weight: normal;
+    color:#CCC;
+}
+.google_comment{
+    border-bottom: 1px solid #d0d4e4;
+    padding: 5px 0 0 5px;
+}
+#google_edit_form > .google_comment_replies{
+    margin-left: 0;
+    border-left: none;
+}
+.google_comment_reply_box{
+    display: none;
+}
+.google_comment_reply_box_level1{
+    display: block;
+}
+.google_comment_replies{
+    margin-left: 40px;
+    border-left: 1px solid #d0d4e4;
+}
+
+.google_icon{
+    height:27px;
+    width: auto;
+    margin: 5px 5px 0 0;
+    float: left;
+}
+.google_icon.small{
+    height:15px;
+    float: none;
+    vertical-align: middle;
+    margin:0 5px 0 0;
+}
+.google_next_messages,
+.google_previous_messages{
+    opacity: 0.6;
+    margin:0 10px;
+}
+.google_next_messages:hover,
+.google_previous_messages:hover{
+}
+.google_comment_clickable{
+    cursor: pointer;
+
+}
+#google_message_header{
+    border:1px solid #d0d4e4;
+    background: #FFF;
+    margin:5px;
+    padding: 8px 5px 14px 10px;
+}
+#google_message_holder{
+}
+.google_picture{
+    background: #FFF;
+    padding: 4px;
+    display: inline-block;
+}
+.google_picture img{
+    max-width: 100%;
+    height:auto;
+}
+
+
+.google_message_summary.unread,
+.message_row_unread .google_message_summary{
+    font-weight: bold;
+}
+
+.google_compose_account_select img{
+    width:20px;
+    height:auto;
+    vertical-align: middle;
+    margin:0 5px;
+}

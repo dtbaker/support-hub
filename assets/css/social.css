@@ -1,0 +1,100 @@
+
+#social_column_social{
+    width:187px;
+}
+#social_column_time{
+    width:80px;
+}
+#social_column_from{
+    width:60px;
+}
+#social_column_action{
+    width:150px;
+}
+.sent_messages #social_column_action,
+.sent_message #social_column_action{
+    width:90px;
+}
+.sent_messages #social_column_links,
+.sent_message #social_column_links{
+    width:90px;
+}
+.sent_messages #social_column_post,
+.sent_message #social_column_post{
+    width:120px;
+}
+
+
+.social_from_holder{
+    overflow: hidden;
+}
+.social_from_holder:hover .social_from_full{
+    display: block;
+}
+.social_from_full:hover{
+    display: block;
+
+}
+.social_from_full{
+    margin: -1px 0 0 -5px;
+    position: absolute;
+    display: none;
+    background: #FFF;
+    border: 1px solid #ddd;
+    padding: 0 4px 4px 4px;
+}
+.social_from_picture{
+    height:27px;
+    width: auto;
+    margin: 5px 1px 0 0;
+}
+#support_hub_compose_table{
+    border-spacing: 0;
+}
+#support_hub_compose_table .social_space{
+    width:5px;
+}
+#support_hub_compose_table thead th.social_column{
+    background-color: #f1f1f1;
+    border-top: 1px solid #dfdfdf;
+    border-left: 1px solid #dfdfdf;
+    border-bottom: 1px solid #dfdfdf;
+}
+#support_hub_compose_table thead th.social_column.last{
+    border-right: 1px solid #dfdfdf;
+}
+#support_hub_compose_table tbody td.social_column{
+    background-color: #f9f9f9;
+    border-left: 1px solid #dfdfdf;
+    border-top: 1px solid #dfdfdf;
+    border-bottom: 1px solid #dfdfdf;
+    vertical-align: top;
+}
+#support_hub_compose_table tbody td.social_column.last{
+    border-right: 1px solid #dfdfdf;
+}
+#support_hub_compose_table tbody th.social_compose_label{
+    border-top: 1px solid #dfdfdf;
+    border-left: 1px solid #dfdfdf;
+    border-bottom: 1px solid #dfdfdf;
+    vertical-align: top;
+    font-weight: normal;
+    text-align: left;
+}
+#support_hub_compose_table tbody th.social_compose_label > span{
+    display: block;
+    padding: 0 0 5px;
+    font-weight: bold;
+    text-align: center;
+}
+#support_hub_compose_table tbody th.social_compose_label.last{
+    border-bottom: 1px solid #dfdfdf;
+}
+#support_hub_compose_table td,
+#support_hub_compose_table th{
+    padding: 5px 8px 8px;
+}
+#support_hub_compose_table textarea{
+    width:100%;
+    min-width: 150px;
+}

@@ -1,0 +1,1 @@
+<a href="admin.php?page=support_hub_compose&post_id=<?php echo (int)$post->ID;?>" class="button">Share via Support Hub</a>
