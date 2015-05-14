@@ -1,28 +1,28 @@
 <?php
-if(!isset($social_twitter_id) || !isset($social_twitter_message_id)){
+if(!isset($shub_twitter_id) || !isset($shub_twitter_message_id)){
 	exit;
 } ?>
 
 <?php
 
-if($social_twitter_id && $social_twitter_message_id){
-	$twitter = new ucm_twitter_account($social_twitter_id);
-    if($social_twitter_id && $twitter->get('social_twitter_id') == $social_twitter_id){
-	    $twitter_message = new ucm_twitter_message( $twitter, $social_twitter_message_id );
-	    if($social_twitter_message_id && $twitter_message->get('social_twitter_message_id') == $social_twitter_message_id && $twitter_message->get('social_twitter_id') == $social_twitter_id){
+if($shub_twitter_id && $shub_twitter_message_id){
+	$twitter = new shub_twitter_account($shub_twitter_id);
+    if($shub_twitter_id && $twitter->get('shub_twitter_id') == $shub_twitter_id){
+	    $twitter_message = new shub_twitter_message( $twitter, $shub_twitter_message_id );
+	    if($shub_twitter_message_id && $twitter_message->get('shub_twitter_message_id') == $shub_twitter_message_id && $twitter_message->get('shub_twitter_id') == $shub_twitter_id){
 
 		    $twitter_message->mark_as_read();
 		    ?>
 			<form action="" method="post" id="twitter_edit_form">
 				<div id="twitter_message_header">
 					<div style="float:right; text-align: right; margin-top:-4px;">
-						<small><?php echo ucm_print_date( $twitter_message->get('message_time'), true ); ?> </small><br/>
-						    <?php if($twitter_message->get('status') == _SOCIAL_MESSAGE_STATUS_ANSWERED){  ?>
+						<small><?php echo shub_print_date( $twitter_message->get('message_time'), true ); ?> </small><br/>
+						    <?php if($twitter_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 							    <a href="#" class="socialtwitter_message_action btn btn-default btn-xs button"
-							       data-action="set-unanswered" data-id="<?php echo (int)$twitter_message->get('social_twitter_message_id');?>" data-social_twitter_id="<?php echo (int)$twitter_message->get('social_twitter_id');?>"><?php _e( 'Inbox' ); ?></a>
+							       data-action="set-unanswered" data-id="<?php echo (int)$twitter_message->get('shub_twitter_message_id');?>" data-shub_twitter_id="<?php echo (int)$twitter_message->get('shub_twitter_id');?>"><?php _e( 'Inbox' ); ?></a>
 						    <?php }else{ ?>
 							    <a href="#" class="socialtwitter_message_action btn btn-default btn-xs button"
-							       data-action="set-answered" data-id="<?php echo (int)$twitter_message->get('social_twitter_message_id');?>" data-social_twitter_id="<?php echo (int)$twitter_message->get('social_twitter_id');?>"><?php _e( 'Archive' ); ?></a>
+							       data-action="set-answered" data-id="<?php echo (int)$twitter_message->get('shub_twitter_message_id');?>" data-shub_twitter_id="<?php echo (int)$twitter_message->get('shub_twitter_id');?>"><?php _e( 'Archive' ); ?></a>
 						    <?php } ?>
 					</div>
 					<img src="<?php echo plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="twitter_icon">
@@ -45,15 +45,15 @@ if($social_twitter_id && $social_twitter_message_id){
     }
 }
 
-if($social_twitter_id && !$social_twitter_message_id){
-	$twitter = new ucm_twitter_account($social_twitter_id);
-    if($social_twitter_id && $twitter->get('social_twitter_id') == $social_twitter_id){
+if($shub_twitter_id && !$shub_twitter_message_id){
+	$twitter = new shub_twitter_account($shub_twitter_id);
+    if($shub_twitter_id && $twitter->get('shub_twitter_id') == $shub_twitter_id){
 
 	    ?>
 
 	    <form action="" method="post" enctype="multipart/form-data">
 		    <input type="hidden" name="_process" value="send_twitter_message">
-		    <?php wp_nonce_field( 'send-twitter' . (int) $twitter->get( 'social_twitter_id' ) ); ?>
+		    <?php wp_nonce_field( 'send-twitter' . (int) $twitter->get( 'shub_twitter_id' ) ); ?>
 		    <?php
 		    $fieldset_data = array(
 			    'heading' => array(
@@ -140,19 +140,19 @@ if($social_twitter_id && !$social_twitter_message_id){
 
 			    $fieldset_data['elements']['twitter_account']['fields'][] =
 				    '<div id="twitter_compose_account_select">' .
-				    '<input type="checkbox" name="compose_account_id['.$twitter->get('social_twitter_id').']" value="1" checked> ' .
+				    '<input type="checkbox" name="compose_account_id['.$twitter->get('shub_twitter_id').']" value="1" checked> ' .
 				    ($twitter->get_picture() ? '<img src="'.$twitter->get_picture().'">' : '' ).
 				    htmlspecialchars($twitter->get('twitter_name')) .
 				    '</div>'
 			    ;
 		    //}
-			echo module_form::generate_fieldset($fieldset_data);
+			echo shub_module_form::generate_fieldset($fieldset_data);
 
 		    $form_actions = array(
 			    'class' => 'action_bar action_bar_center',
 			    'elements' => array(),
 			);
-			echo module_form::generate_form_actions($form_actions);
+			echo shub_module_form::generate_form_actions($form_actions);
 
 			$form_actions['elements'][] = array(
 		        'type' => 'save_button',
@@ -166,12 +166,12 @@ if($social_twitter_id && !$social_twitter_message_id){
 			    'name' => 'cancel',
 			    'value' => __('Cancel'),
 			    'class' => 'submit_button',
-			    'onclick' => "window.location.href='".$module->link_open_message_view($social_twitter_id)."';",
+			    'onclick' => "window.location.href='".$module->link_open_message_view($shub_twitter_id)."';",
 			);*/
-			echo module_form::generate_form_actions($form_actions);
+			echo shub_module_form::generate_form_actions($form_actions);
 		    ?>
 	    </form>
-<script type="text/javascript" src="<?php echo plugins_url('networks/twitter/jquery.charactercounter.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>"></script>
+		<script type="text/javascript" src="<?php echo plugins_url('networks/twitter/jquery.charactercounter.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>"></script>
 
 	    <script type="text/javascript">
 		    function twitter_set_limit(limit){

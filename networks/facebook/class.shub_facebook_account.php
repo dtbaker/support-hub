@@ -1,23 +1,23 @@
 <?php
 
-class ucm_facebook_account{
+class shub_facebook_account{
 
-	public function __construct($social_facebook_id){
-		$this->load($social_facebook_id);
+	public function __construct($shub_facebook_id){
+		$this->load($shub_facebook_id);
 	}
 
-	private $social_facebook_id = false; // the current user id in our system.
+	private $shub_facebook_id = false; // the current user id in our system.
     private $details = array();
 
-	/* @var $pages ucm_facebook_page[] */
+	/* @var $pages shub_facebook_page[] */
     private $pages = array();
-	/* @var $groups ucm_facebook_group[] */
+	/* @var $groups shub_facebook_group[] */
     private $groups = array();
 
 	private function reset(){
-		$this->social_facebook_id = false;
+		$this->shub_facebook_id = false;
 		$this->details = array(
-			'social_facebook_id' => false,
+			'shub_facebook_id' => false,
 			'facebook_name' => false,
 			'last_checked' => false,
 			'facebook_data' => false,
@@ -37,20 +37,20 @@ class ucm_facebook_account{
 
 	public function create_new(){
 		$this->reset();
-		$this->social_facebook_id = ucm_update_insert('social_facebook_id',false,'social_facebook',array());
-		$this->load($this->social_facebook_id);
+		$this->shub_facebook_id = shub_update_insert('shub_facebook_id',false,'shub_facebook',array());
+		$this->load($this->shub_facebook_id);
 	}
 
-    public function load($social_facebook_id = false){
-	    if(!$social_facebook_id)$social_facebook_id = $this->social_facebook_id;
+    public function load($shub_facebook_id = false){
+	    if(!$shub_facebook_id)$shub_facebook_id = $this->shub_facebook_id;
 	    $this->reset();
-	    $this->social_facebook_id = (int)$social_facebook_id;
-        if($this->social_facebook_id){
-            $data = ucm_get_single('social_facebook','social_facebook_id',$this->social_facebook_id);
+	    $this->shub_facebook_id = (int)$shub_facebook_id;
+        if($this->shub_facebook_id){
+            $data = shub_get_single('shub_facebook','shub_facebook_id',$this->shub_facebook_id);
 	        foreach($this->details as $key=>$val){
 		        $this->details[$key] = $data && isset($data[$key]) ? $data[$key] : $val;
 	        }
-	        if(!is_array($this->details) || $this->details['social_facebook_id'] != $this->social_facebook_id){
+	        if(!is_array($this->details) || $this->details['shub_facebook_id'] != $this->shub_facebook_id){
 		        $this->reset();
 		        return false;
 	        }
@@ -59,18 +59,18 @@ class ucm_facebook_account{
             $this->{$key} = $val;
         }
 	    $this->pages = array();
-	    if(!$this->social_facebook_id)return false;
-	    foreach(ucm_get_multiple('social_facebook_page',array('social_facebook_id'=>$this->social_facebook_id),'social_facebook_page_id') as $page){
-		    $page = new ucm_facebook_page($this, $page['social_facebook_page_id']);
+	    if(!$this->shub_facebook_id)return false;
+	    foreach(shub_get_multiple('shub_facebook_page',array('shub_facebook_id'=>$this->shub_facebook_id),'shub_facebook_page_id') as $page){
+		    $page = new shub_facebook_page($this, $page['shub_facebook_page_id']);
 		    $this->pages[$page->get('page_id')] = $page;
 	    }
 	    $this->groups = array();
-	    if(!$this->social_facebook_id)return false;
-	    foreach(ucm_get_multiple('social_facebook_group',array('social_facebook_id'=>$this->social_facebook_id),'social_facebook_group_id') as $group){
-		    $group = new ucm_facebook_group($this, $group['social_facebook_group_id']);
+	    if(!$this->shub_facebook_id)return false;
+	    foreach(shub_get_multiple('shub_facebook_group',array('shub_facebook_id'=>$this->shub_facebook_id),'shub_facebook_group_id') as $group){
+		    $group = new shub_facebook_group($this, $group['shub_facebook_group_id']);
 		    $this->groups[$group->get('group_id')] = $group;
 	    }
-        return $this->social_facebook_id;
+        return $this->shub_facebook_id;
     }
 
 	public function get($field){
@@ -78,7 +78,7 @@ class ucm_facebook_account{
 	}
 
 	public function save_data($post_data){
-		if(!$this->get('social_facebook_id')){
+		if(!$this->get('shub_facebook_id')){
 			$this->create_new();
 		}
 		if(!isset($post_data['import_personal'])){
@@ -104,9 +104,9 @@ class ucm_facebook_account{
 					if($yesno && isset($available_pages[$facebook_page_id])){
 						// we are adding this page to the list. check if it doesn't already exist.
 						if(!isset($this->pages[$facebook_page_id])){
-							$page = new ucm_facebook_page($this);
+							$page = new shub_facebook_page($this);
 							$page->create_new();
-							$page->update('social_facebook_id', $this->social_facebook_id);
+							$page->update('shub_facebook_id', $this->shub_facebook_id);
 							$page->update('facebook_token', $available_pages[$facebook_page_id]['access_token']);
 							$page->update('page_name', $available_pages[$facebook_page_id]['name']);
 							$page->update('page_id', $facebook_page_id);
@@ -132,9 +132,9 @@ class ucm_facebook_account{
 					if($yesno && isset($available_groups[$facebook_group_id])){
 						// we are adding this group to the list. check if it doesn't already exist.
 						if(!isset($this->groups[$facebook_group_id])){
-							$group = new ucm_facebook_group($this);
+							$group = new shub_facebook_group($this);
 							$group->create_new();
-							$group->update('social_facebook_id', $this->social_facebook_id);
+							$group->update('shub_facebook_id', $this->shub_facebook_id);
 							$group->update('administrator', $available_groups[$facebook_group_id]['administrator']);
 							$group->update('group_name', $available_groups[$facebook_group_id]['name']);
 							$group->update('group_id', $facebook_group_id);
@@ -148,20 +148,20 @@ class ucm_facebook_account{
 			}
 		}
 		$this->load();
-		return $this->get('social_facebook_id');
+		return $this->get('shub_facebook_id');
 	}
     public function update($field,$value){
 	    // what fields to we allow? or not allow?
-	    if(in_array($field,array('social_facebook_id')))return;
-        if($this->social_facebook_id){
+	    if(in_array($field,array('shub_facebook_id')))return;
+        if($this->shub_facebook_id){
             $this->{$field} = $value;
-            ucm_update_insert('social_facebook_id',$this->social_facebook_id,'social_facebook',array(
+            shub_update_insert('shub_facebook_id',$this->shub_facebook_id,'shub_facebook',array(
 	            $field => $value,
             ));
         }
     }
 	public function delete(){
-		if($this->social_facebook_id) {
+		if($this->shub_facebook_id) {
 			// delete all the pages for this facebook account.
 			$pages = $this->get('pages');
 			foreach($pages as $page){
@@ -172,7 +172,7 @@ class ucm_facebook_account{
 			foreach($groups as $group){
 				$group->delete();
 			}
-			ucm_delete_from_db( 'social_facebook', 'social_facebook_id', $this->social_facebook_id );
+			shub_delete_from_db( 'shub_facebook', 'shub_facebook_id', $this->shub_facebook_id );
 		}
 	}
 
@@ -365,12 +365,12 @@ class ucm_facebook_account{
 		// we keep a record of the last message received so we know where to stop checking in the FB feed
 		$last_message_received = (int)$this->get('last_message');
 
-		if($debug)echo "The last message we received for this group was on: ".ucm_print_date($last_message_received,true).'<br>';
+		if($debug)echo "The last message we received for this group was on: ".shub_print_date($last_message_received,true).'<br>';
 
 		$newest_message_received = 0;
 
 		if($debug)echo "Getting /feed personal posts... <br>";
-		$facebook_api = new ucm_facebook();
+		$facebook_api = new shub_facebook();
 		$personal_feed = $facebook_api->graph('/me/feed',array(
 			'access_token' => $access_token,
 			'machine_id' => $machine_id,
@@ -386,13 +386,13 @@ class ucm_facebook_account{
 				$newest_message_received = max($message_time, $newest_message_received);
 				if($last_message_received && $last_message_received >= $message_time){
 					// we've already processed messages after this time.
-					if($debug)echo " - Skipping this message (".$personal_feed_message['id'].") because it was received on ".ucm_print_date($message_time,true).' and we only want ones after '.ucm_print_date($last_message_received,true).'<br>';
+					if($debug)echo " - Skipping this message (".$personal_feed_message['id'].") because it was received on ".shub_print_date($message_time,true).' and we only want ones after '.shub_print_date($last_message_received,true).'<br>';
 					break;
 				}else{
-					if($debug)echo ' - storing message received on '.ucm_print_date($message_time,true).'<br>';
+					if($debug)echo ' - storing message received on '.shub_print_date($message_time,true).'<br>';
 				}
 				// check if we have this message in our database already.
-				$facebook_message = new ucm_facebook_message($this, false, false);
+				$facebook_message = new shub_facebook_message($this, false, false);
 				if($facebook_message -> load_by_facebook_id($personal_feed_message['id'], $personal_feed_message, 'feed')){
 					$count++;
 				}
@@ -410,8 +410,8 @@ class ucm_facebook_account{
 		if($debug)echo " got $count new posts <br>";
 
 
-		if($debug)echo "The last message we received for this group was now on: ".ucm_print_date($newest_message_received,true).'<br>';
-		if($debug)echo "Finished checking this group messages at ".ucm_print_date(time(),true)."<br>";
+		if($debug)echo "The last message we received for this group was now on: ".shub_print_date($newest_message_received,true).'<br>';
+		if($debug)echo "Finished checking this group messages at ".shub_print_date(time(),true)."<br>";
 
 		$this->update('last_message',$newest_message_received);
 		$this->update('last_checked',time());
@@ -421,23 +421,23 @@ class ucm_facebook_account{
 	 * Links for wordpress
 	 */
 	public function link_connect(){
-		return 'admin.php?page=support_hub_facebook_settings&fbconnect&social_facebook_id='.$this->get('social_facebook_id');
+		return 'admin.php?page=support_hub_facebook_settings&fbconnect&shub_facebook_id='.$this->get('shub_facebook_id');
 	}
 	public function link_edit(){
-		return 'admin.php?page=support_hub_facebook_settings&social_facebook_id='.$this->get('social_facebook_id');
+		return 'admin.php?page=support_hub_facebook_settings&shub_facebook_id='.$this->get('shub_facebook_id');
 	}
 	public function link_new_message(){
-		return 'admin.php?page=support_hub_main&social_facebook_id='.$this->get('social_facebook_id').'&social_facebook_message_id=new';
+		return 'admin.php?page=support_hub_main&shub_facebook_id='.$this->get('shub_facebook_id').'&shub_facebook_message_id=new';
 	}
 
 	public function link_refresh(){
-		return 'admin.php?page=support_hub_facebook_settings&manualrefresh&social_facebook_id='.$this->get('social_facebook_id').'&facebook_feed=true';
+		return 'admin.php?page=support_hub_facebook_settings&manualrefresh&shub_facebook_id='.$this->get('shub_facebook_id').'&facebook_feed=true';
 	}
 	public function link_refresh_groups(){
-		return 'admin.php?page=support_hub_facebook_settings&manualrefresh&social_facebook_id='.$this->get('social_facebook_id').'&refresh_data=groups';
+		return 'admin.php?page=support_hub_facebook_settings&manualrefresh&shub_facebook_id='.$this->get('shub_facebook_id').'&refresh_data=groups';
 	}
 	public function link_refresh_pages(){
-		return 'admin.php?page=support_hub_facebook_settings&manualrefresh&social_facebook_id='.$this->get('social_facebook_id').'&refresh_data=pages';
+		return 'admin.php?page=support_hub_facebook_settings&manualrefresh&shub_facebook_id='.$this->get('shub_facebook_id').'&refresh_data=pages';
 	}
 
 }

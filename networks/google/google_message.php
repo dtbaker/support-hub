@@ -1,28 +1,28 @@
 <?php
-if(!isset($social_google_id) || !isset($social_google_message_id)){
+if(!isset($shub_google_id) || !isset($shub_google_message_id)){
 	exit;
 } ?>
 
 <?php
 
-if($social_google_id && $social_google_message_id){
-	$google = new ucm_google_account($social_google_id);
-    if($social_google_id && $google->get('social_google_id') == $social_google_id){
-	    $google_message = new ucm_google_message( $google, $social_google_message_id );
-	    if($social_google_message_id && $google_message->get('social_google_message_id') == $social_google_message_id && $google_message->get('social_google_id') == $social_google_id){
+if($shub_google_id && $shub_google_message_id){
+	$google = new shub_google_account($shub_google_id);
+    if($shub_google_id && $google->get('shub_google_id') == $shub_google_id){
+	    $google_message = new shub_google_message( $google, $shub_google_message_id );
+	    if($shub_google_message_id && $google_message->get('shub_google_message_id') == $shub_google_message_id && $google_message->get('shub_google_id') == $shub_google_id){
 
 		    $google_message->mark_as_read();
 		    ?>
 			<form action="" method="post" id="google_edit_form">
 				<div id="google_message_header">
 					<div style="float:right; text-align: right; margin-top:-4px;">
-						<small><?php echo ucm_print_date( $google_message->get('message_time'), true ); ?> </small><br/>
-						    <?php if($google_message->get('status') == _SOCIAL_MESSAGE_STATUS_ANSWERED){  ?>
+						<small><?php echo shub_print_date( $google_message->get('message_time'), true ); ?> </small><br/>
+						    <?php if($google_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 							    <a href="#" class="socialgoogle_message_action btn btn-default btn-xs button"
-							       data-action="set-unanswered" data-id="<?php echo (int)$google_message->get('social_google_message_id');?>" data-social_google_id="<?php echo (int)$google_message->get('social_google_id');?>"><?php _e( 'Inbox' ); ?></a>
+							       data-action="set-unanswered" data-id="<?php echo (int)$google_message->get('shub_google_message_id');?>" data-shub_google_id="<?php echo (int)$google_message->get('shub_google_id');?>"><?php _e( 'Inbox' ); ?></a>
 						    <?php }else{ ?>
 							    <a href="#" class="socialgoogle_message_action btn btn-default btn-xs button"
-							       data-action="set-answered" data-id="<?php echo (int)$google_message->get('social_google_message_id');?>" data-social_google_id="<?php echo (int)$google_message->get('social_google_id');?>"><?php _e( 'Archive' ); ?></a>
+							       data-action="set-answered" data-id="<?php echo (int)$google_message->get('shub_google_message_id');?>" data-shub_google_id="<?php echo (int)$google_message->get('shub_google_id');?>"><?php _e( 'Archive' ); ?></a>
 						    <?php } ?>
 					</div>
 					<img src="<?php echo plugins_url('networks/google/google-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="google_icon">
@@ -45,15 +45,15 @@ if($social_google_id && $social_google_message_id){
     }
 }
 
-if($social_google_id && !$social_google_message_id){
-	$google = new ucm_google_account($social_google_id);
-    if($social_google_id && $google->get('social_google_id') == $social_google_id){
+if($shub_google_id && !$shub_google_message_id){
+	$google = new shub_google_account($shub_google_id);
+    if($shub_google_id && $google->get('shub_google_id') == $shub_google_id){
 
 	    ?>
 
 	    <form action="" method="post" enctype="multipart/form-data">
 		    <input type="hidden" name="_process" value="send_google_message">
-		    <?php wp_nonce_field( 'send-google' . (int) $google->get( 'social_google_id' ) ); ?>
+		    <?php wp_nonce_field( 'send-google' . (int) $google->get( 'shub_google_id' ) ); ?>
 		    <?php
 		    $fieldset_data = array(
 			    'heading' => array(
@@ -140,19 +140,19 @@ if($social_google_id && !$social_google_message_id){
 
 			    $fieldset_data['elements']['google_account']['fields'][] =
 				    '<div id="google_compose_account_select">' .
-				    '<input type="checkbox" name="compose_account_id['.$google->get('social_google_id').']" value="1" checked> ' .
+				    '<input type="checkbox" name="compose_account_id['.$google->get('shub_google_id').']" value="1" checked> ' .
 				    ($google->get_picture() ? '<img src="'.$google->get_picture().'">' : '' ).
 				    htmlspecialchars($google->get('google_name')) .
 				    '</div>'
 			    ;
 		    //}
-			echo module_form::generate_fieldset($fieldset_data);
+			echo shub_module_form::generate_fieldset($fieldset_data);
 
 		    $form_actions = array(
 			    'class' => 'action_bar action_bar_center',
 			    'elements' => array(),
 			);
-			echo module_form::generate_form_actions($form_actions);
+			echo shub_module_form::generate_form_actions($form_actions);
 
 			$form_actions['elements'][] = array(
 		        'type' => 'save_button',
@@ -166,9 +166,9 @@ if($social_google_id && !$social_google_message_id){
 			    'name' => 'cancel',
 			    'value' => __('Cancel'),
 			    'class' => 'submit_button',
-			    'onclick' => "window.location.href='".$module->link_open_message_view($social_google_id)."';",
+			    'onclick' => "window.location.href='".$module->link_open_message_view($shub_google_id)."';",
 			);*/
-			echo module_form::generate_form_actions($form_actions);
+			echo shub_module_form::generate_form_actions($form_actions);
 		    ?>
 	    </form>
 

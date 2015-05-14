@@ -1,15 +1,15 @@
 <?php
-if(!isset($social_linkedin_id) || !isset($social_linkedin_message_id)){
+if(!isset($shub_linkedin_id) || !isset($shub_linkedin_message_id)){
 	exit;
 } ?>
 
 	<?php
 
-if($social_linkedin_id && $social_linkedin_message_id){
-	$linkedin = new ucm_linkedin_account($social_linkedin_id);
-    if($social_linkedin_id && $linkedin->get('social_linkedin_id') == $social_linkedin_id){
-	    $linkedin_message = new ucm_linkedin_message( $linkedin, false, $social_linkedin_message_id );
-	    if($social_linkedin_message_id && $linkedin_message->get('social_linkedin_message_id') == $social_linkedin_message_id && $linkedin_message->get('social_linkedin_id') == $social_linkedin_id){
+if($shub_linkedin_id && $shub_linkedin_message_id){
+	$linkedin = new shub_linkedin_account($shub_linkedin_id);
+    if($shub_linkedin_id && $linkedin->get('shub_linkedin_id') == $shub_linkedin_id){
+	    $linkedin_message = new shub_linkedin_message( $linkedin, false, $shub_linkedin_message_id );
+	    if($shub_linkedin_message_id && $linkedin_message->get('shub_linkedin_message_id') == $shub_linkedin_message_id && $linkedin_message->get('shub_linkedin_id') == $shub_linkedin_id){
 
 		    $comments         = $linkedin_message->get_comments();
 		    $linkedin_message->mark_as_read();
@@ -19,13 +19,13 @@ if($social_linkedin_id && $social_linkedin_message_id){
 			<form action="" method="post" id="linkedin_edit_form">
 				<div id="linkedin_message_header">
 					<div style="float:right; text-align: right; margin-top:-4px;">
-						<small><?php echo ucm_print_date( $linkedin_message->get('last_active'), true ); ?> </small><br/>
-					    <?php if($linkedin_message->get('status') == _SOCIAL_MESSAGE_STATUS_ANSWERED){  ?>
+						<small><?php echo shub_print_date( $linkedin_message->get('last_active'), true ); ?> </small><br/>
+					    <?php if($linkedin_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 						    <a href="#" class="sociallinkedin_message_action  btn btn-default btn-xs button"
-						       data-action="set-unanswered" data-id="<?php echo (int)$linkedin_message->get('social_linkedin_message_id');?>"><?php _e( 'Inbox' ); ?></a>
+						       data-action="set-unanswered" data-id="<?php echo (int)$linkedin_message->get('shub_linkedin_message_id');?>"><?php _e( 'Inbox' ); ?></a>
 					    <?php }else{ ?>
 						    <a href="#" class="sociallinkedin_message_action  btn btn-default btn-xs button"
-						       data-action="set-answered" data-id="<?php echo (int)$linkedin_message->get('social_linkedin_message_id');?>"><?php _e( 'Archive' ); ?></a>
+						       data-action="set-answered" data-id="<?php echo (int)$linkedin_message->get('shub_linkedin_message_id');?>"><?php _e( 'Archive' ); ?></a>
 					    <?php } ?>
 					</div>
 					<img src="<?php echo plugins_url('networks/linkedin/linkedin-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="linkedin_icon">
@@ -44,17 +44,17 @@ if($social_linkedin_id && $social_linkedin_message_id){
     }
 }
 
-if($social_linkedin_id && !(int)$social_linkedin_message_id){
-	$linkedin = new ucm_linkedin_account($social_linkedin_id);
-    if($social_linkedin_id && $linkedin->get('social_linkedin_id') == $social_linkedin_id){
+if($shub_linkedin_id && !(int)$shub_linkedin_message_id){
+	$linkedin = new shub_linkedin_account($shub_linkedin_id);
+    if($shub_linkedin_id && $linkedin->get('shub_linkedin_id') == $shub_linkedin_id){
 
-	    /* @var $groups ucm_linkedin_group[] */
+	    /* @var $groups shub_linkedin_group[] */
 	    $groups = $linkedin->get('groups');
 	    //print_r($groups);
 	    ?>
 	    <form action="" method="post" enctype="multipart/form-data">
 		    <input type="hidden" name="_process" value="send_linkedin_message">
-			<?php wp_nonce_field( 'send-linkedin' . (int) $linkedin->get( 'social_linkedin_id' ) ); ?>
+			<?php wp_nonce_field( 'send-linkedin' . (int) $linkedin->get( 'shub_linkedin_id' ) ); ?>
 		    <?php
 		    $fieldset_data = array(
 			    'heading' => array(
@@ -210,7 +210,7 @@ if($social_linkedin_id && !(int)$social_linkedin_message_id){
 				    '</div>'
 			    ;
 		    }
-			echo module_form::generate_fieldset($fieldset_data);
+			echo shub_module_form::generate_fieldset($fieldset_data);
 
 
 		    ?>

@@ -33,60 +33,60 @@ if(isset($_GET['post_id']) && (int)$_GET['post_id']>0){
 	<div class="inside">
 
 	<?php
-	$SimpleSocial = SupportHub::getInstance();
+	$SupportHub = SupportHub::getInstance();
 	?>
 
 
 	<form action="" method="post" enctype="multipart/form-data">
-	    <input type="hidden" name="_process" value="send_social_message">
+	    <input type="hidden" name="_process" value="send_shub_message">
 	    <input type="hidden" name="post_id" value="<?php echo isset($defaults['post_id']) ? (int)$defaults['post_id'] : 0;?>">
-		<?php wp_nonce_field( 'social_send-message' ); ?>
+		<?php wp_nonce_field( 'shub_send-message' ); ?>
 		<table class="" id="support_hub_compose_table">
 			<thead>
 				<tr>
-					<th class="social_column">Network</th>
-					<th class="social_column">Message</th>
-					<th class="social_column last">Options</th>
+					<th class="shub_column">Network</th>
+					<th class="shub_column">Message</th>
+					<th class="shub_column last">Options</th>
 				</tr>
 			</thead>
 			<tbody>
-			<?php foreach($SimpleSocial->message_managers as $message_manager){
+			<?php foreach($SupportHub->message_managers as $message_manager){
 				if(!$message_manager->get_accounts())continue;
 				?>
 				<tr>
-					<td class="social_space" colspan="3"></td>
+					<td class="shub_space" colspan="3"></td>
 				</tr>
 				<tr>
-				    <th class="social_compose_label">
+				    <th class="shub_compose_label">
 					    <span><?php echo $message_manager->friendly_name;?></span>
 					    <?php $message_manager->compose_to();?>
 				    </th>
-					<td class="social_column">
+					<td class="shub_column">
 					    <?php $message_manager->compose_message($defaults);?>
 				    </td>
-					<td class="social_column last">
+					<td class="shub_column last">
 					    <?php $message_manager->compose_type($defaults);?>
 				    </td>
 				</tr>
 			<?php } ?>
 			<tr>
-				<td class="social_space" colspan="3"></td>
+				<td class="shub_space" colspan="3"></td>
 			</tr>
 			</tbody>
 			<thead>
 				<tr>
-					<th class="social_column last" colspan="3">Settings</th>
+					<th class="shub_column last" colspan="3">Settings</th>
 				</tr>
 			</thead>
 			<tbody>
 			<tr>
-				<td class="social_space" colspan="3"></td>
+				<td class="shub_space" colspan="3"></td>
 			</tr>
 		    <tr>
-			    <th class="social_compose_label">
+			    <th class="shub_compose_label">
 				    Schedule
 			    </th>
-			    <td colspan="2" class="social_column last">
+			    <td colspan="2" class="shub_column last">
 				    <input type="radio" name="schedule_send" id="schedule_send_now" value="now" checked>
 					<label for="schedule_send_now">Send Now</label>
 				    <input type="radio" name="schedule_send" id="schedule_send_later" value="later">
@@ -96,15 +96,15 @@ if(isset($_GET['post_id']) && (int)$_GET['post_id']>0){
 					    <input type="text" name="schedule_date" value="" class="support_hub_date_field">
 					    <input type="text" name="schedule_time" value="" class="support_hub_time_field">
 					    <br/><strong>Please note:</strong> you cannot schedule Picture posts/tweets.
-					    <br/><small> Currently: <?php echo ucm_print_date(current_time('timestamp'),true);?> (Leave blank to send now, or pick a date in the future.)</small>
+					    <br/><small> Currently: <?php echo shub_print_date(current_time('timestamp'),true);?> (Leave blank to send now, or pick a date in the future.)</small>
 				    </div>
 			    </td>
 		    </tr>
 		    <tr>
-			    <th class="social_compose_label">
+			    <th class="shub_compose_label">
 				    Track Clicks
 			    </th>
-			    <td colspan="2" class="social_column last">
+			    <td colspan="2" class="shub_column last">
 				    <input type="checkbox" name="track_links" value="1" checked> Yes, track link clicks.
 				    <br/><small>If enabled, all links in above messages will be automatically changed (eg: <?php
 					    $new_link = trailingslashit( get_site_url() );
@@ -114,10 +114,10 @@ if(isset($_GET['post_id']) && (int)$_GET['post_id']>0){
 			    </td>
 		    </tr>
 		    <tr>
-			    <th class="social_compose_label last">
+			    <th class="shub_compose_label last">
 				    Debug
 			    </th>
-			    <td class="social_column last" colspan="2">
+			    <td class="shub_column last" colspan="2">
 				    <input type="checkbox" name="debug" value="1">
 			    </td>
 		    </tr>

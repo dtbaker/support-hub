@@ -1,9 +1,9 @@
 <?php
 
-$current_account = isset($_REQUEST['social_google_id']) ? (int)$_REQUEST['social_google_id'] : false;
-$ucm_google = new ucm_google();
+$current_account = isset($_REQUEST['shub_google_id']) ? (int)$_REQUEST['shub_google_id'] : false;
+$shub_google = new shub_google();
 if($current_account !== false){
-	$ucm_google_account = new ucm_google_account($current_account);
+	$shub_google_account = new shub_google_account($current_account);
 	if(isset($_GET['do_google_refresh'])) {
 
 		?>
@@ -13,8 +13,8 @@ if($current_account !== false){
 			</h2>
 		Manually refreshing page data...
 		<?php
-		$ucm_google_account->api_login(true);
-		$ucm_google_account->api_get_page_comments($ucm_google_account->get('google_id'),true);
+		$shub_google_account->api_login(true);
+		$shub_google_account->api_get_page_comments($shub_google_account->get('google_id'),true);
 		?>
 		</div>
 		<?php
@@ -29,16 +29,16 @@ if($current_account !== false){
 			<pre>
 			<?php
 			// connect this account to google:
-			$ucm_google_account->api_login(true);
-			echo "Current Google Page ID: ".$ucm_google_account->get('google_id')."\n<br>";
-			if(!$ucm_google_account->is_active()){
+			$shub_google_account->api_login(true);
+			echo "Current Google Page ID: ".$shub_google_account->get('google_id')."\n<br>";
+			if(!$shub_google_account->is_active()){
 				echo "Doing initial refresh... <br>";
-				$ucm_google_account->api_get_page_comments($ucm_google_account->get('google_id'),true);
+				$shub_google_account->api_get_page_comments($shub_google_account->get('google_id'),true);
 			}else{
 				echo "All done";
 			}
-			//$ucm_google_account->api_post_comment_reply("z12ddfpjkxregptdv22cihioszyxybjxb04","new api respose ..");
-			//$ucm_google_account->api_post_page_status($ucm_google_account->get('google_id'),"Posting a new public message from PHP API");
+			//$shub_google_account->api_post_comment_reply("z12ddfpjkxregptdv22cihioszyxybjxb04","new api respose ..");
+			//$shub_google_account->api_post_page_status($shub_google_account->get('google_id'),"Posting a new public message from PHP API");
 			?>
 			</pre>
 		</div>
@@ -53,9 +53,9 @@ if($current_account !== false){
 
 			<form action="" method="post">
 				<input type="hidden" name="_process" value="save_google">
-				<input type="hidden" name="social_google_id"
-				       value="<?php echo (int) $ucm_google_account->get( 'social_google_id' ); ?>">
-				<?php wp_nonce_field( 'save-google' . (int) $ucm_google_account->get( 'social_google_id' ) ); ?>
+				<input type="hidden" name="shub_google_id"
+				       value="<?php echo (int) $shub_google_account->get( 'shub_google_id' ); ?>">
+				<?php wp_nonce_field( 'save-google' . (int) $shub_google_account->get( 'shub_google_id' ) ); ?>
 
 				<hr>
 				<?php
@@ -67,7 +67,7 @@ if($current_account !== false){
 				            'field' => array(
 				                'type' => 'text',
 					            'name' => 'account_name',
-					            'value' => $ucm_google_account->get('account_name'),
+					            'value' => $shub_google_account->get('account_name'),
 					            'help' => 'Choose a name for this account. This name will be shown here in the system.',
 				            ),
 				        ),
@@ -76,23 +76,23 @@ if($current_account !== false){
 				$fieldset_data['elements'][] = array(
 					'title' => __('Last Checked', 'support_hub'),
 			            'fields' => array(
-			                !$ucm_google_account->is_active() ? __('Pending, please click connect button below') : ucm_print_date($ucm_google_account->get('last_checked'),true),
-				            $ucm_google_account->is_active() ? '(<a href="'.$ucm_google_account->link_refresh().'" target="_blank">'.__('Refresh', 'support_hub').'</a>)' : '',
+			                !$shub_google_account->is_active() ? __('Pending, please click connect button below') : shub_print_date($shub_google_account->get('last_checked'),true),
+				            $shub_google_account->is_active() ? '(<a href="'.$shub_google_account->link_refresh().'" target="_blank">'.__('Refresh', 'support_hub').'</a>)' : '',
 			            ),
 			        );
 				$fieldset_data['elements'][] = array(
 					'title' => __('Google Page Name', 'support_hub'),
 			            'fields' => array(
-			                $ucm_google_account->is_active() ? htmlspecialchars($ucm_google_account->get('google_name')) : __('Pending'),
+			                $shub_google_account->is_active() ? htmlspecialchars($shub_google_account->get('google_name')) : __('Pending'),
 			            ),
 			        );
 				$fieldset_data['elements'][] = array(
 					'title' => __('Google Page ID', 'support_hub'),
 			            'fields' => array(
-			                $ucm_google_account->is_active() ? htmlspecialchars($ucm_google_account->get('google_id')) : __('Pending'),
+			                $shub_google_account->is_active() ? htmlspecialchars($shub_google_account->get('google_id')) : __('Pending'),
 			            ),
 			        );
-				echo module_form::generate_fieldset($fieldset_data);
+				echo shub_module_form::generate_fieldset($fieldset_data);
 				/*?>
 				<hr>
 				<p>Please choose which items you would like to manage:</p>
@@ -111,7 +111,7 @@ if($current_account !== false){
 			            'fields' => array(
 			                array(
 				                'type' => 'checkbox',
-				                'value' => $ucm_google_account->get('import_comments'),
+				                'value' => $shub_google_account->get('import_comments'),
 				                'name' => 'import_comments',
 			                )
 			            ),
@@ -122,7 +122,7 @@ if($current_account !== false){
 			                array(
 				                'type' => 'checkbox',
 				                'name' => 'import_plusones',
-				                'value' => $ucm_google_account->get('import_plusones'),
+				                'value' => $shub_google_account->get('import_plusones'),
 			                )
 			            ),
 			        );
@@ -132,11 +132,11 @@ if($current_account !== false){
 			                array(
 				                'type' => 'checkbox',
 				                'name' => 'import_mentions',
-				                'value' => $ucm_google_account->get('import_mentions'),
+				                'value' => $shub_google_account->get('import_mentions'),
 			                )
 			            ),
 			        );
-				echo module_form::generate_fieldset($fieldset_data);
+				echo shub_module_form::generate_fieldset($fieldset_data);
 				*/?>
 				<hr>
 		<p>In order to write messages to Google+ pages then please create a new "Page" email address/password.
@@ -154,7 +154,7 @@ if($current_account !== false){
 		</ol>
 		<p>More details <a href="https://support.google.com/plus/answer/2882201?hl=en" target="_blank">here</a>.</p>
 				<?php
-				$google_data = @json_decode($ucm_google_account->get('google_data'),true);
+				$google_data = @json_decode($shub_google_account->get('google_data'),true);
 			    if(!is_array($google_data))$google_data = array();
 
 				$fieldset_data = array(
@@ -165,7 +165,7 @@ if($current_account !== false){
 				            'field' => array(
 				                'type' => 'text',
 					            'name' => 'username',
-					            'value' => $ucm_google_account->get('username'),
+					            'value' => $shub_google_account->get('username'),
 					            'help' => 'Username for this account, from instructions.',
 				            ),
 				        ),
@@ -174,7 +174,7 @@ if($current_account !== false){
 				            'field' => array(
 				                'type' => 'password',
 					            'name' => 'password',
-					            'value' => $ucm_google_account->get('password'),
+					            'value' => $shub_google_account->get('password'),
 					            'help' => 'Password for this account, from instructions.',
 				            ),
 				        ),
@@ -189,10 +189,10 @@ if($current_account !== false){
 				        ),
 				    )
 				);
-				echo module_form::generate_fieldset($fieldset_data);
+				echo shub_module_form::generate_fieldset($fieldset_data);
 				?>
 				<p class="submit">
-					<?php if ( $ucm_google_account->get( 'social_google_id' ) ) { ?>
+					<?php if ( $shub_google_account->get( 'shub_google_id' ) ) { ?>
 						<input name="butt_save" type="submit" class="button-primary"
 						       value="<?php echo esc_attr( __( 'Save', 'support_hub' ) ); ?>"/>
 						<input name="butt_save_reconnect" type="submit" class="button"
@@ -214,12 +214,12 @@ if($current_account !== false){
 }else{
 	// show account overview:
 	$myListTable = new support_hub_Account_Data_List_Table();
-	$accounts = $ucm_google->get_accounts();
+	$accounts = $shub_google->get_accounts();
 	foreach($accounts as $account_id => $account){
-		$a = new ucm_google_account($account['social_google_id']);
+		$a = new shub_google_account($account['shub_google_id']);
 		$accounts[$account_id]['edit_link'] = $a->link_edit();
 		$accounts[$account_id]['title'] = $a->get('account_name');
-		$accounts[$account_id]['last_checked'] = $a->get('last_checked') ? ucm_print_date( $a->get('last_checked') ) : 'N/A';
+		$accounts[$account_id]['last_checked'] = $a->get('last_checked') ? shub_print_date( $a->get('last_checked') ) : 'N/A';
 	}
 	$myListTable->set_data($accounts);
 	$myListTable->prepare_items();
@@ -227,7 +227,7 @@ if($current_account !== false){
 	<div class="wrap">
 		<h2>
 			<?php _e('Google Page Accounts','support_hub');?>
-			<a href="?page=<?php echo htmlspecialchars($_GET['page']);?>&social_google_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
+			<a href="?page=<?php echo htmlspecialchars($_GET['page']);?>&shub_google_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
 		</h2>
 	    <?php
 	    //$myListTable->search_box( 'search', 'search_id' );

@@ -8,7 +8,7 @@
 	// grab a mysql resource from all available social plugins (hardcoded for now - todo: hook)
 	$search = isset($_REQUEST['search']) && is_array($_REQUEST['search']) ? $_REQUEST['search'] : array();
 	if(!isset($search['status'])){
-		$search['status'] = _SOCIAL_MESSAGE_STATUS_UNANSWERED;
+		$search['status'] = _shub_MESSAGE_STATUS_UNANSWERED;
 	}
 	$order = array();
 
@@ -17,19 +17,19 @@
 
 
 
-    $myListTable = new SimpleSocialMessageList();
+    $myListTable = new SupportHubMessageList();
     $myListTable->set_columns( array(
 		'cb' => '',
-		'social_column_social' => __( 'Social Account', 'support_hub' ),
-		'social_column_time'    => __( 'Date/Time', 'support_hub' ),
-		'social_column_from'    => __( 'From', 'support_hub' ),
-		'social_column_summary'    => __( 'Summary', 'support_hub' ),
-		'social_column_action'    => __( 'Action', 'support_hub' ),
+		'shub_column_social' => __( 'Social Account', 'support_hub' ),
+		'shub_column_time'    => __( 'Date/Time', 'support_hub' ),
+		'shub_column_from'    => __( 'From', 'support_hub' ),
+		'shub_column_summary'    => __( 'Summary', 'support_hub' ),
+		'shub_column_action'    => __( 'Action', 'support_hub' ),
 	) );
     $myListTable->process_bulk_action(); // before we do the search on messages.
 
 
-	/* @var $message_manager ucm_facebook */
+	/* @var $message_manager shub_facebook */
 	foreach($this->message_managers as $message_manager_id => $message_manager){
 		if(isset($search['type']) && !empty($search['type']) && $search['type'] != $message_manager_id)continue;
 		$message_manager->load_all_messages($search, $order);
@@ -95,8 +95,8 @@
 
 		<label for="simple_inbox-search-status"><?php _e('Status:','support_hub');?></label>
 		<select id="simple_inbox-search-status" name="search[status]">
-			<option value="<?php echo _SOCIAL_MESSAGE_STATUS_UNANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _SOCIAL_MESSAGE_STATUS_UNANSWERED ? ' selected' : '';?>><?php _e('Inbox','support_hub');?></option>
-			<option value="<?php echo _SOCIAL_MESSAGE_STATUS_ANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _SOCIAL_MESSAGE_STATUS_ANSWERED ? ' selected' : '';?>><?php _e('Archived','support_hub');?></option>
+			<option value="<?php echo _shub_MESSAGE_STATUS_UNANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_UNANSWERED ? ' selected' : '';?>><?php _e('Inbox','support_hub');?></option>
+			<option value="<?php echo _shub_MESSAGE_STATUS_ANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_ANSWERED ? ' selected' : '';?>><?php _e('Archived','support_hub');?></option>
 		</select>
 
 		<input type="submit" name="" id="search-submit" class="button" value="<?php _e('Search','support_hub');?>"></p>

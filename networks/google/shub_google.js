@@ -33,7 +33,7 @@ ucm.social.google = {
                             action: 'support_hub_send-message-reply',
                             wp_nonce: support_hub.wp_nonce,
                             id: jQuery(this).data('id'),
-                            social_google_id: jQuery(this).data('account-id'),
+                            shub_google_id: jQuery(this).data('account-id'),
                             message: message,
                             debug: jQuery(p).find('.reply-debug')[0].checked ? 1 : 0,
                             form_auth_key: ucm.form_auth_key
@@ -80,8 +80,8 @@ ucm.social.google = {
             data: {
                 action: 'support_hub_'+jQuery(this).data('action'),
                 wp_nonce: support_hub.wp_nonce,
-                social_google_message_id: jQuery(this).data('id'),
-                social_google_id: jQuery(this).data('social_google_id'),
+                shub_google_message_id: jQuery(this).data('id'),
+                shub_google_id: jQuery(this).data('shub_google_id'),
                 form_auth_key: ucm.form_auth_key
             },
             dataType: 'script',

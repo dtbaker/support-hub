@@ -20,10 +20,10 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 defined('__DIR__') or define('__DIR__', dirname(__FILE__));
 
-define('_SOCIAL_MESSAGE_STATUS_UNANSWERED',0);
-define('_SOCIAL_MESSAGE_STATUS_ANSWERED',1);
-define('_SOCIAL_MESSAGE_STATUS_PENDINGSEND',3);
-define('_SOCIAL_MESSAGE_STATUS_SENDING',4);
+define('_shub_MESSAGE_STATUS_UNANSWERED',0);
+define('_shub_MESSAGE_STATUS_ANSWERED',1);
+define('_shub_MESSAGE_STATUS_PENDINGSEND',3);
+define('_shub_MESSAGE_STATUS_SENDING',4);
 define('_DTBAKER_SUPPORT_HUB_CORE_FILE_',__FILE__);
 
 // Include plugin class files

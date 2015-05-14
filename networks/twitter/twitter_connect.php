@@ -1,8 +1,8 @@
 <?php
-if(!isset($ucm_twitter))die();
-$social_twitter_id = isset($_REQUEST['social_twitter_id']) ? (int)$_REQUEST['social_twitter_id'] : 0;
-$twitter_account = new ucm_twitter_account($social_twitter_id);
-if($social_twitter_id && $twitter_account->get('social_twitter_id') && $twitter_account->get('social_twitter_id') == $social_twitter_id){
+if(!isset($shub_twitter))die();
+$shub_twitter_id = isset($_REQUEST['shub_twitter_id']) ? (int)$_REQUEST['shub_twitter_id'] : 0;
+$twitter_account = new shub_twitter_account($shub_twitter_id);
+if($shub_twitter_id && $twitter_account->get('shub_twitter_id') && $twitter_account->get('shub_twitter_id') == $shub_twitter_id){
 	// do a quick oauth.
 ?>
 	<div class="wrap">
@@ -165,7 +165,7 @@ if (!isset($params['oauth_token'])) {
 		<p><a href="<?php echo $twitter_account->link_edit();?>" class="button">Continue</a></p>
 
 		<?php
-		//redirect_browser(module_social_twitter::link_open($social_twitter_id));
+		//redirect_browser(module_shub_twitter::link_open($shub_twitter_id));
 	}else{
 		echo 'Failed to connect to twitter: ';
 		echo $tmhOAuth->response['response'];

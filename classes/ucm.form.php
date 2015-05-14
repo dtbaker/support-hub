@@ -1,6 +1,6 @@
 <?php
 
-class module_form{
+class shub_module_form{
 	 public static function generate_form_element($setting){
 
         if(isset($setting['ignore'])&&$setting['ignore'])return;

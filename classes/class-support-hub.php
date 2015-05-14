@@ -13,7 +13,7 @@ class SupportHub {
 	// 1.47 - added linkedin tables.
 	// 1.46 - added linkedin tables.
 
-	/* @var $message_managers ucm_facebook[] */
+	/* @var $message_managers shub_facebook[] */
 	public $message_managers = array();
 
 	private static $instance = null;
@@ -46,10 +46,10 @@ class SupportHub {
 		// todo: hook these into loop
 		// todo: option to disable a social method completely (tickboxes on settings page)
 		$this->message_managers = array(
-			'facebook' => new ucm_facebook(),
-			'twitter' => new ucm_twitter(),
-			'google' => new ucm_google(),
-			'linkedin' => new ucm_linkedin(),
+			'facebook' => new shub_facebook(),
+			'twitter' => new shub_twitter(),
+			'google' => new shub_google(),
+			'linkedin' => new shub_linkedin(),
 		);
 
 		// Add settings page to menu
@@ -67,13 +67,13 @@ class SupportHub {
 		add_filter('cron_schedules', array( $this, 'cron_new_interval') );
 		add_action( 'support_hub_cron_job', array( $this, 'cron_run') );
 
-		add_action( 'init', array( $this, 'social_init' ) );
+		add_action( 'init', array( $this, 'shub_init' ) );
 
 
 	}
 
 
-	public function social_init(){
+	public function shub_init(){
 
 		if ( ! wp_next_scheduled( 'support_hub_cron_job' ) ) {
 			wp_schedule_event( time(), 'minutes_10', 'support_hub_cron_job' );
@@ -166,9 +166,9 @@ class SupportHub {
 			}
 			$process_action = $_REQUEST['_process'];
 			$process_options = array();
-			$social_message_id = false;
-			if($process_action == 'send_social_message'){
-				check_admin_referer( 'social_send-message' );
+			$shub_message_id = false;
+			if($process_action == 'send_shub_message'){
+				check_admin_referer( 'shub_send-message' );
 				// we are sending a social message! yay!
 
 			    $send_time = time(); // default: now
@@ -184,31 +184,31 @@ class SupportHub {
                     // add the time if it exists
                     $date .= ' '.implode(':',$bits).':00';
 	                $send_time = strtotime($date);
-	                //echo $date."<br>".$send_time."<br>".ucm_print_date($send_time,true);exit;
+	                //echo $date."<br>".$send_time."<br>".shub_print_date($send_time,true);exit;
                 }else if(isset($_POST['schedule_date']) && !empty($_POST['schedule_date'])){
                     $send_time = strtotime($_POST['schedule_date']);
                 }
-				// wack a new entry into the social_message database table and pass that onto our message_managers below
-				$social_message_id = ucm_update_insert('social_message_id',false,'social_message',array(
+				// wack a new entry into the shub_message database table and pass that onto our message_managers below
+				$shub_message_id = shub_update_insert('shub_message_id',false,'shub_message',array(
 					'post_id' => isset($_POST['post_id']) ? $_POST['post_id'] : 0, //todo
 					'sent_time' => $send_time,
 				));
-				if($social_message_id){
-					$process_options['social_message_id'] = $social_message_id;
+				if($shub_message_id){
+					$process_options['shub_message_id'] = $shub_message_id;
 					$process_options['send_time'] = $send_time;
 				}else{
 					die('Failed to create social message');
 				}
-				/* @var $message_manager ucm_facebook */
+				/* @var $message_manager shub_facebook */
 				$message_count = 0;
 				foreach($this->message_managers as $name => $message_manager){
 					$message_count += $message_manager->handle_process($process_action, $process_options);
 				}
-				if($social_message_id && !$message_count){
+				if($shub_message_id && !$message_count){
 					// remove the gobal social message as nothing worked.
-					ucm_delete_from_db('social_message','social_message_id',$social_message_id);
-				}else if($social_message_id){
-					ucm_update_insert('social_message_id',$social_message_id,'social_message',array(
+					shub_delete_from_db('shub_message','shub_message_id',$shub_message_id);
+				}else if($shub_message_id){
+					shub_update_insert('shub_message_id',$shub_message_id,'shub_message',array(
 						'message_count' => $message_count,
 					));
 				}
@@ -224,7 +224,7 @@ class SupportHub {
 			}else{
 				// just process each request normally:
 
-				/* @var $message_manager ucm_facebook */
+				/* @var $message_manager shub_facebook */
 				foreach($this->message_managers as $name => $message_manager){
 					$message_manager->handle_process($process_action, $process_options);
 				}
@@ -343,19 +343,19 @@ class SupportHub {
 $sql = <<< EOT
 
 
-CREATE TABLE {$wpdb->prefix}social_message (
-  social_message_id int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE {$wpdb->prefix}shub_message (
+  shub_message_id int(11) NOT NULL AUTO_INCREMENT,
   post_id int(11) NOT NULL,
   sent_time int(11) NOT NULL DEFAULT '0',
   message_data text NOT NULL,
   message_count int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_message_id (social_message_id),
+  PRIMARY KEY  shub_message_id (shub_message_id),
   KEY post_id (post_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_facebook (
-  social_facebook_id int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE {$wpdb->prefix}shub_facebook (
+  shub_facebook_id int(11) NOT NULL AUTO_INCREMENT,
   facebook_name varchar(50) NOT NULL,
   last_checked int(11) NOT NULL DEFAULT '0',
   last_message int(11) NOT NULL DEFAULT '0',
@@ -365,15 +365,15 @@ CREATE TABLE {$wpdb->prefix}social_facebook (
   facebook_app_secret varchar(255) NOT NULL,
   import_personal int(1) NOT NULL DEFAULT '0',
   machine_id varchar(255) NOT NULL,
-  PRIMARY KEY  social_facebook_id (social_facebook_id)
+  PRIMARY KEY  shub_facebook_id (shub_facebook_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-CREATE TABLE {$wpdb->prefix}social_facebook_message (
-  social_facebook_message_id int(11) NOT NULL AUTO_INCREMENT,
-  social_facebook_id int(11) NOT NULL,
-  social_message_id int(11) NOT NULL DEFAULT '0',
-  social_facebook_page_id int(11) NOT NULL,
-  social_facebook_group_id int(11) NOT NULL,
+CREATE TABLE {$wpdb->prefix}shub_facebook_message (
+  shub_facebook_message_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_id int(11) NOT NULL,
+  shub_message_id int(11) NOT NULL DEFAULT '0',
+  shub_facebook_page_id int(11) NOT NULL,
+  shub_facebook_group_id int(11) NOT NULL,
   facebook_id varchar(255) NOT NULL,
   summary text NOT NULL,
   last_active int(11) NOT NULL DEFAULT '0',
@@ -383,87 +383,87 @@ CREATE TABLE {$wpdb->prefix}social_facebook_message (
   data text NOT NULL,
   status tinyint(1) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_facebook_message_id (social_facebook_message_id),
-  KEY social_facebook_id (social_facebook_id),
-  KEY social_message_id (social_message_id),
+  PRIMARY KEY  shub_facebook_message_id (shub_facebook_message_id),
+  KEY shub_facebook_id (shub_facebook_id),
+  KEY shub_message_id (shub_message_id),
   KEY last_active (last_active),
-  KEY social_facebook_page_id (social_facebook_page_id),
+  KEY shub_facebook_page_id (shub_facebook_page_id),
   KEY facebook_id (facebook_id),
   KEY status (status)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_facebook_message_read (
-  social_facebook_message_id int(11) NOT NULL,
+CREATE TABLE {$wpdb->prefix}shub_facebook_message_read (
+  shub_facebook_message_id int(11) NOT NULL,
   read_time int(11) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_facebook_message_id (social_facebook_message_id,user_id)
+  PRIMARY KEY  shub_facebook_message_id (shub_facebook_message_id,user_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_facebook_message_comment (
-  social_facebook_message_comment_id int(11) NOT NULL AUTO_INCREMENT,
-  social_facebook_message_id int(11) NOT NULL,
+CREATE TABLE {$wpdb->prefix}shub_facebook_message_comment (
+  shub_facebook_message_comment_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_message_id int(11) NOT NULL,
   facebook_id varchar(255) NOT NULL,
   time int(11) NOT NULL,
   message_from text NOT NULL,
   message_to text NOT NULL,
   data text NOT NULL,
   user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_facebook_message_comment_id (social_facebook_message_comment_id),
-  KEY social_facebook_message_id (social_facebook_message_id),
+  PRIMARY KEY  shub_facebook_message_comment_id (shub_facebook_message_comment_id),
+  KEY shub_facebook_message_id (shub_facebook_message_id),
   KEY facebook_id (facebook_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_facebook_message_link (
-  social_facebook_message_link_id int(11) NOT NULL AUTO_INCREMENT,
-  social_facebook_message_id int(11) NOT NULL DEFAULT '0',
+CREATE TABLE {$wpdb->prefix}shub_facebook_message_link (
+  shub_facebook_message_link_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_message_id int(11) NOT NULL DEFAULT '0',
   link varchar(255) NOT NULL,
-  PRIMARY KEY  social_facebook_message_link_id (social_facebook_message_link_id),
-  KEY social_facebook_message_id (social_facebook_message_id)
+  PRIMARY KEY  shub_facebook_message_link_id (shub_facebook_message_link_id),
+  KEY shub_facebook_message_id (shub_facebook_message_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-CREATE TABLE {$wpdb->prefix}social_facebook_message_link_click (
-  social_facebook_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
-  social_facebook_message_link_id int(11) NOT NULL DEFAULT '0',
+CREATE TABLE {$wpdb->prefix}shub_facebook_message_link_click (
+  shub_facebook_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_message_link_id int(11) NOT NULL DEFAULT '0',
   click_time int(11) NOT NULL,
   ip_address varchar(20) NOT NULL,
   user_agent varchar(100) NOT NULL,
   url_referrer varchar(255) NOT NULL,
-  PRIMARY KEY  social_facebook_message_link_click_id (social_facebook_message_link_click_id),
-  KEY social_facebook_message_link_id (social_facebook_message_link_id)
+  PRIMARY KEY  shub_facebook_message_link_click_id (shub_facebook_message_link_click_id),
+  KEY shub_facebook_message_link_id (shub_facebook_message_link_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
 
-CREATE TABLE {$wpdb->prefix}social_facebook_page (
-  social_facebook_page_id int(11) NOT NULL AUTO_INCREMENT,
-  social_facebook_id int(11) NOT NULL,
+CREATE TABLE {$wpdb->prefix}shub_facebook_page (
+  shub_facebook_page_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_id int(11) NOT NULL,
   page_name varchar(50) NOT NULL,
   last_message int(11) NOT NULL DEFAULT '0',
   last_checked int(11) NOT NULL,
   page_id varchar(255) NOT NULL,
   facebook_token varchar(255) NOT NULL,
-  PRIMARY KEY  social_facebook_page_id (social_facebook_page_id),
-  KEY social_facebook_id (social_facebook_id)
+  PRIMARY KEY  shub_facebook_page_id (shub_facebook_page_id),
+  KEY shub_facebook_id (shub_facebook_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-CREATE TABLE {$wpdb->prefix}social_facebook_group (
-  social_facebook_group_id int(11) NOT NULL AUTO_INCREMENT,
-  social_facebook_id int(11) NOT NULL,
+CREATE TABLE {$wpdb->prefix}shub_facebook_group (
+  shub_facebook_group_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_id int(11) NOT NULL,
   group_name varchar(50) NOT NULL,
   last_message int(11) NOT NULL DEFAULT '0',
   last_checked int(11) NOT NULL,
   group_id varchar(255) NOT NULL,
   administrator int(2) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_facebook_group_id (social_facebook_group_id),
-  KEY social_facebook_id (social_facebook_id)
+  PRIMARY KEY  shub_facebook_group_id (shub_facebook_group_id),
+  KEY shub_facebook_id (shub_facebook_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_twitter (
-  social_twitter_id int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE {$wpdb->prefix}shub_twitter (
+  shub_twitter_id int(11) NOT NULL AUTO_INCREMENT,
   twitter_id varchar(255) NOT NULL,
   twitter_name varchar(50) NOT NULL,
   twitter_data text NOT NULL,
@@ -476,15 +476,15 @@ CREATE TABLE {$wpdb->prefix}social_twitter (
   user_data text NOT NULL,
   searches text NOT NULL,
   account_name varchar(80) NOT NULL,
-  PRIMARY KEY  social_twitter_id (social_twitter_id),
+  PRIMARY KEY  shub_twitter_id (shub_twitter_id),
   KEY twitter_id (twitter_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_twitter_message (
-  social_twitter_message_id int(11) NOT NULL AUTO_INCREMENT,
-  social_twitter_id int(11) NOT NULL,
-  social_message_id int(11) NOT NULL DEFAULT '0',
+CREATE TABLE {$wpdb->prefix}shub_twitter_message (
+  shub_twitter_message_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_twitter_id int(11) NOT NULL,
+  shub_message_id int(11) NOT NULL DEFAULT '0',
   reply_to_id int(11) NOT NULL DEFAULT '0',
   twitter_message_id varchar(255) NOT NULL,
   twitter_from_id varchar(80) NOT NULL,
@@ -497,9 +497,9 @@ CREATE TABLE {$wpdb->prefix}social_twitter_message (
   message_time int(11) NOT NULL DEFAULT '0',
   data text NOT NULL,
   user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_twitter_message_id (social_twitter_message_id),
-  KEY social_twitter_id (social_twitter_id),
-  KEY social_message_id (social_message_id),
+  PRIMARY KEY  shub_twitter_message_id (shub_twitter_message_id),
+  KEY shub_twitter_id (shub_twitter_id),
+  KEY shub_message_id (shub_message_id),
   KEY message_time (message_time),
   KEY status (status),
   KEY type (type),
@@ -508,35 +508,35 @@ CREATE TABLE {$wpdb->prefix}social_twitter_message (
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_twitter_message_read (
-  social_twitter_message_id int(11) NOT NULL,
+CREATE TABLE {$wpdb->prefix}shub_twitter_message_read (
+  shub_twitter_message_id int(11) NOT NULL,
   read_time int(11) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_twitter_message_id (social_twitter_message_id,user_id)
+  PRIMARY KEY  shub_twitter_message_id (shub_twitter_message_id,user_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_twitter_message_link (
-  social_twitter_message_link_id int(11) NOT NULL AUTO_INCREMENT,
-  social_twitter_message_id int(11) NOT NULL DEFAULT '0',
+CREATE TABLE {$wpdb->prefix}shub_twitter_message_link (
+  shub_twitter_message_link_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_twitter_message_id int(11) NOT NULL DEFAULT '0',
   link varchar(255) NOT NULL,
-  PRIMARY KEY  social_twitter_message_link_id (social_twitter_message_link_id),
-  KEY social_twitter_message_id (social_twitter_message_id)
+  PRIMARY KEY  shub_twitter_message_link_id (shub_twitter_message_link_id),
+  KEY shub_twitter_message_id (shub_twitter_message_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-CREATE TABLE {$wpdb->prefix}social_twitter_message_link_click (
-  social_twitter_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
-  social_twitter_message_link_id int(11) NOT NULL DEFAULT '0',
+CREATE TABLE {$wpdb->prefix}shub_twitter_message_link_click (
+  shub_twitter_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_twitter_message_link_id int(11) NOT NULL DEFAULT '0',
   click_time int(11) NOT NULL,
   ip_address varchar(20) NOT NULL,
   user_agent varchar(100) NOT NULL,
   url_referrer varchar(255) NOT NULL,
-  PRIMARY KEY  social_twitter_message_link_click_id (social_twitter_message_link_click_id),
-  KEY social_twitter_message_link_id (social_twitter_message_link_id)
+  PRIMARY KEY  shub_twitter_message_link_click_id (shub_twitter_message_link_click_id),
+  KEY shub_twitter_message_link_id (shub_twitter_message_link_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-CREATE TABLE {$wpdb->prefix}social_google (
-  social_google_id int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE {$wpdb->prefix}shub_google (
+  shub_google_id int(11) NOT NULL AUTO_INCREMENT,
   username varchar(255) NOT NULL,
   password varchar(255) NOT NULL,
   google_id varchar(255) NOT NULL,
@@ -550,15 +550,15 @@ CREATE TABLE {$wpdb->prefix}social_google (
   searches text NOT NULL,
   api_cookies text NOT NULL,
   account_name varchar(80) NOT NULL,
-  PRIMARY KEY  social_google_id (social_google_id),
+  PRIMARY KEY  shub_google_id (shub_google_id),
   KEY google_id (google_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_google_message (
-  social_google_message_id int(11) NOT NULL AUTO_INCREMENT,
-  social_google_id int(11) NOT NULL,
-  social_message_id int(11) NOT NULL DEFAULT '0',
+CREATE TABLE {$wpdb->prefix}shub_google_message (
+  shub_google_message_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_google_id int(11) NOT NULL,
+  shub_message_id int(11) NOT NULL DEFAULT '0',
   google_message_id varchar(255) NOT NULL,
   comment_count int(11) NOT NULL,
   comments text NOT NULL,
@@ -573,9 +573,9 @@ CREATE TABLE {$wpdb->prefix}social_google_message (
   message_time int(11) NOT NULL DEFAULT '0',
   data text NOT NULL,
   user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_google_message_id (social_google_message_id),
-  KEY social_google_id (social_google_id),
-  KEY social_message_id (social_message_id),
+  PRIMARY KEY  shub_google_message_id (shub_google_message_id),
+  KEY shub_google_id (shub_google_id),
+  KEY shub_message_id (shub_message_id),
   KEY message_time (message_time),
   KEY status (status),
   KEY type (type),
@@ -583,36 +583,36 @@ CREATE TABLE {$wpdb->prefix}social_google_message (
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_google_message_read (
-  social_google_message_id int(11) NOT NULL,
+CREATE TABLE {$wpdb->prefix}shub_google_message_read (
+  shub_google_message_id int(11) NOT NULL,
   read_time int(11) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_google_message_id (social_google_message_id,user_id)
+  PRIMARY KEY  shub_google_message_id (shub_google_message_id,user_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_google_message_link (
-  social_google_message_link_id int(11) NOT NULL AUTO_INCREMENT,
-  social_google_message_id int(11) NOT NULL DEFAULT '0',
+CREATE TABLE {$wpdb->prefix}shub_google_message_link (
+  shub_google_message_link_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_google_message_id int(11) NOT NULL DEFAULT '0',
   link varchar(255) NOT NULL,
-  PRIMARY KEY  social_google_message_link_id (social_google_message_link_id),
-  KEY social_google_message_id (social_google_message_id)
+  PRIMARY KEY  shub_google_message_link_id (shub_google_message_link_id),
+  KEY shub_google_message_id (shub_google_message_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-CREATE TABLE {$wpdb->prefix}social_google_message_link_click (
-  social_google_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
-  social_google_message_link_id int(11) NOT NULL DEFAULT '0',
+CREATE TABLE {$wpdb->prefix}shub_google_message_link_click (
+  shub_google_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_google_message_link_id int(11) NOT NULL DEFAULT '0',
   click_time int(11) NOT NULL,
   ip_address varchar(20) NOT NULL,
   user_agent varchar(100) NOT NULL,
   url_referrer varchar(255) NOT NULL,
-  PRIMARY KEY  social_google_message_link_click_id (social_google_message_link_click_id),
-  KEY social_google_message_link_id (social_google_message_link_id)
+  PRIMARY KEY  shub_google_message_link_click_id (shub_google_message_link_click_id),
+  KEY shub_google_message_link_id (shub_google_message_link_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_linkedin (
-  social_linkedin_id int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE {$wpdb->prefix}shub_linkedin (
+  shub_linkedin_id int(11) NOT NULL AUTO_INCREMENT,
   linkedin_name varchar(50) NOT NULL,
   last_checked int(11) NOT NULL DEFAULT '0',
   import_stream int(11) NOT NULL DEFAULT '0',
@@ -622,14 +622,14 @@ CREATE TABLE {$wpdb->prefix}social_linkedin (
   linkedin_app_id varchar(255) NOT NULL,
   linkedin_app_secret varchar(255) NOT NULL,
   machine_id varchar(255) NOT NULL,
-  PRIMARY KEY  social_linkedin_id (social_linkedin_id)
+  PRIMARY KEY  shub_linkedin_id (shub_linkedin_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-CREATE TABLE {$wpdb->prefix}social_linkedin_message (
-  social_linkedin_message_id int(11) NOT NULL AUTO_INCREMENT,
-  social_linkedin_id int(11) NOT NULL,
-  social_message_id int(11) NOT NULL DEFAULT '0',
-  social_linkedin_group_id int(11) NOT NULL,
+CREATE TABLE {$wpdb->prefix}shub_linkedin_message (
+  shub_linkedin_message_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linkedin_id int(11) NOT NULL,
+  shub_message_id int(11) NOT NULL DEFAULT '0',
+  shub_linkedin_group_id int(11) NOT NULL,
   linkedin_id varchar(255) NOT NULL,
   summary text NOT NULL,
   title text NOT NULL,
@@ -640,27 +640,27 @@ CREATE TABLE {$wpdb->prefix}social_linkedin_message (
   data text NOT NULL,
   status tinyint(1) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_linkedin_message_id (social_linkedin_message_id),
-  KEY social_linkedin_id (social_linkedin_id),
-  KEY social_message_id (social_message_id),
+  PRIMARY KEY  shub_linkedin_message_id (shub_linkedin_message_id),
+  KEY shub_linkedin_id (shub_linkedin_id),
+  KEY shub_message_id (shub_message_id),
   KEY last_active (last_active),
-  KEY social_linkedin_group_id (social_linkedin_group_id),
+  KEY shub_linkedin_group_id (shub_linkedin_group_id),
   KEY linkedin_id (linkedin_id),
   KEY status (status)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_linkedin_message_read (
-  social_linkedin_message_id int(11) NOT NULL,
+CREATE TABLE {$wpdb->prefix}shub_linkedin_message_read (
+  shub_linkedin_message_id int(11) NOT NULL,
   read_time int(11) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_linkedin_message_id (social_linkedin_message_id,user_id)
+  PRIMARY KEY  shub_linkedin_message_id (shub_linkedin_message_id,user_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_linkedin_message_comment (
-  social_linkedin_message_comment_id int(11) NOT NULL AUTO_INCREMENT,
-  social_linkedin_message_id int(11) NOT NULL,
+CREATE TABLE {$wpdb->prefix}shub_linkedin_message_comment (
+  shub_linkedin_message_comment_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linkedin_message_id int(11) NOT NULL,
   linkedin_id varchar(255) NOT NULL,
   time int(11) NOT NULL,
   message_from text NOT NULL,
@@ -668,41 +668,41 @@ CREATE TABLE {$wpdb->prefix}social_linkedin_message_comment (
   comment_text text NOT NULL,
   data text NOT NULL,
   user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  social_linkedin_message_comment_id (social_linkedin_message_comment_id),
-  KEY social_linkedin_message_id (social_linkedin_message_id),
+  PRIMARY KEY  shub_linkedin_message_comment_id (shub_linkedin_message_comment_id),
+  KEY shub_linkedin_message_id (shub_linkedin_message_id),
   KEY linkedin_id (linkedin_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}social_linkedin_message_link (
-  social_linkedin_message_link_id int(11) NOT NULL AUTO_INCREMENT,
-  social_linkedin_message_id int(11) NOT NULL DEFAULT '0',
+CREATE TABLE {$wpdb->prefix}shub_linkedin_message_link (
+  shub_linkedin_message_link_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linkedin_message_id int(11) NOT NULL DEFAULT '0',
   link varchar(255) NOT NULL,
-  PRIMARY KEY  social_linkedin_message_link_id (social_linkedin_message_link_id),
-  KEY social_linkedin_message_id (social_linkedin_message_id)
+  PRIMARY KEY  shub_linkedin_message_link_id (shub_linkedin_message_link_id),
+  KEY shub_linkedin_message_id (shub_linkedin_message_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-CREATE TABLE {$wpdb->prefix}social_linkedin_message_link_click (
-  social_linkedin_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
-  social_linkedin_message_link_id int(11) NOT NULL DEFAULT '0',
+CREATE TABLE {$wpdb->prefix}shub_linkedin_message_link_click (
+  shub_linkedin_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linkedin_message_link_id int(11) NOT NULL DEFAULT '0',
   click_time int(11) NOT NULL,
   ip_address varchar(20) NOT NULL,
   user_agent varchar(100) NOT NULL,
   url_referrer varchar(255) NOT NULL,
-  PRIMARY KEY  social_linkedin_message_link_click_id (social_linkedin_message_link_click_id),
-  KEY social_linkedin_message_link_id (social_linkedin_message_link_id)
+  PRIMARY KEY  shub_linkedin_message_link_click_id (shub_linkedin_message_link_click_id),
+  KEY shub_linkedin_message_link_id (shub_linkedin_message_link_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-CREATE TABLE {$wpdb->prefix}social_linkedin_group (
-  social_linkedin_group_id int(11) NOT NULL AUTO_INCREMENT,
-  social_linkedin_id int(11) NOT NULL,
+CREATE TABLE {$wpdb->prefix}shub_linkedin_group (
+  shub_linkedin_group_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linkedin_id int(11) NOT NULL,
   group_name varchar(50) NOT NULL,
   last_message int(11) NOT NULL DEFAULT '0',
   last_checked int(11) NOT NULL,
   group_id varchar(255) NOT NULL,
   linkedin_token varchar(255) NOT NULL,
-  PRIMARY KEY  social_linkedin_group_id (social_linkedin_group_id),
-  KEY social_linkedin_id (social_linkedin_id)
+  PRIMARY KEY  shub_linkedin_group_id (shub_linkedin_group_id),
+  KEY shub_linkedin_id (shub_linkedin_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 EOT;
@@ -716,92 +716,6 @@ EOT;
 			}
 		}
 
-		// now we update any old latin collations to utf8 (opps!)
-		// from: http://stackoverflow.com/a/106272/457850
-		$tables_to_check = array(
-			'social_facebook',
-			'social_facebook_message',
-			'social_facebook_message_comment',
-			'social_facebook_page',
-			'social_google',
-			'social_google_mesage',
-			'social_message',
-			'social_twitter',
-			'social_twitter_message',
-		);
-		$convert_fields_collate_from = 'latin1_swedish_ci';
-		$convert_fields_collate_to = 'utf8_general_ci';
-		$convert_tables_character_set_to = 'utf8';
-		$show_debug_messages = false;
-		global $wpdb;
-		$wpdb->show_errors();
-		foreach($tables_to_check as $table) {
-			$table = $wpdb->prefix . $table;
-			$indicies = $wpdb->get_results(  "SHOW INDEX FROM `$table`", ARRAY_A );
-			$results = $wpdb->get_results( "SHOW FULL COLUMNS FROM `$table`" , ARRAY_A );
-			foreach($results as $result){
-				if($show_debug_messages)echo "Checking field ".$result['Field'] ." with collat: ".$result['Collation']."\n";
-				if(isset($result['Field']) && $result['Field'] && isset($result['Collation']) && $result['Collation'] == $convert_fields_collate_from){
-					if($show_debug_messages)echo "Table: $table - Converting field " .$result['Field'] ." - " .$result['Type']." - from $convert_fields_collate_from to $convert_fields_collate_to \n";
-					// found a field to convert. check if there's an index on this field.
-					// we have to remove index before converting field to binary.
-					$is_there_an_index = false;
-					foreach($indicies as $index){
-						if ( isset($index['Column_name']) && $index['Column_name'] == $result['Field']){
-							// there's an index on this column! store it for adding later on.
-							$is_there_an_index = $index;
-							$wpdb->query( $wpdb->prepare( "ALTER TABLE `%s` DROP INDEX %s", $table, $index['Key_name']) );
-							if($show_debug_messages)echo "Dropped index ".$index['Key_name']." before converting field.. \n";
-							break;
-						}
-					}
-					$set = false;
-
-					if ( preg_match( "/^varchar\((\d+)\)$/i", $result['Type'], $mat ) ) {
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` VARBINARY({$mat[1]})" );
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` VARCHAR({$mat[1]}) CHARACTER SET {$convert_tables_character_set_to} COLLATE {$convert_fields_collate_to}" );
-						$set = true;
-					} else if ( !strcasecmp( $result['Type'], "CHAR" ) ) {
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` BINARY(1)" );
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` VARCHAR(1) CHARACTER SET {$convert_tables_character_set_to} COLLATE {$convert_fields_collate_to}" );
-						$set = true;
-					} else if ( !strcasecmp( $result['Type'], "TINYTEXT" ) ) {
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` TINYBLOB" );
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` TINYTEXT CHARACTER SET {$convert_tables_character_set_to} COLLATE {$convert_fields_collate_to}" );
-						$set = true;
-					} else if ( !strcasecmp( $result['Type'], "MEDIUMTEXT" ) ) {
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` MEDIUMBLOB" );
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` MEDIUMTEXT CHARACTER SET {$convert_tables_character_set_to} COLLATE {$convert_fields_collate_to}" );
-						$set = true;
-					} else if ( !strcasecmp( $result['Type'], "LONGTEXT" ) ) {
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` LONGBLOB" );
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` LONGTEXT CHARACTER SET {$convert_tables_character_set_to} COLLATE {$convert_fields_collate_to}" );
-						$set = true;
-					} else if ( !strcasecmp( $result['Type'], "TEXT" ) ) {
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` BLOB" );
-						$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$result['Field']}` TEXT CHARACTER SET {$convert_tables_character_set_to} COLLATE {$convert_fields_collate_to}" );
-						$set = true;
-					}else{
-						if($show_debug_messages)echo "Failed to change field - unsupported type: ".$result['Type']."\n";
-					}
-					if($set){
-						if($show_debug_messages)echo "Altered field success! \n";
-						$wpdb->query( "ALTER TABLE `$table` MODIFY {$result['Field']} COLLATE $convert_fields_collate_to" );
-					}
-					if($is_there_an_index !== false){
-						// add the index back.
-						if ( !$is_there_an_index["Non_unique"] ) {
-							$wpdb->query( "CREATE UNIQUE INDEX `{$is_there_an_index['Key_name']}` ON `{$table}` ({$is_there_an_index['Column_name']})", $is_there_an_index['Key_name'], $table, $is_there_an_index['Column_name'] );
-						} else {
-							$wpdb->query( "CREATE UNIQUE INDEX `{$is_there_an_index['Key_name']}` ON `{$table}` ({$is_there_an_index['Column_name']})", $is_there_an_index['Key_name'], $table, $is_there_an_index['Column_name'] );
-						}
-					}
-				}
-			}
-			// set default collate
-			$wpdb->query( "ALTER TABLE `{$table}` DEFAULT CHARACTER SET {$convert_tables_character_set_to} COLLATE {$convert_fields_collate_to}" );
-			if($show_debug_messages)echo "Finished with table $table \n";
-		}
 		$wpdb->hide_errors();
 
 

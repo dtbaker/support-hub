@@ -1,14 +1,14 @@
 <?php
 
-function ucm_query($sql){
+function shub_query($sql){
 	global $wpdb;
 	return $wpdb->query($sql);
 }
-function ucm_qa1($sql){
+function shub_qa1($sql){
 	global $wpdb;
 	return $wpdb->get_row($sql, ARRAY_A);
 }
-function ucm_get_single($table, $primary_key_name, $primary_key_value){
+function shub_get_single($table, $primary_key_name, $primary_key_value){
 	global $wpdb;
 	$primary_key_name = is_array($primary_key_name) ? $primary_key_name : array($primary_key_name);
 	$primary_key_value = is_array($primary_key_value) ? $primary_key_value : array($primary_key_value);
@@ -19,11 +19,11 @@ function ucm_get_single($table, $primary_key_name, $primary_key_value){
 	return $wpdb->get_row($sql, ARRAY_A);
 }
 
-function ucm_update_insert($primary_key_name, $primary_key_value, $table_name, $data){
+function shub_update_insert($primary_key_name, $primary_key_value, $table_name, $data){
 	global $wpdb;
 	if(!is_array($data))$data = array();
 	// does it exist?
-	$exists = $primary_key_value ? ucm_get_single($table_name, $primary_key_name, $primary_key_value) : false;
+	$exists = $primary_key_value ? shub_get_single($table_name, $primary_key_name, $primary_key_value) : false;
 	if(!$exists){
 		$data[$primary_key_name] = $primary_key_value;
 		$wpdb->replace(_support_hub_DB_PREFIX.$table_name, $data);
@@ -36,7 +36,7 @@ function ucm_update_insert($primary_key_name, $primary_key_value, $table_name, $
 		exit;
 	}
 }
-function ucm_get_multiple($table, $search, $index){
+function shub_get_multiple($table, $search, $index){
 	global $wpdb;
 	$sql = "SELECT * FROM `"._support_hub_DB_PREFIX.esc_sql($table)."` WHERE 1 ";
 	foreach($search as $key=>$val){
@@ -54,16 +54,16 @@ function ucm_get_multiple($table, $search, $index){
 	}
 	return $return;
 }
-function ucm_delete_from_db($table, $key, $val){
+function shub_delete_from_db($table, $key, $val){
 	global $wpdb;
 	$wpdb->delete(_support_hub_DB_PREFIX.$table, array($key=>$val));
 }
 
-function ucm_print_date($time, $include_time=false){
+function shub_print_date($time, $include_time=false){
 	return date('Y-m-d' .  ($include_time ? ' H:i:s' : '') , $time);
 }
 
-function ucm_process_pagination($rows,$per_page = 20,$page_number = 0,$table_id='table'){
+function shub_process_pagination($rows,$per_page = 20,$page_number = 0,$table_id='table'){
 	$data = array();
 	$data['rows']=array();
 	$data['links']='';
@@ -274,7 +274,7 @@ function ucm_process_pagination($rows,$per_page = 20,$page_number = 0,$table_id=
 }
 
 
-function ucm_forum_text($original_text){
+function shub_forum_text($original_text){
 
 	return wpautop(make_clickable($original_text));
 

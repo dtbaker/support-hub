@@ -1,21 +1,21 @@
 <?php
 
-class ucm_linkedin_account{
+class shub_linkedin_account{
 
-	public function __construct($social_linkedin_id){
-		$this->load($social_linkedin_id);
+	public function __construct($shub_linkedin_id){
+		$this->load($shub_linkedin_id);
 	}
 
-	private $social_linkedin_id = false; // the current user id in our system.
+	private $shub_linkedin_id = false; // the current user id in our system.
     private $details = array();
 
-	/* @var $groups ucm_linkedin_group[] */
+	/* @var $groups shub_linkedin_group[] */
     private $groups = array();
 
 	private function reset(){
-		$this->social_linkedin_id = false;
+		$this->shub_linkedin_id = false;
 		$this->details = array(
-			'social_linkedin_id' => false,
+			'shub_linkedin_id' => false,
 			'linkedin_name' => false,
 			'last_checked' => false,
 			'linkedin_data' => false,
@@ -33,20 +33,20 @@ class ucm_linkedin_account{
 
 	public function create_new(){
 		$this->reset();
-		$this->social_linkedin_id = ucm_update_insert('social_linkedin_id',false,'social_linkedin',array());
-		$this->load($this->social_linkedin_id);
+		$this->shub_linkedin_id = shub_update_insert('shub_linkedin_id',false,'shub_linkedin',array());
+		$this->load($this->shub_linkedin_id);
 	}
 
-    public function load($social_linkedin_id = false){
-	    if(!$social_linkedin_id)$social_linkedin_id = $this->social_linkedin_id;
+    public function load($shub_linkedin_id = false){
+	    if(!$shub_linkedin_id)$shub_linkedin_id = $this->shub_linkedin_id;
 	    $this->reset();
-	    $this->social_linkedin_id = (int)$social_linkedin_id;
-        if($this->social_linkedin_id){
-            $data = ucm_get_single('social_linkedin','social_linkedin_id',$this->social_linkedin_id);
+	    $this->shub_linkedin_id = (int)$shub_linkedin_id;
+        if($this->shub_linkedin_id){
+            $data = shub_get_single('shub_linkedin','shub_linkedin_id',$this->shub_linkedin_id);
 	        foreach($this->details as $key=>$val){
 		        $this->details[$key] = $data && isset($data[$key]) ? $data[$key] : $val;
 	        }
-	        if(!is_array($this->details) || $this->details['social_linkedin_id'] != $this->social_linkedin_id){
+	        if(!is_array($this->details) || $this->details['shub_linkedin_id'] != $this->shub_linkedin_id){
 		        $this->reset();
 		        return false;
 	        }
@@ -55,12 +55,12 @@ class ucm_linkedin_account{
             $this->{$key} = $val;
         }
 	    $this->groups = array();
-	    if(!$this->social_linkedin_id)return false;
-	    foreach(ucm_get_multiple('social_linkedin_group',array('social_linkedin_id'=>$this->social_linkedin_id),'social_linkedin_group_id') as $group){
-		    $group = new ucm_linkedin_group($this, $group['social_linkedin_group_id']);
+	    if(!$this->shub_linkedin_id)return false;
+	    foreach(shub_get_multiple('shub_linkedin_group',array('shub_linkedin_id'=>$this->shub_linkedin_id),'shub_linkedin_group_id') as $group){
+		    $group = new shub_linkedin_group($this, $group['shub_linkedin_group_id']);
 		    $this->groups[$group->get('group_id')] = $group;
 	    }
-        return $this->social_linkedin_id;
+        return $this->shub_linkedin_id;
     }
 
 	public function get($field){
@@ -68,7 +68,7 @@ class ucm_linkedin_account{
 	}
 
 	public function save_data($post_data){
-		if(!$this->get('social_linkedin_id')){
+		if(!$this->get('shub_linkedin_id')){
 			$this->create_new();
 		}
 		if(is_array($post_data)){
@@ -94,9 +94,9 @@ class ucm_linkedin_account{
 					if($yesno && isset($available_groups[$linkedin_group_id])){
 						// we are adding this group to the list. check if it doesn't already exist.
 						if(!isset($this->groups[$linkedin_group_id])){
-							$group = new ucm_linkedin_group($this);
+							$group = new shub_linkedin_group($this);
 							$group->create_new();
-							$group->update('social_linkedin_id', $this->social_linkedin_id);
+							$group->update('shub_linkedin_id', $this->shub_linkedin_id);
 							$group->update('linkedin_token', 'same'); // $available_groups[$linkedin_group_id]['access_token']
 							$group->update('group_name', $available_groups[$linkedin_group_id]['group']['name']);
 							$group->update('group_id', $linkedin_group_id);
@@ -110,26 +110,26 @@ class ucm_linkedin_account{
 			}
 		}
 		$this->load();
-		return $this->get('social_linkedin_id');
+		return $this->get('shub_linkedin_id');
 	}
     public function update($field,$value){
 	    // what fields to we allow? or not allow?
-	    if(in_array($field,array('social_linkedin_id')))return;
-        if($this->social_linkedin_id){
+	    if(in_array($field,array('shub_linkedin_id')))return;
+        if($this->shub_linkedin_id){
             $this->{$field} = $value;
-            ucm_update_insert('social_linkedin_id',$this->social_linkedin_id,'social_linkedin',array(
+            shub_update_insert('shub_linkedin_id',$this->shub_linkedin_id,'shub_linkedin',array(
 	            $field => $value,
             ));
         }
     }
 	public function delete(){
-		if($this->social_linkedin_id) {
+		if($this->shub_linkedin_id) {
 			// delete all the groups for this twitter account.
 			$groups = $this->get('groups');
 			foreach($groups as $group){
 				$group->delete();
 			}
-			ucm_delete_from_db( 'social_linkedin', 'social_linkedin_id', $this->social_linkedin_id );
+			shub_delete_from_db( 'shub_linkedin', 'shub_linkedin_id', $this->shub_linkedin_id );
 		}
 	}
 
@@ -203,7 +203,7 @@ class ucm_linkedin_account{
 
 					// skip private shares.
 					if(!isset($network_update['updateContent']['person']['currentShare']) || (isset($network_update['updateContent']['person']['firstName']) && $network_update['updateContent']['person']['firstName'] == 'private'))continue;
-					$share = new ucm_linkedin_message( $this, false, false );
+					$share = new shub_linkedin_message( $this, false, false );
 					$share->load_by_linkedin_id( $network_update['updateKey'], $network_update, 'share', $debug );
 				}
 			}
@@ -245,18 +245,18 @@ class ucm_linkedin_account{
 	 * Links for wordpress
 	 */
 	public function link_connect(){
-		return 'admin.php?page=support_hub_linkedin_settings&linkedin_do_oauth_connect&social_linkedin_id='.$this->get('social_linkedin_id');
+		return 'admin.php?page=support_hub_linkedin_settings&linkedin_do_oauth_connect&shub_linkedin_id='.$this->get('shub_linkedin_id');
 	}
 	public function link_edit(){
-		return 'admin.php?page=support_hub_linkedin_settings&social_linkedin_id='.$this->get('social_linkedin_id');
+		return 'admin.php?page=support_hub_linkedin_settings&shub_linkedin_id='.$this->get('shub_linkedin_id');
 	}
 	public function link_new_message(){
-		return 'admin.php?page=support_hub_main&social_linkedin_id='.$this->get('social_linkedin_id').'&social_linkedin_message_id=new';
+		return 'admin.php?page=support_hub_main&shub_linkedin_id='.$this->get('shub_linkedin_id').'&shub_linkedin_message_id=new';
 	}
 
 
 	public function link_refresh(){
-		return 'admin.php?page=support_hub_linkedin_settings&manualrefresh&social_linkedin_id='.$this->get('social_linkedin_id').'&linkedin_stream=true';
+		return 'admin.php?page=support_hub_linkedin_settings&manualrefresh&shub_linkedin_id='.$this->get('shub_linkedin_id').'&linkedin_stream=true';
 	}
 
 }

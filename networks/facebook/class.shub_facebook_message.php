@@ -1,28 +1,28 @@
 <?php
 
-class ucm_facebook_message{
+class shub_facebook_message{
 
-	public function __construct($facebook_account = false, $facebook_page_or_group = false, $social_facebook_message_id = false){
+	public function __construct($facebook_account = false, $facebook_page_or_group = false, $shub_facebook_message_id = false){
 		$this->facebook_account = $facebook_account;
 		$this->facebook_page_or_group = $facebook_page_or_group;
-		$this->load($social_facebook_message_id);
+		$this->load($shub_facebook_message_id);
 	}
 
-	/* @var $facebook_page_or_group  ucm_facebook_page ucm_facebook_group */
+	/* @var $facebook_page_or_group  shub_facebook_page shub_facebook_group */
 	private $facebook_page_or_group= false;
-	/* @var $facebook_account ucm_facebook_account */
+	/* @var $facebook_account shub_facebook_account */
 	private $facebook_account = false;
-	private $social_facebook_message_id = false; // the current user id in our system.
+	private $shub_facebook_message_id = false; // the current user id in our system.
     private $details = array();
 
 	private function reset(){
-		$this->social_facebook_message_id = false;
+		$this->shub_facebook_message_id = false;
 		$this->details = array(
-			'social_facebook_message_id' => '',
+			'shub_facebook_message_id' => '',
 			'marketing_message_id' => '',
-			'social_facebook_page_id' => '',
-			'social_facebook_group_id' => '',
-			'social_facebook_id' => '',
+			'shub_facebook_page_id' => '',
+			'shub_facebook_group_id' => '',
+			'shub_facebook_id' => '',
 			'facebook_id' => '',
 			'summary' => '',
 			'last_active' => '',
@@ -40,8 +40,8 @@ class ucm_facebook_message{
 
 	public function create_new(){
 		$this->reset();
-		$this->social_facebook_message_id = ucm_update_insert('social_facebook_message_id',false,'social_facebook_message',array());
-		$this->load($this->social_facebook_message_id);
+		$this->shub_facebook_message_id = shub_update_insert('shub_facebook_message_id',false,'shub_facebook_message',array());
+		$this->load($this->shub_facebook_message_id);
 	}
 
 	public function load_by_facebook_id($facebook_id, $message_data, $type, $debug = false){
@@ -50,11 +50,11 @@ class ucm_facebook_message{
 		$access_token = $this->facebook_account->get( 'facebook_token' );
 		if($this->facebook_page_or_group) {
 			switch ( get_class( $this->facebook_page_or_group ) ) {
-				case 'ucm_facebook_group':
+				case 'shub_facebook_group':
 					$access_token = $this->facebook_account->get( 'facebook_token' );
 					$message_type = 'group';
 					break;
-				case 'ucm_facebook_page':
+				case 'shub_facebook_page':
 					$access_token = $this->facebook_page_or_group ? $this->facebook_page_or_group->get( 'facebook_token' ) : '';
 					$message_type = 'page';
 					break;
@@ -65,7 +65,7 @@ class ucm_facebook_message{
 		$machine_id = $this->facebook_account ? $this->facebook_account->get('machine_id') : '';
 
 		if(!$message_data){
-			$facebook_api = new ucm_facebook();
+			$facebook_api = new shub_facebook();
 			$data = $facebook_api->graph($facebook_id,array(
 				'access_token' => $access_token,
 				'machine_id' => $machine_id,
@@ -78,10 +78,10 @@ class ucm_facebook_message{
 		}
 
 		// check if exists already
-		$existing = ucm_get_single('social_facebook_message', 'facebook_id', $facebook_id);
+		$existing = shub_get_single('shub_facebook_message', 'facebook_id', $facebook_id);
 		if($existing){
 			// load it up.
-			$this->load($existing['social_facebook_message_id']);
+			$this->load($existing['shub_facebook_message_id']);
 		}else{
 			// ignore if status and feeds match a user
 			if($message_type == 'page' && isset($message_data['type']) && $message_data['type'] == 'status' && $message_data['from']['id'] == $this->facebook_page_or_group->get('page_id') && isset($message_data['story_tags']) && $message_data['story_tags']){
@@ -102,17 +102,17 @@ class ucm_facebook_message{
 			$this->update('comments', isset($message_data['messages']) ? json_encode( $message_data['messages'] ) : '');
 			if(isset($message_data['messages']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $this->facebook_page_or_group->get('page_id')){
 				// was the last comment from us?
-				$this->update('status',_SOCIAL_MESSAGE_STATUS_ANSWERED);
+				$this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
 			}else{
-				$this->update('status',_SOCIAL_MESSAGE_STATUS_UNANSWERED);
+				$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
 			}
 			$this->update('data',json_encode($message_data));
 			$this->update('type',isset($message_data['type']) ? $message_data['type'] : $type);
 			if($this->facebook_page_or_group){
-				$this->update('social_facebook_page_id',$this->facebook_page_or_group->get('social_facebook_page_id'));
+				$this->update('shub_facebook_page_id',$this->facebook_page_or_group->get('shub_facebook_page_id'));
 			}
 			if($this->facebook_account){
-				$this->update('social_facebook_id',$this->facebook_account->get('social_facebook_id'));
+				$this->update('shub_facebook_id',$this->facebook_account->get('shub_facebook_id'));
 			}
 		}else{
 			$message_time = strtotime(isset($message_data['updated_time']) && strlen($message_data['updated_time']) ? $message_data['updated_time'] : $message_data['created_time']);
@@ -120,7 +120,7 @@ class ucm_facebook_message{
 			$this->update('facebook_id', $message_data['id']);
 			$this->update('summary', isset($message_data['message']) ? $message_data['message'] : (isset($message_data['story']) ? $message_data['story'] : 'N/A'));
 			// grab the comments rom the api again.
-			$facebook_api = new ucm_facebook();
+			$facebook_api = new shub_facebook();
 			$data = $facebook_api->graph($message_data['id'].'/comments',array(
 				//'filter'=>'stream',
 				//'fields'=>'from,message,id,attachment,created_time',
@@ -133,33 +133,33 @@ class ucm_facebook_message{
 			if($message_type == 'page') {
 				if ( isset( $message_data['comments']['data'][0]['from']['id'] ) && $this->facebook_page_or_group && $message_data['comments']['data'][0]['from']['id'] == $this->facebook_page_or_group->get( 'page_id' ) ) {
 					// was the last comment from us?
-					$this->update( 'status', _SOCIAL_MESSAGE_STATUS_ANSWERED );
+					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
 				} else {
-					$this->update( 'status', _SOCIAL_MESSAGE_STATUS_UNANSWERED );
+					$this->update( 'status', _shub_MESSAGE_STATUS_UNANSWERED );
 				}
 				if ( isset( $message_data['messages']['data'][0]['from']['id'] ) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $this->facebook_page_or_group->get( 'page_id' ) ) {
 					// was the last comment from us?
-					$this->update( 'status', _SOCIAL_MESSAGE_STATUS_ANSWERED );
+					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
 				} else {
-					$this->update( 'status', _SOCIAL_MESSAGE_STATUS_UNANSWERED );
+					$this->update( 'status', _shub_MESSAGE_STATUS_UNANSWERED );
 				}
 			}else{
 				$me = @json_decode($this->facebook_account->get('facebook_data'),true);
 				if(is_array($me) && isset($me['me']['id'])) {
 					if ( isset( $message_data['comments']['data'][0]['from']['id'] ) && $this->facebook_page_or_group && $message_data['comments']['data'][0]['from']['id'] == $me['me']['id'] ) {
 						// was the last comment from us?
-						$this->update( 'status', _SOCIAL_MESSAGE_STATUS_ANSWERED );
+						$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
 					} else {
-						$this->update( 'status', _SOCIAL_MESSAGE_STATUS_UNANSWERED );
+						$this->update( 'status', _shub_MESSAGE_STATUS_UNANSWERED );
 					}
 					if ( isset( $message_data['messages']['data'][0]['from']['id'] ) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $me['me']['id'] ) {
 						// was the last comment from us?
-						$this->update( 'status', _SOCIAL_MESSAGE_STATUS_ANSWERED );
+						$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
 					} else {
-						$this->update( 'status', _SOCIAL_MESSAGE_STATUS_UNANSWERED );
+						$this->update( 'status', _shub_MESSAGE_STATUS_UNANSWERED );
 					}
 				}else{
-					$this->update( 'status', _SOCIAL_MESSAGE_STATUS_UNANSWERED );
+					$this->update( 'status', _shub_MESSAGE_STATUS_UNANSWERED );
 				}
 
 			}
@@ -167,33 +167,33 @@ class ucm_facebook_message{
 			$this->update('type',isset($message_data['type']) ? $message_data['type'] : $type);
 			if($this->facebook_page_or_group){
 				if($message_type == 'page'){
-					$this->update('social_facebook_page_id',$this->facebook_page_or_group->get('social_facebook_page_id'));
+					$this->update('shub_facebook_page_id',$this->facebook_page_or_group->get('shub_facebook_page_id'));
 				}elseif($message_type == 'group'){
-					$this->update('social_facebook_group_id',$this->facebook_page_or_group->get('social_facebook_group_id'));
+					$this->update('shub_facebook_group_id',$this->facebook_page_or_group->get('shub_facebook_group_id'));
 				}
 
 			}
 			if($this->facebook_account){
-				$this->update('social_facebook_id',$this->facebook_account->get('social_facebook_id'));
+				$this->update('shub_facebook_id',$this->facebook_account->get('shub_facebook_id'));
 			}
 		}
 
 		// work out if this message is answered or not.
 
 
-		return $this->social_facebook_message_id;
+		return $this->shub_facebook_message_id;
 	}
 
-    public function load($social_facebook_message_id = false){
-	    if(!$social_facebook_message_id)$social_facebook_message_id = $this->social_facebook_message_id;
+    public function load($shub_facebook_message_id = false){
+	    if(!$shub_facebook_message_id)$shub_facebook_message_id = $this->shub_facebook_message_id;
 	    $this->reset();
-	    $this->social_facebook_message_id = $social_facebook_message_id;
-        if($this->social_facebook_message_id){
-	        $data = ucm_get_single('social_facebook_message','social_facebook_message_id',$this->social_facebook_message_id);
+	    $this->shub_facebook_message_id = $shub_facebook_message_id;
+        if($this->shub_facebook_message_id){
+	        $data = shub_get_single('shub_facebook_message','shub_facebook_message_id',$this->shub_facebook_message_id);
 	        foreach($this->details as $key=>$val){
 		        $this->details[$key] = $data && isset($data[$key]) ? $data[$key] : $val;
 	        }
-	        if(!is_array($this->details) || !isset($this->details['social_facebook_message_id']) || $this->details['social_facebook_message_id'] != $this->social_facebook_message_id){
+	        if(!is_array($this->details) || !isset($this->details['shub_facebook_message_id']) || $this->details['shub_facebook_message_id'] != $this->shub_facebook_message_id){
 		        $this->reset();
 		        return false;
 	        }
@@ -201,17 +201,17 @@ class ucm_facebook_message{
         foreach($this->details as $key=>$val){
             $this->{$key} = $val;
         }
-	    if(!$this->facebook_account && $this->get('social_facebook_id')){
-		    $this->facebook_account = new ucm_facebook_account($this->get('social_facebook_id'));
+	    if(!$this->facebook_account && $this->get('shub_facebook_id')){
+		    $this->facebook_account = new shub_facebook_account($this->get('shub_facebook_id'));
 	    }
 	    if(!$this->facebook_page_or_group) {
-		    if($this->get('social_facebook_page_id')){
-			    $this->facebook_page_or_group = new ucm_facebook_page($this->facebook_account, $this->get('social_facebook_page_id'));
-		    }else if($this->get('social_facebook_group_id')){
-			    $this->facebook_page_or_group = new ucm_facebook_group($this->facebook_account, $this->get('social_facebook_group_id'));
+		    if($this->get('shub_facebook_page_id')){
+			    $this->facebook_page_or_group = new shub_facebook_page($this->facebook_account, $this->get('shub_facebook_page_id'));
+		    }else if($this->get('shub_facebook_group_id')){
+			    $this->facebook_page_or_group = new shub_facebook_group($this->facebook_account, $this->get('shub_facebook_group_id'));
 		    }
 	    }
-        return $this->social_facebook_message_id;
+        return $this->shub_facebook_message_id;
     }
 
 	public function get($field){
@@ -221,21 +221,21 @@ class ucm_facebook_message{
 
     public function update($field,$value){
 	    // what fields to we allow? or not allow?
-	    if(in_array($field,array('social_facebook_message_id')))return;
-        if($this->social_facebook_message_id){
+	    if(in_array($field,array('shub_facebook_message_id')))return;
+        if($this->shub_facebook_message_id){
             $this->{$field} = $value;
-            ucm_update_insert('social_facebook_message_id',$this->social_facebook_message_id,'social_facebook_message',array(
+            shub_update_insert('shub_facebook_message_id',$this->shub_facebook_message_id,'shub_facebook_message',array(
 	            $field => $value,
             ));
 		    // special processing for certain fields.
 		    if($field == 'comments'){
-			    // we push all thsee comments into a social_facebook_message_comment database table
+			    // we push all thsee comments into a shub_facebook_message_comment database table
 			    // this is so we can do quick lookups on comment ids so we dont import duplicate items from graph (ie: a reply on a comment comes in as a separate item sometimes)
 			    $data = @json_decode($value,true);
 			    if($data && isset($data['data'])) {
 				    // clear previous comment history.
-				    $existing_comments = ucm_get_multiple('social_facebook_message_comment',array('social_facebook_message_id'=>$this->social_facebook_message_id),'social_facebook_message_comment_id');
-				    //ucm_delete_from_db('social_facebook_message_comment','social_facebook_message_id',$this->social_facebook_message_id);
+				    $existing_comments = shub_get_multiple('shub_facebook_message_comment',array('shub_facebook_message_id'=>$this->shub_facebook_message_id),'shub_facebook_message_comment_id');
+				    //shub_delete_from_db('shub_facebook_message_comment','shub_facebook_message_id',$this->shub_facebook_message_id);
 				    $remaining_comments = $this->_update_comments( $data , $existing_comments);
 				    // $remaining_comments contains any comments that no longer exist...
 				    // todo: remove these? yer prolly. do a quick test on removing a comment - i think the only thing is it will show the 'from' name still.
@@ -245,7 +245,7 @@ class ucm_facebook_message{
     }
 
 	public function parse_links($content = false){
-		if(!$this->get('social_facebook_message_id'))return;
+		if(!$this->get('shub_facebook_message_id'))return;
 		// strip out any links in the tweet and write them to the facebook_message_link table.
 		$url_clickable = '~
 		            ([\\s(<.,;:!?])                                        # 1: Leading whitespace, or punctuation
@@ -271,17 +271,17 @@ class ucm_facebook_message{
 				$url = trim($url);
 				if(strlen($url)) {
 					// wack this url into the database and replace it with our rewritten url.
-					$social_facebook_message_link_id = ucm_update_insert( 'social_facebook_message_link_id', false, 'social_facebook_message_link', array(
-						'social_facebook_message_id' => $this->get('social_facebook_message_id'),
+					$shub_facebook_message_link_id = shub_update_insert( 'shub_facebook_message_link_id', false, 'shub_facebook_message_link', array(
+						'shub_facebook_message_id' => $this->get('shub_facebook_message_id'),
 						'link' => $url,
 					) );
-					if($social_facebook_message_link_id) {
+					if($shub_facebook_message_link_id) {
 						$new_link = trailingslashit( get_site_url() );
 						$new_link .= strpos( $new_link, '?' ) === false ? '?' : '&';
-						$new_link .= _support_hub_FACEBOOK_LINK_REWRITE_PREFIX . '=' . $social_facebook_message_link_id;
+						$new_link .= _support_hub_FACEBOOK_LINK_REWRITE_PREFIX . '=' . $shub_facebook_message_link_id;
 						// basic hash to stop brute force.
 						if(defined('AUTH_KEY')){
-							$new_link .= ':'.substr(md5(AUTH_KEY.' facebook link '.$social_facebook_message_link_id),1,5);
+							$new_link .= ':'.substr(md5(AUTH_KEY.' facebook link '.$shub_facebook_message_link_id),1,5);
 						}
 						$newsummary = trim(preg_replace('#'.preg_quote($url,'#').'#',$new_link,$summary, 1));
 						if(strlen($newsummary)){// just incase.
@@ -302,18 +302,18 @@ class ucm_facebook_message{
 		    foreach($data['data'] as $comment){
 			    if($comment['id']){
 				    // does this id exist in the db already?
-				    $exists = ucm_get_single('social_facebook_message_comment',array('facebook_id','social_facebook_message_id'),array($comment['id'],$this->social_facebook_message_id));
+				    $exists = shub_get_single('shub_facebook_message_comment',array('facebook_id','shub_facebook_message_id'),array($comment['id'],$this->shub_facebook_message_id));
 
-				    $social_facebook_message_comment_id = ucm_update_insert('social_facebook_message_comment_id',$exists ? $exists['social_facebook_message_comment_id'] : false,'social_facebook_message_comment',array(
-					    'social_facebook_message_id' => $this->social_facebook_message_id,
+				    $shub_facebook_message_comment_id = shub_update_insert('shub_facebook_message_comment_id',$exists ? $exists['shub_facebook_message_comment_id'] : false,'shub_facebook_message_comment',array(
+					    'shub_facebook_message_id' => $this->shub_facebook_message_id,
 					    'facebook_id' => $comment['id'],
 					    'time' => isset($comment['updated_time']) ? strtotime($comment['updated_time']) : (isset($comment['created_time']) ? strtotime($comment['created_time']) : 0),
 					    'data' => json_encode($comment),
 					    'message_from' => isset($comment['from']) ? json_encode($comment['from']) : '',
 					    'message_to' => isset($comment['to']) ? json_encode($comment['to']) : '',
 				    ));
-				    if(isset($existing_comments[$social_facebook_message_comment_id])){
-					    unset($existing_comments[$social_facebook_message_comment_id]);
+				    if(isset($existing_comments[$shub_facebook_message_comment_id])){
+					    unset($existing_comments[$shub_facebook_message_comment_id]);
 				    }
 				    if(isset($comment['comments']) && is_array($comment['comments'])){
 					    $existing_comments = $this->_update_comments($comment['comments'], $existing_comments);
@@ -325,16 +325,16 @@ class ucm_facebook_message{
 	}
 
 	public function delete(){
-		if($this->social_facebook_message_id) {
-			ucm_delete_from_db( 'social_facebook_message', 'social_facebook_message_id', $this->social_facebook_message_id );
+		if($this->shub_facebook_message_id) {
+			shub_delete_from_db( 'shub_facebook_message', 'shub_facebook_message_id', $this->shub_facebook_message_id );
 		}
 	}
 
 
 	public function mark_as_read(){
-		if($this->social_facebook_message_id && get_current_user_id()){
-			$sql = "REPLACE INTO `"._support_hub_DB_PREFIX."social_facebook_message_read` SET `social_facebook_message_id` = ".(int)$this->social_facebook_message_id.", `user_id` = ".(int)get_current_user_id().", read_time = ".(int)time();
-			ucm_query($sql);
+		if($this->shub_facebook_message_id && get_current_user_id()){
+			$sql = "REPLACE INTO `"._support_hub_DB_PREFIX."shub_facebook_message_read` SET `shub_facebook_message_id` = ".(int)$this->shub_facebook_message_id.", `user_id` = ".(int)get_current_user_id().", read_time = ".(int)time();
+			shub_query($sql);
 		}
 	}
 
@@ -366,16 +366,16 @@ class ucm_facebook_message{
 				<?php } ?>
 			</div>
 			<div class="facebook_comment_header">
-				<?php echo isset($facebook_data,$facebook_data['from']) ? ucm_facebook::format_person($facebook_data['from']) : 'N/A'; ?>
+				<?php echo isset($facebook_data,$facebook_data['from']) ? shub_facebook::format_person($facebook_data['from']) : 'N/A'; ?>
 				<span><?php $time = strtotime(isset($facebook_data['updated_time']) ? $facebook_data['updated_time'] : (isset($facebook_data['created_time']) ? $facebook_data['created_time'] : false));
-				echo $time ? ' @ ' . ucm_print_date($time,true) : '';
+				echo $time ? ' @ ' . shub_print_date($time,true) : '';
 
 				// todo - better this! don't call on every comment, load list in main loop and pass through all results.
 				if ( isset( $facebook_data['user_id'] ) && $facebook_data['user_id'] ) {
 					$user_info = get_userdata($facebook_data['user_id']);
 					echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
 				}else if(isset($facebook_data['id']) && $facebook_data['id']) {
-					$exists = ucm_get_single( 'social_facebook_message_comment', array( 'facebook_id', 'social_facebook_message_id' ), array( $facebook_data['id'], $this->social_facebook_message_id ) );
+					$exists = shub_get_single( 'shub_facebook_message_comment', array( 'facebook_id', 'shub_facebook_message_id' ), array( $facebook_data['id'], $this->shub_facebook_message_id ) );
 					if ( $exists && isset( $exists['user_id'] ) && $exists['user_id'] ) {
 						$user_info = get_userdata($exists['user_id']);
 						echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
@@ -393,11 +393,11 @@ class ucm_facebook_message{
 				</div>
 				<?php } ?>
 				<div>
-					<?php echo ucm_forum_text($facebook_data['message']);?>
+					<?php echo shub_forum_text($facebook_data['message']);?>
 				</div>
 			</div>
 			<div class="facebook_comment_actions">
-				<?php if($this->can_reply && (($this->get('type') != 'conversation' && !$this->get('social_facebook_group_id') && $level == 2))){ ?>
+				<?php if($this->can_reply && (($this->get('type') != 'conversation' && !$this->get('shub_facebook_group_id') && $level == 2))){ ?>
 					<a href="#" class="facebook_reply_button"><?php _e('Reply');?></a>
 				<?php } ?>
 			</div>
@@ -425,7 +425,7 @@ class ucm_facebook_message{
 
 	public function full_message_output($can_reply = false){
 		$this->can_reply = $can_reply;
-		// used in social_facebook_list.php to display the full message and its comments
+		// used in shub_facebook_list.php to display the full message and its comments
 		switch($this->get('type')){
 			case 'conversation':
 				$facebook_data['id'] = $this->get('facebook_id');
@@ -446,7 +446,7 @@ class ucm_facebook_message{
 	}
 
 	public function reply_box($facebook_id,$level=1){
-		if($this->facebook_account && $this->social_facebook_message_id) {
+		if($this->facebook_account && $this->shub_facebook_message_id) {
 			?>
 			<div class="facebook_comment facebook_comment_reply_box facebook_comment_reply_box_level<?php echo $level;?>">
 				<div class="facebook_comment_picture">
@@ -462,16 +462,16 @@ class ucm_facebook_message{
 				<div class="facebook_comment_header">
 					<?php
 					if($this->facebook_page_or_group && $this->facebook_page_or_group->get('page_id')){
-						echo ucm_facebook::format_person( array('id'=>$this->facebook_page_or_group->get('page_id'), 'name'=>$this->facebook_page_or_group->get('page_name')) );
+						echo shub_facebook::format_person( array('id'=>$this->facebook_page_or_group->get('page_id'), 'name'=>$this->facebook_page_or_group->get('page_name')) );
 					}else{
 						$me = @json_decode($this->facebook_account->get('facebook_data'),true);
-						echo ucm_facebook::format_person($me['me']);
+						echo shub_facebook::format_person($me['me']);
 					}
 					?>
 				</div>
 				<div class="facebook_comment_reply">
 					<textarea placeholder="Write a reply..."></textarea>
-					<button data-facebook-id="<?php echo htmlspecialchars($facebook_id);?>" data-id="<?php echo (int)$this->social_facebook_message_id;?>"><?php _e('Send');?></button>
+					<button data-facebook-id="<?php echo htmlspecialchars($facebook_id);?>" data-id="<?php echo (int)$this->shub_facebook_message_id;?>"><?php _e('Send');?></button>
 					<br/>
 					(debug) <input type="checkbox" name="debug" class="reply-debug" value="1">
 				</div>
@@ -499,12 +499,12 @@ class ucm_facebook_message{
 		}
 	}
 	public function send_queued($debug = false){
-		if($this->facebook_account && $this->social_facebook_message_id) {
+		if($this->facebook_account && $this->shub_facebook_message_id) {
 			// send this message out to facebook.
 			// this is run when user is composing a new message from the UI,
-			if ( $this->get( 'status' ) == _SOCIAL_MESSAGE_STATUS_SENDING )
+			if ( $this->get( 'status' ) == _shub_MESSAGE_STATUS_SENDING )
 				return; // dont double up on cron.
-			$this->update( 'status', _SOCIAL_MESSAGE_STATUS_SENDING );
+			$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
 
 			$access_token = $this->facebook_page_or_group && $this->facebook_page_or_group->get('facebook_token') ? $this->facebook_page_or_group->get('facebook_token') :$this->facebook_account->get('facebook_token');
 			// get the machine id from the parent facebook_account
@@ -519,7 +519,7 @@ class ucm_facebook_message{
 					echo "Sending a new message to the personal facebook feed:<br>\n";
 				}
 				$result    = false;
-				$facebook  = new ucm_facebook();
+				$facebook  = new shub_facebook();
 				$post_data = array(
 					'access_token' => $access_token,
 					'machine_id'   => $machine_id,
@@ -616,7 +616,7 @@ class ucm_facebook_message{
 						echo "Sending a new message to facebook group ID: $facebook_group_id <br>\n";
 					}
 					$result    = false;
-					$facebook  = new ucm_facebook();
+					$facebook  = new shub_facebook();
 					$post_data = array(
 						'access_token' => $access_token,
 						'machine_id'   => $machine_id,
@@ -709,7 +709,7 @@ class ucm_facebook_message{
 						echo "Sending a new message to facebook Page ID: $facebook_page_id <br>\n";
 					}
 					$result    = false;
-					$facebook  = new ucm_facebook();
+					$facebook  = new shub_facebook();
 					$post_data = array(
 						'access_token' => $access_token,
 						'machine_id'   => $machine_id,
@@ -799,13 +799,13 @@ class ucm_facebook_message{
 			}
 
 			// successfully sent, mark is as answered.
-			$this->update( 'status', _SOCIAL_MESSAGE_STATUS_ANSWERED );
+			$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
 			return true;
 		}
 		return false;
 	}
 	public function send_reply($facebook_id, $message, $debug = false){
-		if($this->facebook_account && $this->social_facebook_message_id) {
+		if($this->facebook_account && $this->shub_facebook_message_id) {
 			$access_token = $this->facebook_page_or_group && $this->facebook_page_or_group->get('facebook_token') ? $this->facebook_page_or_group->get('facebook_token') :$this->facebook_account->get('facebook_token');
 			// get the machine id from the parent facebook_account
 			$machine_id = $this->facebook_account->get('machine_id');
@@ -819,7 +819,7 @@ class ucm_facebook_message{
 				case 'conversation':
 					// do we reply to the previous comment?
 					// nah for now we just add it to the bottom of the list.
-					$facebook = new ucm_facebook();
+					$facebook = new shub_facebook();
 					$result = $facebook->graph_post(''.$facebook_id.'/messages',array(
 						'message' => $message,
 						'access_token' => $access_token,
@@ -833,7 +833,7 @@ class ucm_facebook_message{
 				default:
 					// do we reply to the previous comment?
 					// nah for now we just add it to the bottom of the list.
-					$facebook = new ucm_facebook();
+					$facebook = new shub_facebook();
 					$result = $facebook->graph_post(''.$facebook_id.'/comments',array(
 						'message' => $message,
 						'access_token' => $access_token,
@@ -847,11 +847,11 @@ class ucm_facebook_message{
 			// hack to add the 'user_id' of who created this reply to the db for logging.
 			if($result && isset($result['id'])){
 				// find this comment id in our facebook comment database.
-				$exists = ucm_get_single('social_facebook_message_comment',array('facebook_id','social_facebook_message_id'),array($result['id'],$this->social_facebook_message_id));
-				if($exists && $exists['social_facebook_message_comment_id']){
+				$exists = shub_get_single('shub_facebook_message_comment',array('facebook_id','shub_facebook_message_id'),array($result['id'],$this->shub_facebook_message_id));
+				if($exists && $exists['shub_facebook_message_comment_id']){
 					// it really should exist after we've done the 'load_by_facebook_id' above. however with a post with lots of comments it may not appear without graph api pagination.
 					// todo - pagination!
-					ucm_update_insert('social_facebook_message_comment_id',$exists['social_facebook_message_comment_id'],'social_facebook_message_comment',array(
+					shub_update_insert('shub_facebook_message_comment_id',$exists['shub_facebook_message_comment_id'],'shub_facebook_message_comment',array(
 						'user_id' => get_current_user_id(),
 					));
 				}
@@ -886,7 +886,7 @@ class ucm_facebook_message{
 	}
 
 	public function get_from() {
-		if($this->social_facebook_message_id){
+		if($this->shub_facebook_message_id){
 			$from = array();
 			$data = @json_decode($this->get('data'),true);
 			if(isset($data['from']['id'])){
@@ -898,7 +898,7 @@ class ucm_facebook_message{
 				}
 			}
 
-			$messages = ucm_get_multiple('social_facebook_message_comment',array('social_facebook_message_id'=>$this->social_facebook_message_id),'social_facebook_message_comment_id');
+			$messages = shub_get_multiple('shub_facebook_message_comment',array('shub_facebook_message_id'=>$this->shub_facebook_message_id),'shub_facebook_message_comment_id');
 			foreach($messages as $message){
 				if($message['message_from']){
 					$data = @json_decode($message['message_from'],true);
@@ -914,7 +914,7 @@ class ucm_facebook_message{
 
 
 	public function link_open(){
-		return 'admin.php?page=support_hub_main&social_facebook_id='.$this->facebook_account->get('social_facebook_id').'&social_facebook_message_id='.$this->social_facebook_message_id;
+		return 'admin.php?page=support_hub_main&shub_facebook_id='.$this->facebook_account->get('shub_facebook_id').'&shub_facebook_message_id='.$this->shub_facebook_message_id;
 	}
 
 

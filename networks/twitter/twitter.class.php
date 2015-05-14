@@ -11,7 +11,7 @@ define('_TWITTER_MESSAGE_TYPE_DIRECT',6);
 
 define('_support_hub_TWITTER_LINK_REWRITE_PREFIX','sstlnk');
 
-class ucm_twitter {
+class shub_twitter {
 
 	public function __construct( ) {
 		$this->reset();
@@ -26,18 +26,18 @@ class ucm_twitter {
 			// check hash
 			$bits = explode(':',$_GET[_support_hub_TWITTER_LINK_REWRITE_PREFIX]);
 			if(defined('AUTH_KEY') && isset($bits[1])){
-				$social_twitter_message_link_id = (int)$bits[0];
-				if($social_twitter_message_link_id > 0){
-					$correct_hash = substr(md5(AUTH_KEY.' twitter link '.$social_twitter_message_link_id),1,5);
+				$shub_twitter_message_link_id = (int)$bits[0];
+				if($shub_twitter_message_link_id > 0){
+					$correct_hash = substr(md5(AUTH_KEY.' twitter link '.$shub_twitter_message_link_id),1,5);
 					if($correct_hash == $bits[1]){
 						// link worked! log a visit and redirect.
-						$link = ucm_get_single('social_twitter_message_link','social_twitter_message_link_id',$social_twitter_message_link_id);
+						$link = shub_get_single('shub_twitter_message_link','shub_twitter_message_link_id',$shub_twitter_message_link_id);
 						if($link){
 							if(!preg_match('#^http#',$link['link'])){
 								$link['link'] = 'http://'.trim($link['link']);
 							}
-							ucm_update_insert('social_twitter_message_link_click_id',false,'social_twitter_message_link_click',array(
-								'social_twitter_message_link_id' => $social_twitter_message_link_id,
+							shub_update_insert('shub_twitter_message_link_click_id',false,'shub_twitter_message_link_click',array(
+								'shub_twitter_message_link_id' => $shub_twitter_message_link_id,
 								'click_time' => time(),
 								'ip_address' => $_SERVER['REMOTE_ADDR'],
 								'user_agent' => $_SERVER['HTTP_USER_AGENT'],
@@ -62,9 +62,9 @@ class ucm_twitter {
 	public function page_assets($from_master=false){
 		if(!$from_master)SupportHub::getInstance()->inbox_assets();
 
-		wp_register_style( 'support-hub-twitter-css', plugins_url('networks/twitter/social_twitter.css',_DTBAKER_SUPPORT_HUB_CORE_FILE_), array(), '1.0.0' );
+		wp_register_style( 'support-hub-twitter-css', plugins_url('networks/twitter/shub_twitter.css',_DTBAKER_SUPPORT_HUB_CORE_FILE_), array(), '1.0.0' );
 		wp_enqueue_style( 'support-hub-twitter-css' );
-		wp_register_script( 'support-hub-twitter', plugins_url('networks/twitter/social_twitter.js',_DTBAKER_SUPPORT_HUB_CORE_FILE_), array( 'jquery' ), '1.0.0' );
+		wp_register_script( 'support-hub-twitter', plugins_url('networks/twitter/shub_twitter.js',_DTBAKER_SUPPORT_HUB_CORE_FILE_), array( 'jquery' ), '1.0.0' );
 		wp_enqueue_script( 'support-hub-twitter' );
 		wp_register_script( 'twitter-text', plugins_url('networks/twitter/twitter-text.js',_DTBAKER_SUPPORT_HUB_CORE_FILE_), array( 'jquery' ), '1.0.0' );
 		wp_enqueue_script( 'twitter-text' );
@@ -83,9 +83,9 @@ class ucm_twitter {
 		    _e('No accounts configured', 'support_hub');
 	    }
 		foreach ( $accounts as $account ) {
-			$twitter_account = new ucm_twitter_account( $account['social_twitter_id'] );
+			$twitter_account = new shub_twitter_account( $account['shub_twitter_id'] );
 		    echo '<div class="twitter_compose_account_select">' .
-				    '<input type="checkbox" name="compose_twitter_id['.$twitter_account->get('social_twitter_id').']" value="1"> ' .
+				    '<input type="checkbox" name="compose_twitter_id['.$twitter_account->get('shub_twitter_id').']" value="1"> ' .
 				    ($twitter_account->get_picture() ? '<img src="'.$twitter_account->get_picture().'">' : '' ).
 				     '<span>' . htmlspecialchars( $twitter_account->get('twitter_name') ) . '</span>' .
 				    '</div>'
@@ -126,7 +126,7 @@ class ucm_twitter {
 
 
 	public function get_accounts() {
-		$this->accounts = ucm_get_multiple( 'social_twitter', array(), 'social_twitter_id' );
+		$this->accounts = shub_get_multiple( 'shub_twitter', array(), 'shub_twitter_id' );
 		return $this->accounts;
 	}
 
@@ -154,17 +154,17 @@ class ucm_twitter {
 	private $all_messages = false;
 	public function load_all_messages($search=array(),$order=array()){
 
-		$sql = "SELECT m.*, mr.read_time FROM `"._support_hub_DB_PREFIX."social_twitter_message` m ";
-		$sql .= " LEFT OUTER JOIN `"._support_hub_DB_PREFIX."social_twitter_message_read` mr ON m.social_twitter_message_id = mr.social_twitter_message_id";
+		$sql = "SELECT m.*, mr.read_time FROM `"._support_hub_DB_PREFIX."shub_twitter_message` m ";
+		$sql .= " LEFT OUTER JOIN `"._support_hub_DB_PREFIX."shub_twitter_message_read` mr ON m.shub_twitter_message_id = mr.shub_twitter_message_id";
 		$sql .= " WHERE 1 ";
 		if(isset($search['status']) && $search['status'] !== false){
 			$sql .= " AND `status` = ".(int)$search['status'];
 		}
-		if(isset($search['social_message_id']) && $search['social_message_id'] !== false){
-			$sql .= " AND `social_message_id` = ".(int)$search['social_message_id'];
+		if(isset($search['shub_message_id']) && $search['shub_message_id'] !== false){
+			$sql .= " AND `shub_message_id` = ".(int)$search['shub_message_id'];
 		}
-		if(isset($search['social_twitter_id']) && $search['social_twitter_id'] !== false){
-			$sql .= " AND `social_twitter_id` = ".(int)$search['social_twitter_id'];
+		if(isset($search['shub_twitter_id']) && $search['shub_twitter_id'] !== false){
+			$sql .= " AND `shub_twitter_id` = ".(int)$search['shub_twitter_id'];
 		}
 		if(isset($search['generic']) && !empty($search['generic'])){
 			$sql .= " AND `summary` LIKE '%".mysql_real_escape_string($search['generic'])."%'";
@@ -172,7 +172,7 @@ class ucm_twitter {
 			$sql .= " AND `type` != "._TWITTER_MESSAGE_TYPE_OTHERTWEET;
 		}
 		$sql .= " ORDER BY `message_time` DESC ";
-		//$this->all_messages = ucm_query($sql);
+		//$this->all_messages = shub_query($sql);
 		global $wpdb;
 		$this->all_messages = $wpdb->get_results($sql, ARRAY_A);
 		return $this->all_messages;
@@ -187,47 +187,47 @@ class ucm_twitter {
 
 
 	// used in our Wp "outbox" view showing combined messages.
-	public function get_message_details($social_message_id){
-		if(!$social_message_id)return array();
-		$messages = $this->load_all_messages(array('social_message_id'=>$social_message_id));
+	public function get_message_details($shub_message_id){
+		if(!$shub_message_id)return array();
+		$messages = $this->load_all_messages(array('shub_message_id'=>$shub_message_id));
 		// we want data for our colum outputs in the WP table:
-		/*'social_column_time'    => __( 'Date/Time', 'support_hub' ),
-	    'social_column_social' => __( 'Social Accounts', 'support_hub' ),
-		'social_column_summary'    => __( 'Summary', 'support_hub' ),
-		'social_column_links'    => __( 'Link Clicks', 'support_hub' ),
-		'social_column_stats'    => __( 'Stats', 'support_hub' ),
-		'social_column_action'    => __( 'Action', 'support_hub' ),*/
+		/*'shub_column_time'    => __( 'Date/Time', 'support_hub' ),
+	    'shub_column_social' => __( 'Social Accounts', 'support_hub' ),
+		'shub_column_summary'    => __( 'Summary', 'support_hub' ),
+		'shub_column_links'    => __( 'Link Clicks', 'support_hub' ),
+		'shub_column_stats'    => __( 'Stats', 'support_hub' ),
+		'shub_column_action'    => __( 'Action', 'support_hub' ),*/
 		$data = array(
-			'social_column_social' => '',
-			'social_column_summary' => '',
-			'social_column_links' => '',
+			'shub_column_social' => '',
+			'shub_column_summary' => '',
+			'shub_column_links' => '',
 		);
 		$link_clicks = 0;
 		foreach($messages as $message){
-			$twitter_message = new ucm_twitter_message(false, $message['social_twitter_message_id']);
+			$twitter_message = new shub_twitter_message(false, $message['shub_twitter_message_id']);
 			$data['message'] = $twitter_message;
-			$data['social_column_social'] .= '<div><img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="twitter_icon small"><a href="'.$twitter_message->get_link().'" target="_blank">'.htmlspecialchars( $twitter_message->get('twitter_account')->get( 'account_name' ) ) .'</a></div>';
-			$data['social_column_summary'] .= '<div><img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="twitter_icon small"><a href="'.$twitter_message->get_link().'" target="_blank">'.htmlspecialchars( $twitter_message->get_summary() ) .'</a></div>';
+			$data['shub_column_social'] .= '<div><img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="twitter_icon small"><a href="'.$twitter_message->get_link().'" target="_blank">'.htmlspecialchars( $twitter_message->get('twitter_account')->get( 'account_name' ) ) .'</a></div>';
+			$data['shub_column_summary'] .= '<div><img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="twitter_icon small"><a href="'.$twitter_message->get_link().'" target="_blank">'.htmlspecialchars( $twitter_message->get_summary() ) .'</a></div>';
 			// how many link clicks does this one have?
 			$sql = "SELECT count(*) AS `link_clicks` FROM ";
-			$sql .= " `"._support_hub_DB_PREFIX."social_twitter_message` m ";
-			$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."social_twitter_message_link` ml USING (social_twitter_message_id) ";
-			$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."social_twitter_message_link_click` lc USING (social_twitter_message_link_id) ";
+			$sql .= " `"._support_hub_DB_PREFIX."shub_twitter_message` m ";
+			$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_twitter_message_link` ml USING (shub_twitter_message_id) ";
+			$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_twitter_message_link_click` lc USING (shub_twitter_message_link_id) ";
 			$sql .= " WHERE 1 ";
-			$sql .= " AND m.social_twitter_message_id = ".(int)$message['social_twitter_message_id'];
-			$sql .= " AND lc.social_twitter_message_link_id IS NOT NULL ";
+			$sql .= " AND m.shub_twitter_message_id = ".(int)$message['shub_twitter_message_id'];
+			$sql .= " AND lc.shub_twitter_message_link_id IS NOT NULL ";
 			$sql .= " AND lc.user_agent NOT LIKE '%Google%' ";
 			$sql .= " AND lc.user_agent NOT LIKE '%Yahoo%' ";
 			$sql .= " AND lc.user_agent NOT LIKE '%Meta%' ";
 			$sql .= " AND lc.user_agent NOT LIKE '%Slurp%' ";
 			$sql .= " AND lc.user_agent NOT LIKE '%Bot%' ";
 			$sql .= " AND lc.user_agent != 'Mozilla/5.0 ()' ";
-			$res = ucm_qa1($sql);
+			$res = shub_qa1($sql);
 			$link_clicks = $res && $res['link_clicks'] ? $res['link_clicks'] : 0;
-			$data['social_column_links'] .= '<div><img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="twitter_icon small">'. $link_clicks  .'</div>';
+			$data['shub_column_links'] .= '<div><img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="twitter_icon small">'. $link_clicks  .'</div>';
 		}
 		if(count($messages) && $link_clicks > 0){
-			//$data['social_column_links'] = '<div><img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORTHUB_CORE_FILE_).'" class="twitter_icon small">'. $link_clicks  .'</div>';
+			//$data['shub_column_links'] = '<div><img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORTHUB_CORE_FILE_).'" class="twitter_icon small">'. $link_clicks  .'</div>';
 		}
 		return $data;
 
@@ -235,43 +235,43 @@ class ucm_twitter {
 
 	public function get_unread_count($search=array()){
 		if(!get_current_user_id())return 0;
-		$sql = "SELECT count(*) AS `unread` FROM `"._support_hub_DB_PREFIX."social_twitter_message` m ";
+		$sql = "SELECT count(*) AS `unread` FROM `"._support_hub_DB_PREFIX."shub_twitter_message` m ";
 		$sql .= " WHERE 1 ";
-		$sql .= " AND m.social_twitter_message_id NOT IN (SELECT mr.social_twitter_message_id FROM `"._support_hub_DB_PREFIX."social_twitter_message_read` mr WHERE mr.user_id = '".(int)get_current_user_id()."' AND mr.social_twitter_message_id = m.social_twitter_message_id)";
-		$sql .= " AND m.`status` = "._SOCIAL_MESSAGE_STATUS_UNANSWERED;
-		if(isset($search['social_twitter_id']) && $search['social_twitter_id'] !== false){
-			$sql .= " AND m.`social_twitter_id` = ".(int)$search['social_twitter_id'];
+		$sql .= " AND m.shub_twitter_message_id NOT IN (SELECT mr.shub_twitter_message_id FROM `"._support_hub_DB_PREFIX."shub_twitter_message_read` mr WHERE mr.user_id = '".(int)get_current_user_id()."' AND mr.shub_twitter_message_id = m.shub_twitter_message_id)";
+		$sql .= " AND m.`status` = "._shub_MESSAGE_STATUS_UNANSWERED;
+		if(isset($search['shub_twitter_id']) && $search['shub_twitter_id'] !== false){
+			$sql .= " AND m.`shub_twitter_id` = ".(int)$search['shub_twitter_id'];
 		}
 		$sql .= " AND m.`type` != "._TWITTER_MESSAGE_TYPE_OTHERTWEET;
-		$res = ucm_qa1($sql);
+		$res = shub_qa1($sql);
 		return $res ? $res['unread'] : 0;
 	}
 
 	public function output_row($message, $settings){
-		$twitter_message = new ucm_twitter_message(false, $message['social_twitter_message_id']);
+		$twitter_message = new shub_twitter_message(false, $message['shub_twitter_message_id']);
 		?>
 		<tr class="<?php echo isset($settings['row_class']) ? $settings['row_class'] : '';?> twitter_message_row <?php echo !isset($message['read_time']) || !$message['read_time'] ? ' message_row_unread' : '';?>"
-	        data-id="<?php echo (int) $message['social_twitter_message_id']; ?>"
-	        data-social_twitter_id="<?php echo (int) $message['social_twitter_id']; ?>">
-		    <td class="social_column_social">
+	        data-id="<?php echo (int) $message['shub_twitter_message_id']; ?>"
+	        data-shub_twitter_id="<?php echo (int) $message['shub_twitter_id']; ?>">
+		    <td class="shub_column_social">
 			    <img src="<?php echo plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="twitter_icon">
 			    <a href="<?php echo $twitter_message->get_link(); ?>"
 		           target="_blank"><?php echo htmlspecialchars( $twitter_message->get('twitter_account')->get( 'account_name' ) ); ?></a> <br/>
 			    <?php echo htmlspecialchars( $twitter_message->get_type_pretty() ); ?>
 		    </td>
-		    <td class="social_column_time"><?php echo ucm_print_date( $message['message_time'], true ); ?></td>
-		    <td class="social_column_from">
+		    <td class="shub_column_time"><?php echo shub_print_date( $message['message_time'], true ); ?></td>
+		    <td class="shub_column_from">
 			    <?php
 		        // work out who this is from.
 		        $from = $twitter_message->get_from();
 			    ?>
-			    <div class="social_from_holder social_twitter">
-			    <div class="social_from_full">
+			    <div class="shub_from_holder shub_twitter">
+			    <div class="shub_from_full">
 				    <?php
 					foreach($from as $id => $from_data){
 						?>
 						<div>
-							<a href="//twitter.com/<?php echo htmlspecialchars($from_data['screen_name']);?>" target="_blank"><img src="<?php echo $from_data['image'];?>" class="social_from_picture"></a> <?php echo htmlspecialchars($from_data['screen_name']); ?>
+							<a href="//twitter.com/<?php echo htmlspecialchars($from_data['screen_name']);?>" target="_blank"><img src="<?php echo $from_data['image'];?>" class="shub_from_picture"></a> <?php echo htmlspecialchars($from_data['screen_name']); ?>
 						</div>
 						<?php
 					} ?>
@@ -279,8 +279,8 @@ class ucm_twitter {
 		        <?php
 		        reset($from);
 		        $current = current($from);
-		        echo '<a href="//twitter.com/'.htmlspecialchars($current['screen_name']).'" target="_blank">' . '<img src="'.$current['image'].'" class="social_from_picture"></a> ';
-		        echo '<span class="social_from_count">';
+		        echo '<a href="//twitter.com/'.htmlspecialchars($current['screen_name']).'" target="_blank">' . '<img src="'.$current['image'].'" class="shub_from_picture"></a> ';
+		        echo '<span class="shub_from_count">';
 		        if(count($from) > 1){
 			        echo '+'.(count($from)-1);
 		        }
@@ -288,23 +288,23 @@ class ucm_twitter {
 		        ?>
 			    </div>
 		    </td>
-		    <td class="social_column_summary">
+		    <td class="shub_column_summary">
 			    <div class="twitter_message_summary<?php echo !isset($message['read_time']) || !$message['read_time'] ? ' unread' : '';?>"> <?php
 				    echo $twitter_message->get_summary();
 				    ?>
 			    </div>
 		    </td>
 		    <!--<td></td>-->
-		    <td nowrap class="social_column_action">
+		    <td nowrap class="shub_column_action">
 
-		        <a href="<?php echo $twitter_message->link_open();?>" class="socialtwitter_message_open social_modal button" data-modaltitle="<?php echo __('Tweet','support_hub');?>" data-socialtwittermessageid="<?php echo (int)$twitter_message->get('social_twitter_message_id');?>"><?php _e( 'Open' );?></a>
+		        <a href="<?php echo $twitter_message->link_open();?>" class="socialtwitter_message_open shub_modal button" data-modaltitle="<?php echo __('Tweet','support_hub');?>" data-socialtwittermessageid="<?php echo (int)$twitter_message->get('shub_twitter_message_id');?>"><?php _e( 'Open' );?></a>
 
-			    <?php if($twitter_message->get('status') == _SOCIAL_MESSAGE_STATUS_ANSWERED){  ?>
+			    <?php if($twitter_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 				    <a href="#" class="socialtwitter_message_action button"
-				       data-action="set-unanswered" data-id="<?php echo (int)$twitter_message->get('social_twitter_message_id');?>" data-social_twitter_id="<?php echo (int)$twitter_message->get('social_twitter_id');?>"><?php _e( 'Inbox' ); ?></a>
+				       data-action="set-unanswered" data-id="<?php echo (int)$twitter_message->get('shub_twitter_message_id');?>" data-shub_twitter_id="<?php echo (int)$twitter_message->get('shub_twitter_id');?>"><?php _e( 'Inbox' ); ?></a>
 			    <?php }else{ ?>
 				    <a href="#" class="socialtwitter_message_action button"
-				       data-action="set-answered" data-id="<?php echo (int)$twitter_message->get('social_twitter_message_id');?>" data-social_twitter_id="<?php echo (int)$twitter_message->get('social_twitter_id');?>"><?php _e( 'Archive' ); ?></a>
+				       data-action="set-answered" data-id="<?php echo (int)$twitter_message->get('shub_twitter_message_id');?>" data-shub_twitter_id="<?php echo (int)$twitter_message->get('shub_twitter_id');?>"><?php _e( 'Archive' ); ?></a>
 			    <?php } ?>
 		    </td>
 	    </tr>
@@ -320,24 +320,24 @@ class ucm_twitter {
 
 	public function handle_process($process, $options = array()){
 		switch($process){
-			case 'send_social_message':
-				check_admin_referer( 'social_send-message' );
+			case 'send_shub_message':
+				check_admin_referer( 'shub_send-message' );
 				$message_count = 0;
-				if(isset($options['social_message_id']) && (int)$options['social_message_id'] > 0 && isset($_POST['twitter_message']) && !empty($_POST['twitter_message'])){
+				if(isset($options['shub_message_id']) && (int)$options['shub_message_id'] > 0 && isset($_POST['twitter_message']) && !empty($_POST['twitter_message'])){
 					// we have a social message id, ready to send!
 					// which twitter accounts are we sending too?
 					$twitter_accounts = isset($_POST['compose_twitter_id']) && is_array($_POST['compose_twitter_id']) ? $_POST['compose_twitter_id'] : array();
 					foreach($twitter_accounts as $twitter_account_id => $tf){
 						if(!$tf)continue; // shoulnd't happen, as checkbox shouldn't post.
-						$twitter_account = new ucm_twitter_account($twitter_account_id);
-						if($twitter_account->get('social_twitter_id') == $twitter_account_id){
+						$twitter_account = new shub_twitter_account($twitter_account_id);
+						if($twitter_account->get('shub_twitter_id') == $twitter_account_id){
 							// good to go! send us a message!
 
 
-							$twitter_message = new ucm_twitter_message($twitter_account, false);
+							$twitter_message = new shub_twitter_message($twitter_account, false);
 						    $twitter_message->create_new();
-						    $twitter_message->update('social_twitter_id',$twitter_account->get('social_twitter_id'));
-						    $twitter_message->update('social_message_id',$options['social_message_id']);
+						    $twitter_message->update('shub_twitter_id',$twitter_account->get('shub_twitter_id'));
+						    $twitter_message->update('shub_message_id',$options['shub_message_id']);
 						    $twitter_message->update('summary',isset($_POST['twitter_message']) ? $_POST['twitter_message'] : '');
 							if(isset($_POST['track_links']) && $_POST['track_links']){
 								$twitter_message->parse_links();
@@ -346,7 +346,7 @@ class ucm_twitter {
 						    $twitter_message->update('data',json_encode($_POST));
 						    $twitter_message->update('user_id',get_current_user_id());
 						    // do we send this one now? or schedule it later.
-						    $twitter_message->update('status',_SOCIAL_MESSAGE_STATUS_PENDINGSEND);
+						    $twitter_message->update('status',_shub_MESSAGE_STATUS_PENDINGSEND);
 						    if(isset($options['send_time']) && !empty($options['send_time'])){
 							    // schedule for sending at a different time (now or in the past)
 							    $twitter_message->update('message_time',$options['send_time']);
@@ -358,7 +358,7 @@ class ucm_twitter {
 							    $twitter_message->add_attachment($_FILES['twitter_picture']['tmp_name']);
 						    }
 							$now = current_time('timestamp');
-							//echo "Scheduled a tweet for ".$twitter_message->get('message_time')." ( ".ucm_print_date($twitter_message->get('message_time'),true)." ) time now is $now ( ".ucm_print_date($now,true)." )";exit;
+							//echo "Scheduled a tweet for ".$twitter_message->get('message_time')." ( ".shub_print_date($twitter_message->get('message_time'),true)." ) time now is $now ( ".shub_print_date($now,true)." )";exit;
 							if(!$twitter_message->get('message_time') || $twitter_message->get('message_time') <= $now){
 								// send now! otherwise we wait for cron job..
 								if($twitter_message->send_queued(isset($_POST['debug']) && $_POST['debug'])){
@@ -367,7 +367,7 @@ class ucm_twitter {
 							}else{
 						        $message_count ++;
 								if(isset($_POST['debug']) && $_POST['debug']){
-									echo "Message will be sent in cron job after ".ucm_print_date($twitter_message->get('message_time'),true);
+									echo "Message will be sent in cron job after ".shub_print_date($twitter_message->get('message_time'),true);
 								}
 							}
 						}
@@ -385,15 +385,15 @@ class ucm_twitter {
 				}
 				break;
 			case 'save_twitter':
-				$social_twitter_id = isset($_REQUEST['social_twitter_id']) ? (int)$_REQUEST['social_twitter_id'] : 0;
-				check_admin_referer( 'save-twitter'.$social_twitter_id );
-				$twitter = new ucm_twitter_account($social_twitter_id);
+				$shub_twitter_id = isset($_REQUEST['shub_twitter_id']) ? (int)$_REQUEST['shub_twitter_id'] : 0;
+				check_admin_referer( 'save-twitter'.$shub_twitter_id );
+				$twitter = new shub_twitter_account($shub_twitter_id);
 		        if(isset($_POST['butt_delete'])){
 	                $twitter->delete();
 			        $redirect = 'admin.php?page=support_hub_twitter_settings';
 		        }else{
 			        $twitter->save_data($_POST);
-			        $social_twitter_id = $twitter->get('social_twitter_id');
+			        $shub_twitter_id = $twitter->get('shub_twitter_id');
 			        if(isset($_POST['butt_save_reconnect'])){
 				        $redirect = $twitter->link_connect();
 			        }else {
@@ -411,11 +411,11 @@ class ucm_twitter {
 		switch($action){
 			case 'send-message-reply':
 				if (!headers_sent())header('Content-type: text/javascript');
-				if(isset($_REQUEST['social_twitter_id']) && !empty($_REQUEST['social_twitter_id']) && isset($_REQUEST['id']) && (int)$_REQUEST['id'] > 0) {
-					$ucm_twitter = new ucm_twitter_account($_REQUEST['social_twitter_id']);
-					if($ucm_twitter->get('social_twitter_id') == $_REQUEST['social_twitter_id']){
-						$ucm_twitter_message = new ucm_twitter_message( $ucm_twitter, $_REQUEST['id'] );
-						if($ucm_twitter_message->get('social_twitter_message_id') == $_REQUEST['id']) {
+				if(isset($_REQUEST['shub_twitter_id']) && !empty($_REQUEST['shub_twitter_id']) && isset($_REQUEST['id']) && (int)$_REQUEST['id'] > 0) {
+					$shub_twitter = new shub_twitter_account($_REQUEST['shub_twitter_id']);
+					if($shub_twitter->get('shub_twitter_id') == $_REQUEST['shub_twitter_id']){
+						$shub_twitter_message = new shub_twitter_message( $shub_twitter, $_REQUEST['id'] );
+						if($shub_twitter_message->get('shub_twitter_message_id') == $_REQUEST['id']) {
 							$return  = array();
 							$message = isset( $_POST['message'] ) && $_POST['message'] ? $_POST['message'] : '';
 							$debug   = isset( $_POST['debug'] ) && $_POST['debug'] ? $_POST['debug'] : false;
@@ -425,16 +425,16 @@ class ucm_twitter {
 
 
 								//$twitter_message->send_reply( $message, $debug );
-								$new_twitter_message = new ucm_twitter_message( $ucm_twitter, false );
+								$new_twitter_message = new shub_twitter_message( $shub_twitter, false );
 								$new_twitter_message->create_new();
-								$new_twitter_message->update( 'reply_to_id', $ucm_twitter_message->get( 'social_twitter_message_id' ) );
-								$new_twitter_message->update( 'social_twitter_id', $ucm_twitter->get( 'social_twitter_id' ) );
+								$new_twitter_message->update( 'reply_to_id', $shub_twitter_message->get( 'shub_twitter_message_id' ) );
+								$new_twitter_message->update( 'shub_twitter_id', $shub_twitter->get( 'shub_twitter_id' ) );
 								$new_twitter_message->update( 'summary', $message );
 								//$new_twitter_message->update('type','pending');
 								$new_twitter_message->update( 'data', json_encode( $_POST ) );
 								$new_twitter_message->update( 'user_id', get_current_user_id() );
 								// do we send this one now? or schedule it later.
-								$new_twitter_message->update( 'status', _SOCIAL_MESSAGE_STATUS_PENDINGSEND );
+								$new_twitter_message->update( 'status', _shub_MESSAGE_STATUS_PENDINGSEND );
 								if ( isset( $_FILES['twitter_picture']['tmp_name'] ) && is_uploaded_file( $_FILES['twitter_picture']['tmp_name'] ) ) {
 									$new_twitter_message->add_attachment( $_FILES['twitter_picture']['tmp_name'] );
 								}
@@ -445,7 +445,7 @@ class ucm_twitter {
 								} else if ( $worked ) {
 									// success, redicet!
 									//set_message( _l( 'Message sent and conversation archived.' ) );
-									//$return['redirect'] = module_social_twitter::link_open_message_view( $social_twitter_id );
+									//$return['redirect'] = module_shub_twitter::link_open_message_view( $shub_twitter_id );
 									$return['redirect'] = 'admin.php?page=support_hub_main';
 									//$return['success'] = 1;
 								} else {
@@ -460,11 +460,11 @@ class ucm_twitter {
 				break;
 			case 'modal':
 				if(isset($_REQUEST['socialtwittermessageid']) && (int)$_REQUEST['socialtwittermessageid'] > 0) {
-					$ucm_twitter_message = new ucm_twitter_message( false,  $_REQUEST['socialtwittermessageid'] );
-					if($ucm_twitter_message->get('social_twitter_message_id') == $_REQUEST['socialtwittermessageid']){
+					$shub_twitter_message = new shub_twitter_message( false,  $_REQUEST['socialtwittermessageid'] );
+					if($shub_twitter_message->get('shub_twitter_message_id') == $_REQUEST['socialtwittermessageid']){
 
-						$social_twitter_id = $ucm_twitter_message->get('twitter_account')->get('social_twitter_id');
-						$social_twitter_message_id = $ucm_twitter_message->get('social_twitter_message_id');
+						$shub_twitter_id = $shub_twitter_message->get('twitter_account')->get('shub_twitter_id');
+						$shub_twitter_message_id = $shub_twitter_message->get('shub_twitter_message_id');
 						include( trailingslashit( $support_hub_wp->dir ) . 'networks/twitter/twitter_message.php');
 					}
 
@@ -472,28 +472,28 @@ class ucm_twitter {
 				break;
 			case 'set-answered':
 				if (!headers_sent())header('Content-type: text/javascript');
-				if(isset($_REQUEST['social_twitter_message_id']) && (int)$_REQUEST['social_twitter_message_id'] > 0){
-					$ucm_twitter_message = new ucm_twitter_message(false, $_REQUEST['social_twitter_message_id']);
-					if($ucm_twitter_message->get('social_twitter_message_id') == $_REQUEST['social_twitter_message_id']){
-						$ucm_twitter_message->update('status',_SOCIAL_MESSAGE_STATUS_ANSWERED);
+				if(isset($_REQUEST['shub_twitter_message_id']) && (int)$_REQUEST['shub_twitter_message_id'] > 0){
+					$shub_twitter_message = new shub_twitter_message(false, $_REQUEST['shub_twitter_message_id']);
+					if($shub_twitter_message->get('shub_twitter_message_id') == $_REQUEST['shub_twitter_message_id']){
+						$shub_twitter_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
 						?>
-						jQuery('.socialtwitter_message_action[data-id=<?php echo (int)$ucm_twitter_message->get('social_twitter_message_id'); ?>]').parents('tr').first().hide();
+						jQuery('.socialtwitter_message_action[data-id=<?php echo (int)$shub_twitter_message->get('shub_twitter_message_id'); ?>]').parents('tr').first().hide();
 						<?php
 						// if this is a direct message, we also archive all other messages in it.
-						if($ucm_twitter_message->get('type') == _TWITTER_MESSAGE_TYPE_DIRECT){
-							$from = preg_replace('#[^0-9]#','',$ucm_twitter_message->get('twitter_from_id'));
-							$to = preg_replace('#[^0-9]#','',$ucm_twitter_message->get('twitter_to_id'));
+						if($shub_twitter_message->get('type') == _TWITTER_MESSAGE_TYPE_DIRECT){
+							$from = preg_replace('#[^0-9]#','',$shub_twitter_message->get('twitter_from_id'));
+							$to = preg_replace('#[^0-9]#','',$shub_twitter_message->get('twitter_to_id'));
 							if($from && $to) {
-								$sql      = "SELECT * FROM `" . _support_hub_DB_PREFIX . "social_twitter_message` WHERE `type` = " . _TWITTER_MESSAGE_TYPE_DIRECT . " AND `status` = " . (int) _SOCIAL_MESSAGE_STATUS_UNANSWERED . " AND social_twitter_id = " . (int) $ucm_twitter_message->get('twitter_account')->get( 'social_twitter_id' ) . " AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ";
+								$sql      = "SELECT * FROM `" . _support_hub_DB_PREFIX . "shub_twitter_message` WHERE `type` = " . _TWITTER_MESSAGE_TYPE_DIRECT . " AND `status` = " . (int) _shub_MESSAGE_STATUS_UNANSWERED . " AND shub_twitter_id = " . (int) $shub_twitter_message->get('twitter_account')->get( 'shub_twitter_id' ) . " AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ";
 								global $wpdb;
 								$others = $wpdb->get_results($sql, ARRAY_A);
 								if(count($others)){
 									foreach($others as $other_message){
-										$ucm_twitter_message = new ucm_twitter_message(false, $other_message['social_twitter_message_id']);
-										if($ucm_twitter_message->get('social_twitter_message_id') == $other_message['social_twitter_message_id']) {
-											$ucm_twitter_message->update( 'status', _SOCIAL_MESSAGE_STATUS_ANSWERED );
+										$shub_twitter_message = new shub_twitter_message(false, $other_message['shub_twitter_message_id']);
+										if($shub_twitter_message->get('shub_twitter_message_id') == $other_message['shub_twitter_message_id']) {
+											$shub_twitter_message->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
 											?>
-											jQuery('.socialtwitter_message_action[data-id=<?php echo (int) $ucm_twitter_message->get( 'social_twitter_message_id' ); ?>]').parents('tr').first().hide();
+											jQuery('.socialtwitter_message_action[data-id=<?php echo (int) $shub_twitter_message->get( 'shub_twitter_message_id' ); ?>]').parents('tr').first().hide();
 										<?php
 										}
 									}
@@ -505,12 +505,12 @@ class ucm_twitter {
 				break;
 			case 'set-unanswered':
 				if (!headers_sent())header('Content-type: text/javascript');
-				if(isset($_REQUEST['social_twitter_message_id']) && (int)$_REQUEST['social_twitter_message_id'] > 0){
-					$ucm_twitter_message = new ucm_twitter_message(false, $_REQUEST['social_twitter_message_id']);
-					if($ucm_twitter_message->get('social_twitter_message_id') == $_REQUEST['social_twitter_message_id']){
-						$ucm_twitter_message->update('status',_SOCIAL_MESSAGE_STATUS_UNANSWERED);
+				if(isset($_REQUEST['shub_twitter_message_id']) && (int)$_REQUEST['shub_twitter_message_id'] > 0){
+					$shub_twitter_message = new shub_twitter_message(false, $_REQUEST['shub_twitter_message_id']);
+					if($shub_twitter_message->get('shub_twitter_message_id') == $_REQUEST['shub_twitter_message_id']){
+						$shub_twitter_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
 						?>
-						jQuery('.socialtwitter_message_action[data-id=<?php echo (int)$ucm_twitter_message->get('social_twitter_message_id'); ?>]').parents('tr').first().hide();
+						jQuery('.socialtwitter_message_action[data-id=<?php echo (int)$shub_twitter_message->get('shub_twitter_message_id'); ?>]').parents('tr').first().hide();
 						<?php
 					}
 				}
@@ -524,29 +524,29 @@ class ucm_twitter {
 		if($debug)echo "Starting Twitter Cron Job \n";
 		$accounts = $this->get_accounts();
 		foreach($accounts as $account){
-			$ucm_twitter_account = new ucm_twitter_account( $account['social_twitter_id'] );
-			$ucm_twitter_account->import_data($debug);
-			$ucm_twitter_account->run_cron($debug);
+			$shub_twitter_account = new shub_twitter_account( $account['shub_twitter_id'] );
+			$shub_twitter_account->import_data($debug);
+			$shub_twitter_account->run_cron($debug);
 		}
 		if($debug)echo "Finished Twitter Cron Job \n";
 	}
 
 }
 
-class ucm_twitter_account{
+class shub_twitter_account{
 
-	public function __construct($social_twitter_id){
-		$this->load($social_twitter_id);
+	public function __construct($shub_twitter_id){
+		$this->load($shub_twitter_id);
 	}
 
-	private $social_twitter_id = false; // the current user id in our system.
+	private $shub_twitter_id = false; // the current user id in our system.
     private $details = array();
 
 	private function reset(){
-		$this->social_twitter_id = false;
+		$this->shub_twitter_id = false;
 		self::$api = false;
 		$this->details = array(
-			'social_twitter_id' => false,
+			'shub_twitter_id' => false,
 			'twitter_id' => false,
 			'twitter_name' => false,
 			'twitter_data' => false,
@@ -568,17 +568,17 @@ class ucm_twitter_account{
 
 	public function create_new(){
 		$this->reset();
-		$this->social_twitter_id = ucm_update_insert('social_twitter_id',false,'social_twitter',array());
-		$this->load($this->social_twitter_id);
+		$this->shub_twitter_id = shub_update_insert('shub_twitter_id',false,'shub_twitter',array());
+		$this->load($this->shub_twitter_id);
 	}
 
-    public function load($social_twitter_id = false){
-	    if(!$social_twitter_id)$social_twitter_id = $this->social_twitter_id;
+    public function load($shub_twitter_id = false){
+	    if(!$shub_twitter_id)$shub_twitter_id = $this->shub_twitter_id;
 	    $this->reset();
-	    $this->social_twitter_id = $social_twitter_id;
-        if($this->social_twitter_id){
-            $this->details = ucm_get_single('social_twitter','social_twitter_id',$this->social_twitter_id);
-	        if(!is_array($this->details) || $this->details['social_twitter_id'] != $this->social_twitter_id){
+	    $this->shub_twitter_id = $shub_twitter_id;
+        if($this->shub_twitter_id){
+            $this->details = shub_get_single('shub_twitter','shub_twitter_id',$this->shub_twitter_id);
+	        if(!is_array($this->details) || $this->details['shub_twitter_id'] != $this->shub_twitter_id){
 		        $this->reset();
 		        return false;
 	        }
@@ -586,14 +586,14 @@ class ucm_twitter_account{
         foreach($this->details as $key=>$val){
             $this->{$key} = $val;
         }
-        return $this->social_twitter_id;
+        return $this->shub_twitter_id;
     }
 
 	public function get_messages($search=array()){
-		$twitter = new ucm_twitter();
-		$search['social_twitter_id'] = $this->social_twitter_id;
+		$twitter = new shub_twitter();
+		$search['shub_twitter_id'] = $this->shub_twitter_id;
 		return $twitter->load_all_messages($search);
-		//return ucm_get_multiple('social_twitter_message',$search,'social_twitter_message_id','exact','message_time DESC');
+		//return shub_get_multiple('shub_twitter_message',$search,'shub_twitter_message_id','exact','message_time DESC');
 	}
 
 	public function get($field){
@@ -605,7 +605,7 @@ class ucm_twitter_account{
 	}
 
 	public function save_data($post_data){
-		if(!$this->get('social_twitter_id')){
+		if(!$this->get('shub_twitter_id')){
 			$this->create_new();
 		}
 		if(is_array($post_data)){
@@ -620,32 +620,32 @@ class ucm_twitter_account{
 			}
 		}
 		$this->load();
-		return $this->get('social_twitter_id');
+		return $this->get('shub_twitter_id');
 	}
     public function update($field,$value){
 	    // what fields to we allow? or not allow?
-	    if(in_array($field,array('social_twitter_id')))return;
-        if($this->social_twitter_id){
+	    if(in_array($field,array('shub_twitter_id')))return;
+        if($this->shub_twitter_id){
             $this->{$field} = $value;
-            ucm_update_insert('social_twitter_id',$this->social_twitter_id,'social_twitter',array(
+            shub_update_insert('shub_twitter_id',$this->shub_twitter_id,'shub_twitter',array(
 	            $field => $value,
             ));
         }
     }
 	public function delete(){
-		if($this->social_twitter_id) {
+		if($this->shub_twitter_id) {
 			// delete all the messages for this twitter account.
-			$messages = ucm_get_multiple('social_twitter_message',array(
-				'social_twitter_id' => $this->social_twitter_id,
-			),'social_twitter_message_id');
+			$messages = shub_get_multiple('shub_twitter_message',array(
+				'shub_twitter_id' => $this->shub_twitter_id,
+			),'shub_twitter_message_id');
 			foreach($messages as $message){
-				if($message && isset($message['social_twitter_id']) && $message['social_twitter_id'] == $this->social_twitter_id){
-					ucm_delete_from_db( 'social_twitter_message', 'social_twitter_message_id', $message['social_twitter_message_id'] );
-					ucm_delete_from_db( 'social_twitter_message_link', 'social_twitter_message_id', $message['social_twitter_message_id'] );
-					ucm_delete_from_db( 'social_twitter_message_read', 'social_twitter_message_id', $message['social_twitter_message_id'] );
+				if($message && isset($message['shub_twitter_id']) && $message['shub_twitter_id'] == $this->shub_twitter_id){
+					shub_delete_from_db( 'shub_twitter_message', 'shub_twitter_message_id', $message['shub_twitter_message_id'] );
+					shub_delete_from_db( 'shub_twitter_message_link', 'shub_twitter_message_id', $message['shub_twitter_message_id'] );
+					shub_delete_from_db( 'shub_twitter_message_read', 'shub_twitter_message_id', $message['shub_twitter_message_id'] );
 				}
 			}
-			ucm_delete_from_db( 'social_twitter', 'social_twitter_id', $this->social_twitter_id );
+			shub_delete_from_db( 'shub_twitter', 'shub_twitter_id', $this->shub_twitter_id );
 		}
 	}
 
@@ -669,12 +669,12 @@ class ucm_twitter_account{
 		if(!self::$api){
 
 			require_once trailingslashit( __DIR__ ) . 'tmhOAuth.php';
-			$ucm_twitter = new ucm_twitter();
+			$shub_twitter = new shub_twitter();
 
 			self::$api = new tmhOAuth( array(
 			    // change the values below to ones for your application
-			    'consumer_key'    => $ucm_twitter->get('api_key'),
-			    'consumer_secret' => $ucm_twitter->get('api_secret'),
+			    'consumer_key'    => $shub_twitter->get('api_key'),
+			    'consumer_secret' => $shub_twitter->get('api_secret'),
 				'token'           => $this->get('user_key'),
 				'secret'          => $this->get('user_secret'),
 			    'user_agent'      => 'UCM Twitter 0.1',
@@ -687,13 +687,13 @@ class ucm_twitter_account{
 	public function run_cron($debug = false){
 		// find all messages that haven't been sent yet.
 		$messages = $this->get_messages(array(
-			'status' => _SOCIAL_MESSAGE_STATUS_PENDINGSEND,
+			'status' => _shub_MESSAGE_STATUS_PENDINGSEND,
 		));
 		$now = time();
 		foreach($messages as $message){
 			if(isset($message['message_time']) && $message['message_time'] < $now){
-				$ucm_twitter_message = new ucm_twitter_message($this, $message['social_twitter_message_id']);
-				$ucm_twitter_message->send_queued($debug);
+				$shub_twitter_message = new shub_twitter_message($this, $message['shub_twitter_message_id']);
+				$shub_twitter_message->send_queued($debug);
 			}
 		}
 	}
@@ -736,7 +736,7 @@ class ucm_twitter_account{
 						'url' => $tmhOAuth->url('1.1/direct_messages/sent'),
 						'params' => array(
 					      'since_id' => $latest_search_values['dm_sent'],
-					      'count' => 20,//module_config::c('social_twitter_search_count',20),
+					      'count' => 20,//module_config::c('shub_twitter_search_count',20),
 					    ),
 					));
 					if ($code_sent == 200){
@@ -746,10 +746,10 @@ class ucm_twitter_account{
 								if($debug) echo ' - importing DM ID: '.$dm['id_str']."<br>\n";
 								$latest_search_values['dm_sent'] = max($latest_search_values['dm_sent'], $dm['id_str']);
 								// does this exist in the database?
-								$exists = ucm_get_single('social_twitter_message',array('social_twitter_id','twitter_message_id'),array($this->social_twitter_id,$dm['id_str']));
+								$exists = shub_get_single('shub_twitter_message',array('shub_twitter_id','twitter_message_id'),array($this->shub_twitter_id,$dm['id_str']));
 								// update/insert based on this item.
-								ucm_update_insert('social_twitter_message_id',$exists && isset($exists['social_twitter_message_id']) ? $exists['social_twitter_message_id'] : false, 'social_twitter_message', array(
-									'social_twitter_id' => $this->social_twitter_id,
+								shub_update_insert('shub_twitter_message_id',$exists && isset($exists['shub_twitter_message_id']) ? $exists['shub_twitter_message_id'] : false, 'shub_twitter_message', array(
+									'shub_twitter_id' => $this->shub_twitter_id,
 									'twitter_message_id' => $dm['id_str'],
 									'twitter_from_id' => isset($dm['sender_id_str']) ? $dm['sender_id_str'] : '',
 									'twitter_from_name' => isset($dm['sender_screen_name']) ? $dm['sender_screen_name'] : '',
@@ -777,7 +777,7 @@ class ucm_twitter_account{
 						'url' => $tmhOAuth->url('1.1/direct_messages'),
 						'params' => array(
 					      'since_id' => $latest_search_values['dm_received'],
-					      'count' => 20,//module_config::c('social_twitter_search_count',20),
+					      'count' => 20,//module_config::c('shub_twitter_search_count',20),
 					    ),
 					));
 					if ($code_received == 200){
@@ -787,10 +787,10 @@ class ucm_twitter_account{
 								if($debug) echo ' - importing DM ID: '.$dm['id_str']."<br>\n";
 								$latest_search_values['dm_received'] = max($latest_search_values['dm_received'], $dm['id_str']);
 								// does this exist in the database?
-								$exists = ucm_get_single('social_twitter_message',array('social_twitter_id','twitter_message_id'),array($this->social_twitter_id,$dm['id_str']));
+								$exists = shub_get_single('shub_twitter_message',array('shub_twitter_id','twitter_message_id'),array($this->shub_twitter_id,$dm['id_str']));
 								// update/insert based on this item.
-								ucm_update_insert('social_twitter_message_id',$exists && isset($exists['social_twitter_message_id']) ? $exists['social_twitter_message_id'] : false, 'social_twitter_message', array(
-									'social_twitter_id' => $this->social_twitter_id,
+								shub_update_insert('shub_twitter_message_id',$exists && isset($exists['shub_twitter_message_id']) ? $exists['shub_twitter_message_id'] : false, 'shub_twitter_message', array(
+									'shub_twitter_id' => $this->shub_twitter_id,
 									'twitter_message_id' => $dm['id_str'],
 									'twitter_from_id' => isset($dm['sender_id_str']) ? $dm['sender_id_str'] : '',
 									'twitter_from_name' => isset($dm['sender_screen_name']) ? $dm['sender_screen_name'] : '',
@@ -822,7 +822,7 @@ class ucm_twitter_account{
 						'url' => $tmhOAuth->url('1.1/statuses/mentions_timeline'),
 						'params' => array(
 					      'since_id' => $latest_search_values['mentions'],
-					      'count' => 20,//module_config::c('social_twitter_search_count',20),
+					      'count' => 20,//module_config::c('shub_twitter_search_count',20),
 					    ),
 					));
 					if ($code_sent == 200){
@@ -830,14 +830,14 @@ class ucm_twitter_account{
 						foreach($mentions as $mention){
 							if(isset($mention['id_str'])){
 								$latest_search_values['mentions'] = max($latest_search_values['mentions'], $mention['id_str']);
-								$new_tweet = new ucm_twitter_message($this, false);
+								$new_tweet = new shub_twitter_message($this, false);
 								$new_tweet->load_by_twitter_id($mention['id_str'], $mention, _TWITTER_MESSAGE_TYPE_MENTION);
 								if($debug) echo ' - importing mention ID: '.$mention['id_str']."<br>\n";
 								/*// does this exist in the database?
-								$exists = ucm_get_single('social_twitter_message',array('social_twitter_id','twitter_message_id'),array($this->social_twitter_id,$mention['id_str']));
+								$exists = shub_get_single('shub_twitter_message',array('shub_twitter_id','twitter_message_id'),array($this->shub_twitter_id,$mention['id_str']));
 								// update/insert based on this item.
-								ucm_update_insert('social_twitter_message_id',$exists && isset($exists['social_twitter_message_id']) ? $exists['social_twitter_message_id'] : false, 'social_twitter_message', array(
-									'social_twitter_id' => $this->social_twitter_id,
+								shub_update_insert('shub_twitter_message_id',$exists && isset($exists['shub_twitter_message_id']) ? $exists['shub_twitter_message_id'] : false, 'shub_twitter_message', array(
+									'shub_twitter_id' => $this->shub_twitter_id,
 									'twitter_message_id' => $mention['id_str'],
 									'twitter_from_id' => isset($mention['user']['id_str']) ? $mention['user']['id_str'] : '',
 									'twitter_from_name' => isset($mention['user']['screen_name']) ? $mention['user']['screen_name'] : '',
@@ -862,7 +862,7 @@ class ucm_twitter_account{
 						'url' => $tmhOAuth->url('1.1/statuses/user_timeline'),
 						'params' => array(
 					      'since_id' => $latest_search_values['timeline'],
-					      'count' => 20,// module_config::c('social_twitter_search_count',20),
+					      'count' => 20,// module_config::c('shub_twitter_search_count',20),
 					      'screen_name' => $this->get('twitter_name'),
 					    ),
 					));
@@ -872,15 +872,15 @@ class ucm_twitter_account{
 							if(isset($tweet['id_str'])){
 								$latest_search_values['timeline'] = max($latest_search_values['timeline'], $tweet['id_str']);
 
-								$new_tweet = new ucm_twitter_message($this, false);
+								$new_tweet = new shub_twitter_message($this, false);
 								$new_tweet->load_by_twitter_id($tweet['id_str'], $tweet);
 								if($debug) echo ' - importing tweet ID: '.$tweet['id_str']."<br>\n";
 
 								/*// does this exist in the database (it really shouldn't because weshould be doing 'since' search correctly)
-								$exists = ucm_get_single('social_twitter_message',array('social_twitter_id','twitter_message_id'),array($this->social_twitter_id,$tweet['id_str']));
+								$exists = shub_get_single('shub_twitter_message',array('shub_twitter_id','twitter_message_id'),array($this->shub_twitter_id,$tweet['id_str']));
 								// update/insert based on this item.
-								ucm_update_insert('social_twitter_message_id',$exists && isset($exists['social_twitter_message_id']) ? $exists['social_twitter_message_id'] : false, 'social_twitter_message', array(
-									'social_twitter_id' => $this->social_twitter_id,
+								shub_update_insert('shub_twitter_message_id',$exists && isset($exists['shub_twitter_message_id']) ? $exists['shub_twitter_message_id'] : false, 'shub_twitter_message', array(
+									'shub_twitter_id' => $this->shub_twitter_id,
 									'reply_to_id' => $reply_to_id,
 									'twitter_message_id' => $tweet['id_str'],
 									'twitter_from_id' => isset($tweet['user']['id_str']) ? $tweet['user']['id_str'] : '',
@@ -905,7 +905,7 @@ class ucm_twitter_account{
 						'url' => $tmhOAuth->url('1.1/statuses/retweets_of_me'),
 						'params' => array(
 					      'since_id' => $latest_search_values['retweets'],
-					      'count' => 20, //module_config::c('social_twitter_search_count',20),
+					      'count' => 20, //module_config::c('shub_twitter_search_count',20),
 					    ),
 					));
 					// only query the list of retweets for tweets newer than 2 weeks.
@@ -919,16 +919,16 @@ class ucm_twitter_account{
 									$latest_search_values['retweets'] = max($latest_search_values['retweets'], $tweet['id_str']);
 								}
 
-								$new_tweet = new ucm_twitter_message($this, false);
+								$new_tweet = new shub_twitter_message($this, false);
 								// refresh these so the retweet_count and favorite_count get stored in the database again.
 								$new_tweet->load_by_twitter_id($tweet['id_str'], $tweet, false, $debug, true);
 								if($debug) echo ' - importing tweet ID: '.$tweet['id_str']."<br>\n";
 
 								/*// does this exist in the database (it really shouldn't because weshould be doing 'since' search correctly)
-								$exists = ucm_get_single('social_twitter_message',array('social_twitter_id','twitter_message_id'),array($this->social_twitter_id,$tweet['id_str']));
+								$exists = shub_get_single('shub_twitter_message',array('shub_twitter_id','twitter_message_id'),array($this->shub_twitter_id,$tweet['id_str']));
 								// update/insert based on this item.
-								ucm_update_insert('social_twitter_message_id',$exists && isset($exists['social_twitter_message_id']) ? $exists['social_twitter_message_id'] : false, 'social_twitter_message', array(
-									'social_twitter_id' => $this->social_twitter_id,
+								shub_update_insert('shub_twitter_message_id',$exists && isset($exists['shub_twitter_message_id']) ? $exists['shub_twitter_message_id'] : false, 'shub_twitter_message', array(
+									'shub_twitter_id' => $this->shub_twitter_id,
 									'reply_to_id' => $reply_to_id,
 									'twitter_message_id' => $tweet['id_str'],
 									'twitter_from_id' => isset($tweet['user']['id_str']) ? $tweet['user']['id_str'] : '',
@@ -968,12 +968,12 @@ class ucm_twitter_account{
 		$reply_to_id = false;
 		if(empty($tweet_status_id))return $reply_to_id;
 
-		$tweet = new ucm_twitter_message($this, false);
+		$tweet = new shub_twitter_message($this, false);
 		$tweet->load_by_twitter_id($tweet_status_id);
-		return $tweet->get('social_twitter_message_id');
+		return $tweet->get('shub_twitter_message_id');
 		/*
 		// check if it exists in the database already:
-		$exists = ucm_get_single('social_twitter_message','twitter_message_id',$tweet_status_id);
+		$exists = shub_get_single('shub_twitter_message','twitter_message_id',$tweet_status_id);
 		if(!$exists || $exists['twitter_message_id'] != $tweet_status_id){
 			// grab from api and save in database.
 			$tmhOAuth = $this->get_api();
@@ -997,8 +997,8 @@ class ucm_twitter_account{
 				}else if(isset($tweet['user']['id_str']) && $tweet['user']['id_str'] == $this->get('twitter_id')){
 					$type = _TWITTER_MESSAGE_TYPE_MYTWEET;
 				}
-				ucm_update_insert('social_twitter_message_id',false, 'social_twitter_message', array(
-					'social_twitter_id' => $this->social_twitter_id,
+				shub_update_insert('shub_twitter_message_id',false, 'shub_twitter_message', array(
+					'shub_twitter_id' => $this->shub_twitter_id,
 					'reply_to_id' => $new_reply_to_id,
 					'twitter_message_id' => $tweet['id_str'],
 					'twitter_from_id' => isset($tweet['user']['id_str']) ? $tweet['user']['id_str'] : '',
@@ -1012,7 +1012,7 @@ class ucm_twitter_account{
 				));
 			}
 		}else{
-			$reply_to_id = $exists['social_twitter_message_id'];
+			$reply_to_id = $exists['shub_twitter_message_id'];
 		}
 
 		return $reply_to_id;*/
@@ -1024,16 +1024,16 @@ class ucm_twitter_account{
 	 * Links for wordpress
 	 */
 	public function link_connect(){
-		return 'admin.php?page=support_hub_twitter_settings&do_twitter_connect=1&social_twitter_id='.$this->get('social_twitter_id');
+		return 'admin.php?page=support_hub_twitter_settings&do_twitter_connect=1&shub_twitter_id='.$this->get('shub_twitter_id');
 	}
 	public function link_edit(){
-		return 'admin.php?page=support_hub_twitter_settings&social_twitter_id='.$this->get('social_twitter_id');
+		return 'admin.php?page=support_hub_twitter_settings&shub_twitter_id='.$this->get('shub_twitter_id');
 	}
 	public function link_refresh(){
-		return 'admin.php?page=support_hub_twitter_settings&do_twitter_refresh=1&social_twitter_id='.$this->get('social_twitter_id');
+		return 'admin.php?page=support_hub_twitter_settings&do_twitter_refresh=1&shub_twitter_id='.$this->get('shub_twitter_id');
 	}
 	public function link_new_message(){
-		return 'admin.php?page=support_hub_main&social_twitter_id='.$this->get('social_twitter_id').'&social_twitter_message_id=new';
+		return 'admin.php?page=support_hub_main&shub_twitter_id='.$this->get('shub_twitter_id').'&shub_twitter_message_id=new';
 	}
 
 }
@@ -1041,43 +1041,43 @@ class ucm_twitter_account{
 
 
 
-class ucm_twitter_message{
+class shub_twitter_message{
 
-	public function __construct($twitter_account = false, $social_twitter_message_id = false){
+	public function __construct($twitter_account = false, $shub_twitter_message_id = false){
 		$this->twitter_account = $twitter_account;
-		$this->load($social_twitter_message_id);
+		$this->load($shub_twitter_message_id);
 	}
 
-	/* @var $twitter_account ucm_twitter_account */
+	/* @var $twitter_account shub_twitter_account */
 	private $twitter_account = false;
-	private $social_twitter_message_id = false; // the current user id in our system.
+	private $shub_twitter_message_id = false; // the current user id in our system.
     private $details = array();
 
 	private function reset(){
-		$this->social_twitter_message_id = false;
+		$this->shub_twitter_message_id = false;
 		$this->details = array();
 	}
 
 	public function create_new(){
 		$this->reset();
-		$this->social_twitter_message_id = ucm_update_insert('social_twitter_message_id',false,'social_twitter_message',array());
-		$this->load($this->social_twitter_message_id);
+		$this->shub_twitter_message_id = shub_update_insert('shub_twitter_message_id',false,'shub_twitter_message',array());
+		$this->load($this->shub_twitter_message_id);
 	}
 
 	public function load_by_twitter_id($twitter_id, $tweet=false, $type = false, $debug = false, $force = false){
 
-		if(!$this->twitter_account || !$this->twitter_account->get('social_twitter_id')){
+		if(!$this->twitter_account || !$this->twitter_account->get('shub_twitter_id')){
 			return false;
 		}
-		$this->social_twitter_message_id = 0;
-		$exists = ucm_get_single('social_twitter_message',array('social_twitter_id','twitter_message_id'),array($this->twitter_account->get('social_twitter_id'),$twitter_id));
+		$this->shub_twitter_message_id = 0;
+		$exists = shub_get_single('shub_twitter_message',array('shub_twitter_id','twitter_message_id'),array($this->twitter_account->get('shub_twitter_id'),$twitter_id));
 		if($exists && $exists['twitter_message_id'] == $twitter_id){
-			$this->load($exists['social_twitter_message_id']);
-			if($this->social_twitter_message_id != $exists['social_twitter_message_id']){
+			$this->load($exists['shub_twitter_message_id']);
+			if($this->shub_twitter_message_id != $exists['shub_twitter_message_id']){
 				$this->reset(); // shouldn't happen.
 			}
-			if(!$force && $this->social_twitter_message_id == $exists['social_twitter_message_id']){
-				return $this->social_twitter_message_id;
+			if(!$force && $this->shub_twitter_message_id == $exists['shub_twitter_message_id']){
+				return $this->shub_twitter_message_id;
 			}
 		}
 		if(!$tweet || $force){
@@ -1126,8 +1126,8 @@ class ucm_twitter_message{
 				}
 			}
 			// todo: unarchive tweet if the retweet or fav action happens
-			$this->social_twitter_message_id = ucm_update_insert('social_twitter_message_id',$this->social_twitter_message_id, 'social_twitter_message', array(
-				'social_twitter_id' => $this->twitter_account->get('social_twitter_id'),
+			$this->shub_twitter_message_id = shub_update_insert('shub_twitter_message_id',$this->shub_twitter_message_id, 'shub_twitter_message', array(
+				'shub_twitter_id' => $this->twitter_account->get('shub_twitter_id'),
 				'reply_to_id' => $new_reply_to_id,
 				'twitter_message_id' => $tweet['id_str'],
 				'twitter_from_id' => isset($tweet['user']['id_str']) ? $tweet['user']['id_str'] : (isset($tweet['sender_id_str']) ? $tweet['sender_id_str'] : ''),
@@ -1139,21 +1139,21 @@ class ucm_twitter_message{
 				'data' => json_encode($tweet),
 				'type' =>$type,
 			));
-			$this->load($this->social_twitter_message_id);
+			$this->load($this->shub_twitter_message_id);
 		}
 
 
 
-		return $this->social_twitter_message_id;
+		return $this->shub_twitter_message_id;
 	}
 
-    public function load($social_twitter_message_id = false){
-	    if(!$social_twitter_message_id)$social_twitter_message_id = $this->social_twitter_message_id;
+    public function load($shub_twitter_message_id = false){
+	    if(!$shub_twitter_message_id)$shub_twitter_message_id = $this->shub_twitter_message_id;
 	    $this->reset();
-	    $this->social_twitter_message_id = $social_twitter_message_id;
-        if($this->social_twitter_message_id){
-            $this->details = ucm_get_single('social_twitter_message','social_twitter_message_id',$this->social_twitter_message_id);
-	        if(!is_array($this->details) || !isset($this->details['social_twitter_message_id']) || $this->details['social_twitter_message_id'] != $this->social_twitter_message_id){
+	    $this->shub_twitter_message_id = $shub_twitter_message_id;
+        if($this->shub_twitter_message_id){
+            $this->details = shub_get_single('shub_twitter_message','shub_twitter_message_id',$this->shub_twitter_message_id);
+	        if(!is_array($this->details) || !isset($this->details['shub_twitter_message_id']) || $this->details['shub_twitter_message_id'] != $this->shub_twitter_message_id){
 		        $this->reset();
 		        return false;
 	        }
@@ -1161,10 +1161,10 @@ class ucm_twitter_message{
         foreach($this->details as $key=>$val){
             $this->{$key} = $val;
         }
-	    if(!$this->twitter_account && $this->get('social_twitter_id')){
-		    $this->twitter_account = new ucm_twitter_account($this->get('social_twitter_id'));
+	    if(!$this->twitter_account && $this->get('shub_twitter_id')){
+		    $this->twitter_account = new shub_twitter_account($this->get('shub_twitter_id'));
 	    }
-        return $this->social_twitter_message_id;
+        return $this->shub_twitter_message_id;
     }
 
 	public function get($field){
@@ -1174,17 +1174,17 @@ class ucm_twitter_message{
 
     public function update($field,$value){
 	    // what fields to we allow? or not allow?
-	    if(in_array($field,array('social_twitter_message_id')))return;
-        if($this->social_twitter_message_id){
+	    if(in_array($field,array('shub_twitter_message_id')))return;
+        if($this->shub_twitter_message_id){
             $this->{$field} = $value;
-            ucm_update_insert('social_twitter_message_id',$this->social_twitter_message_id,'social_twitter_message',array(
+            shub_update_insert('shub_twitter_message_id',$this->shub_twitter_message_id,'shub_twitter_message',array(
 	            $field => $value,
             ));
         }
     }
 
 	public function parse_links(){
-		if(!$this->get('social_twitter_message_id'))return;
+		if(!$this->get('shub_twitter_message_id'))return;
 		// strip out any links in the tweet and write them to the twitter_message_link table.
 		$url_clickable = '~
 		            ([\\s(<.,;:!?])                                        # 1: Leading whitespace, or punctuation
@@ -1206,17 +1206,17 @@ class ucm_twitter_message{
 				$url = trim($url);
 				if(strlen($url)) {
 					// wack this url into the database and replace it with our rewritten url.
-					$social_twitter_message_link_id = ucm_update_insert( 'social_twitter_message_link_id', false, 'social_twitter_message_link', array(
-						'social_twitter_message_id' => $this->get('social_twitter_message_id'),
+					$shub_twitter_message_link_id = shub_update_insert( 'shub_twitter_message_link_id', false, 'shub_twitter_message_link', array(
+						'shub_twitter_message_id' => $this->get('shub_twitter_message_id'),
 						'link' => $url,
 					) );
-					if($social_twitter_message_link_id) {
+					if($shub_twitter_message_link_id) {
 						$new_link = trailingslashit( get_site_url() );
 						$new_link .= strpos( $new_link, '?' ) === false ? '?' : '&';
-						$new_link .= _support_hub_TWITTER_LINK_REWRITE_PREFIX . '=' . $social_twitter_message_link_id;
+						$new_link .= _support_hub_TWITTER_LINK_REWRITE_PREFIX . '=' . $shub_twitter_message_link_id;
 						// basic hash to stop brute force.
 						if(defined('AUTH_KEY')){
-							$new_link .= ':'.substr(md5(AUTH_KEY.' twitter link '.$social_twitter_message_link_id),1,5);
+							$new_link .= ':'.substr(md5(AUTH_KEY.' twitter link '.$shub_twitter_message_link_id),1,5);
 						}
 						$newsummary = trim(preg_replace('#'.preg_quote($url,'#').'#',$new_link,$summary, 1));
 						if(strlen($newsummary)){// just incase.
@@ -1230,15 +1230,15 @@ class ucm_twitter_message{
 	}
 
 	public function delete(){
-		if($this->social_twitter_message_id) {
-			ucm_delete_from_db( 'social_twitter_message', 'social_twitter_message_id', $this->social_twitter_message_id );
+		if($this->shub_twitter_message_id) {
+			shub_delete_from_db( 'shub_twitter_message', 'shub_twitter_message_id', $this->shub_twitter_message_id );
 		}
 	}
 
 	public function mark_as_read(){
-		if($this->social_twitter_message_id && get_current_user_id()){
-			$sql = "REPLACE INTO `"._support_hub_DB_PREFIX."social_twitter_message_read` SET `social_twitter_message_id` = ".(int)$this->social_twitter_message_id.", `user_id` = ".(int)get_current_user_id().", read_time = ".(int)time();
-			ucm_query($sql);
+		if($this->shub_twitter_message_id && get_current_user_id()){
+			$sql = "REPLACE INTO `"._support_hub_DB_PREFIX."shub_twitter_message_read` SET `shub_twitter_message_id` = ".(int)$this->shub_twitter_message_id.", `user_id` = ".(int)get_current_user_id().", read_time = ".(int)time();
+			shub_query($sql);
 		}
 	}
 
@@ -1266,7 +1266,7 @@ class ucm_twitter_message{
 	private $can_reply = false;
 	public function output_block($level){
 
-		if(!$this->get('social_twitter_message_id') || $level < -3)return;
+		if(!$this->get('shub_twitter_message_id') || $level < -3)return;
 
 		$twitter_data = @json_decode($this->get('data'),true);
 
@@ -1277,7 +1277,7 @@ class ucm_twitter_message{
 				?>
 				<div class="twitter_previous_messages">
 					<?php
-					$reply_message = new ucm_twitter_message($this->twitter_account, $this->get('reply_to_id'));
+					$reply_message = new shub_twitter_message($this->twitter_account, $this->get('reply_to_id'));
 					$reply_message->output_block($level-1);
 					?>
 				</div>
@@ -1287,13 +1287,13 @@ class ucm_twitter_message{
 				$from = preg_replace('#[^0-9]#','',$this->get('twitter_from_id'));
 				$to = preg_replace('#[^0-9]#','',$this->get('twitter_to_id'));
 				if($from && $to){
-					$sql = "SELECT * FROM `"._support_hub_DB_PREFIX."social_twitter_message` WHERE `type` = "._TWITTER_MESSAGE_TYPE_DIRECT." AND message_time <= ".(int)$this->get('message_time')." AND social_twitter_message_id != ".(int)$this->social_twitter_message_id." AND social_twitter_id = ".(int)$this->twitter_account->get('social_twitter_id')." AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ORDER BY `message_time` DESC LIMIT 1";
-					$previous = ucm_qa1($sql);
-					if($previous && $previous['social_twitter_message_id']){
+					$sql = "SELECT * FROM `"._support_hub_DB_PREFIX."shub_twitter_message` WHERE `type` = "._TWITTER_MESSAGE_TYPE_DIRECT." AND message_time <= ".(int)$this->get('message_time')." AND shub_twitter_message_id != ".(int)$this->shub_twitter_message_id." AND shub_twitter_id = ".(int)$this->twitter_account->get('shub_twitter_id')." AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ORDER BY `message_time` DESC LIMIT 1";
+					$previous = shub_qa1($sql);
+					if($previous && $previous['shub_twitter_message_id']){
 						?>
 						<div class="twitter_previous_messages twitter_direct">
 							<?php
-							$reply_message = new ucm_twitter_message($this->twitter_account, $previous['social_twitter_message_id']);
+							$reply_message = new shub_twitter_message($this->twitter_account, $previous['shub_twitter_message_id']);
 							$reply_message->output_block($level-1);
 							?>
 						</div>
@@ -1311,7 +1311,7 @@ class ucm_twitter_message{
 			}
 			//echo '<pre>'; print_r($twitter_data); echo '</pre>';
 			?>
-			<div class="twitter_comment <?php echo $level != 0 ? ' twitter_comment_clickable' : 'twitter_comment_current';?>" data-id="<?php echo $this->social_twitter_message_id;?>" data-link="<?php echo $this->link_open();?>" data-title="<?php echo __('Tweet','support_hub');?>" data-socialtwittermessageid="<?php echo (int)$this->get('social_twitter_message_id');?>">
+			<div class="twitter_comment <?php echo $level != 0 ? ' twitter_comment_clickable' : 'twitter_comment_current';?>" data-id="<?php echo $this->shub_twitter_message_id;?>" data-link="<?php echo $this->link_open();?>" data-title="<?php echo __('Tweet','support_hub');?>" data-socialtwittermessageid="<?php echo (int)$this->get('shub_twitter_message_id');?>">
 				<div class="twitter_comment_picture">
 					<?php 
 					if(isset($twitter_data['user']['id_str'])){
@@ -1335,9 +1335,9 @@ class ucm_twitter_message{
 					?>
 				</div>
 				<div class="twitter_comment_header">
-					<?php _e('From:'); echo ' '; echo $message_from ? ucm_twitter::format_person($message_from) : 'N/A'; ?>
+					<?php _e('From:'); echo ' '; echo $message_from ? shub_twitter::format_person($message_from) : 'N/A'; ?>
 					<span><?php $time = strtotime($this->get('message_time'));
-					echo $time ? ' @ ' . ucm_print_date($time,true) : '';
+					echo $time ? ' @ ' . shub_print_date($time,true) : '';
 
 					if ( $this->get('user_id') ) {
 						$user_info = get_userdata($this->get('user_id'));
@@ -1364,7 +1364,7 @@ class ucm_twitter_message{
 						}
 					} ?>
 					<div>
-						<?php echo ucm_forum_text($this->get('summary'));?>
+						<?php echo shub_forum_text($this->get('summary'));?>
 					</div>
 					<div class="twitter_comment_stats">
 						<?php
@@ -1409,13 +1409,13 @@ class ucm_twitter_message{
 				$from = preg_replace('#[^0-9]#','',$this->get('twitter_from_id'));
 				$to = preg_replace('#[^0-9]#','',$this->get('twitter_to_id'));
 				if($from && $to){
-					$sql = "SELECT * FROM `"._support_hub_DB_PREFIX."social_twitter_message` WHERE `type` = "._TWITTER_MESSAGE_TYPE_DIRECT." AND message_time >= ".(int)$this->get('message_time')." AND social_twitter_message_id != ".(int)$this->social_twitter_message_id." AND social_twitter_id = ".(int)$this->twitter_account->get('social_twitter_id')." AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ORDER BY `message_time` ASC LIMIT 1";
-					$next = ucm_qa1($sql);
-					if($next && $next['social_twitter_message_id']){
+					$sql = "SELECT * FROM `"._support_hub_DB_PREFIX."shub_twitter_message` WHERE `type` = "._TWITTER_MESSAGE_TYPE_DIRECT." AND message_time >= ".(int)$this->get('message_time')." AND shub_twitter_message_id != ".(int)$this->shub_twitter_message_id." AND shub_twitter_id = ".(int)$this->twitter_account->get('shub_twitter_id')." AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ORDER BY `message_time` ASC LIMIT 1";
+					$next = shub_qa1($sql);
+					if($next && $next['shub_twitter_message_id']){
 						?>
 						<div class="twitter_next_messages twitter_direct">
 							<?php
-							$reply_message = new ucm_twitter_message($this->twitter_account, $next['social_twitter_message_id']);
+							$reply_message = new shub_twitter_message($this->twitter_account, $next['shub_twitter_message_id']);
 							$reply_message->output_block($level + 1);
 							?>
 						</div>
@@ -1423,18 +1423,18 @@ class ucm_twitter_message{
 					}
 				}
 			}else{
-				$next = ucm_get_multiple( 'social_twitter_message', array(
-						'social_twitter_id' => $this->twitter_account->get( 'social_twitter_id' ),
-						'reply_to_id' => $this->social_twitter_message_id,
-					), 'social_twitter_message_id' );
+				$next = shub_get_multiple( 'shub_twitter_message', array(
+						'shub_twitter_id' => $this->twitter_account->get( 'shub_twitter_id' ),
+						'reply_to_id' => $this->shub_twitter_message_id,
+					), 'shub_twitter_message_id' );
 				if ( $next ) {
 					foreach($next as $n) {
 						// this tweet is a reply to a previous tweet!
-						if($n['social_twitter_message_id']) {
+						if($n['shub_twitter_message_id']) {
 							?>
 							<div class="twitter_next_messages">
 								<?php
-								$reply_message = new ucm_twitter_message( $this->twitter_account, $n['social_twitter_message_id'] );
+								$reply_message = new shub_twitter_message( $this->twitter_account, $n['shub_twitter_message_id'] );
 								$reply_message->output_block( $level + 1 );
 								?>
 							</div>
@@ -1449,14 +1449,14 @@ class ucm_twitter_message{
 
 	public function full_message_output($can_reply = false){
 		$this->can_reply = $can_reply;
-		// used in social_twitter_list.php to display the full message and its comments
+		// used in shub_twitter_list.php to display the full message and its comments
 
 
 		$this->output_block(0);
 	}
 
 	public function reply_box($level=0, $message_from = array()){
-		if($this->twitter_account &&  $this->social_twitter_message_id && (int)$this->get('social_twitter_id') > 0 && $this->get('social_twitter_id') == $this->twitter_account->get('social_twitter_id')) {
+		if($this->twitter_account &&  $this->shub_twitter_message_id && (int)$this->get('shub_twitter_id') > 0 && $this->get('shub_twitter_id') == $this->twitter_account->get('shub_twitter_id')) {
 			// who are we replying to?
 			$account_data = @json_decode($this->twitter_account->get('twitter_data'),true);
 			?>
@@ -1477,7 +1477,7 @@ class ucm_twitter_message{
 					} ?>
 				</div>
 				<div class="twitter_comment_header">
-					<?php echo ucm_twitter::format_person( $account_data ); ?>
+					<?php echo shub_twitter::format_person( $account_data ); ?>
 				</div>
 				<div class="twitter_comment_reply">
 					<textarea placeholder="Write a reply..." class="twitter_compose_message"><?php
@@ -1485,7 +1485,7 @@ class ucm_twitter_message{
 							echo '@'.htmlspecialchars($message_from['screen_name']).' ';
 						}
 						?></textarea>
-					<button data-id="<?php echo (int)$this->social_twitter_message_id;?>" data-account-id="<?php echo (int)$this->get('social_twitter_id');?>"><?php _e('Send');?></button>
+					<button data-id="<?php echo (int)$this->shub_twitter_message_id;?>" data-account-id="<?php echo (int)$this->get('shub_twitter_id');?>"><?php _e('Send');?></button>
 					<div style="clear:both;">
 				    <span class="twitter_characters_remain"><span>140</span> characters remaining.</span>
 					<br/>
@@ -1515,12 +1515,12 @@ class ucm_twitter_message{
 		}
 	}
 	public function send_queued($debug = false){
-		if($this->twitter_account && $this->social_twitter_message_id) {
+		if($this->twitter_account && $this->shub_twitter_message_id) {
 			// send this message out to twitter.
 			// this is run when user is composing a new message from the UI,
-			if ( $this->get( 'status' ) == _SOCIAL_MESSAGE_STATUS_SENDING )
+			if ( $this->get( 'status' ) == _shub_MESSAGE_STATUS_SENDING )
 				return; // dont double up on cron.
-			$this->update( 'status', _SOCIAL_MESSAGE_STATUS_SENDING );
+			$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
 
 			$user_post_data = @json_decode($this->get('data'),true);
 
@@ -1535,7 +1535,7 @@ class ucm_twitter_message{
 			);
 			$reply_message = false;
 			if($this->get('reply_to_id')){
-				$reply_message = new ucm_twitter_message(false, $this->get('reply_to_id'));
+				$reply_message = new shub_twitter_message(false, $this->get('reply_to_id'));
 				if($reply_message && $reply_message->get('twitter_message_id')){
 					$post_data['in_reply_to_status_id'] = $reply_message->get('twitter_message_id');
 				}else{
@@ -1648,10 +1648,10 @@ class ucm_twitter_message{
 			}
 
 			// successfully sent, mark is as answered.
-			$this->update( 'status', _SOCIAL_MESSAGE_STATUS_ANSWERED );
+			$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
 			if($reply_message){
 				//archive the message we replied to as well
-				$reply_message->update( 'status', _SOCIAL_MESSAGE_STATUS_ANSWERED );
+				$reply_message->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
 			}
 			return true;
 		}
@@ -1686,7 +1686,7 @@ class ucm_twitter_message{
 	}
 
 	public function get_from() {
-		if($this->social_twitter_message_id){
+		if($this->shub_twitter_message_id){
 			$from = array();
 			$data = @json_decode($this->get('data'),true);
 			if(isset($data['user']['id_str'])){
@@ -1713,7 +1713,7 @@ class ucm_twitter_message{
 	}
 
 	public function link_open(){
-		return 'admin.php?page=support_hub_main&social_twitter_id='.$this->twitter_account->get('social_twitter_id').'&social_twitter_message_id='.$this->social_twitter_message_id;
+		return 'admin.php?page=support_hub_main&shub_twitter_id='.$this->twitter_account->get('shub_twitter_id').'&shub_twitter_message_id='.$this->shub_twitter_message_id;
 	}
 
 

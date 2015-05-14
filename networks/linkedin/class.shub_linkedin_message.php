@@ -1,27 +1,27 @@
 <?php
 
-class ucm_linkedin_message{
+class shub_linkedin_message{
 
-	public function __construct($linkedin_account = false, $linkedin_group = false, $social_linkedin_message_id = false){
+	public function __construct($linkedin_account = false, $linkedin_group = false, $shub_linkedin_message_id = false){
 		$this->linkedin_account = $linkedin_account;
 		$this->linkedin_group = $linkedin_group;
-		$this->load($social_linkedin_message_id);
+		$this->load($shub_linkedin_message_id);
 	}
 
-	/* @var $linkedin_group ucm_linkedin_group */
+	/* @var $linkedin_group shub_linkedin_group */
 	private $linkedin_group= false;
-	/* @var $linkedin_account ucm_linkedin_account */
+	/* @var $linkedin_account shub_linkedin_account */
 	private $linkedin_account = false;
-	private $social_linkedin_message_id = false; // the current user id in our system.
+	private $shub_linkedin_message_id = false; // the current user id in our system.
     private $details = array();
 
 	private function reset(){
-		$this->social_linkedin_message_id = false;
+		$this->shub_linkedin_message_id = false;
 		$this->details = array(
-			'social_linkedin_message_id' => '',
+			'shub_linkedin_message_id' => '',
 			'marketing_message_id' => '',
-			'social_linkedin_group_id' => '',
-			'social_linkedin_id' => '',
+			'shub_linkedin_group_id' => '',
+			'shub_linkedin_id' => '',
 			'linkedin_id' => '',
 			'summary' => '',
 			'last_active' => '',
@@ -39,8 +39,8 @@ class ucm_linkedin_message{
 
 	public function create_new(){
 		$this->reset();
-		$this->social_linkedin_message_id = ucm_update_insert('social_linkedin_message_id',false,'social_linkedin_message',array());
-		$this->load($this->social_linkedin_message_id);
+		$this->shub_linkedin_message_id = shub_update_insert('shub_linkedin_message_id',false,'shub_linkedin_message',array());
+		$this->load($this->shub_linkedin_message_id);
 	}
 
 	public function load_by_linkedin_id($linkedin_id, $message_data, $type, $debug = false, $refresh_from_api = false){
@@ -51,10 +51,10 @@ class ucm_linkedin_message{
 				if($debug){
 					echo "Processing share $linkedin_id <br>\n";
 				}
-				$existing = ucm_get_single('social_linkedin_message', 'linkedin_id', $linkedin_id);
+				$existing = shub_get_single('shub_linkedin_message', 'linkedin_id', $linkedin_id);
 				if($existing && !$refresh_from_api){
 					// load it up.
-					$this->load($existing['social_linkedin_message_id']);
+					$this->load($existing['shub_linkedin_message_id']);
 					// check if comments have changed from original.
 					if(isset($message_data['updateComments']['_total']) && $message_data['updateComments']['_total'] > 0){
 						// api has comments, check if matches.
@@ -89,13 +89,13 @@ class ucm_linkedin_message{
 					if(!$existing){
 						$this->create_new();
 					}else{
-						$this->load($existing['social_linkedin_message_id']);
+						$this->load($existing['shub_linkedin_message_id']);
 						if($debug) {
 							echo "Updating existing message from api: ";
 						}
 					}
-					$this->update('social_linkedin_id',$this->linkedin_account->get('social_linkedin_id'));
-					$this->update('social_linkedin_group_id',0);
+					$this->update('shub_linkedin_id',$this->linkedin_account->get('shub_linkedin_id'));
+					$this->update('shub_linkedin_group_id',0);
 					$this->update('summary',$message_data['updateContent']['person']['currentShare']['comment'] ?: '');
 					$this->update('title',isset($message_data['updateContent']['person']['currentShare']['content']['description']) ? $message_data['updateContent']['person']['currentShare']['content']['description'] : '');
 					$this->update('last_active',round($message_data['timestamp']/1000));
@@ -103,7 +103,7 @@ class ucm_linkedin_message{
 					$this->update('data',json_encode($message_data));
 					$this->update('link',isset($message_data['updateContent']['person']['currentShare']['content']['submittedUrl']) ? $message_data['updateContent']['person']['currentShare']['content']['submittedUrl'] : '');
 					$this->update('linkedin_id', $message_data['updateKey']);
-					$this->update('status',_SOCIAL_MESSAGE_STATUS_UNANSWERED);
+					$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
 					// find any comments.
 					$max_per_api_call = 20;
 					$api_result = $api->api('v1/people/~/network/updates/key='.$linkedin_id.'/update-comments' , array(
@@ -152,10 +152,10 @@ class ucm_linkedin_message{
 				break;
 			case 'group_post':
 
-				$existing = ucm_get_single('social_linkedin_message', 'linkedin_id', $linkedin_id);
+				$existing = shub_get_single('shub_linkedin_message', 'linkedin_id', $linkedin_id);
 				if($existing && !$refresh_from_api){
 					// load it up.
-					$this->load($existing['social_linkedin_message_id']);
+					$this->load($existing['shub_linkedin_message_id']);
 					return true; // already exists in database.
 				}else{
 
@@ -171,13 +171,13 @@ class ucm_linkedin_message{
 						if(!$existing){
 							$this->create_new();
 						}else{
-							$this->load($existing['social_linkedin_message_id']);
+							$this->load($existing['shub_linkedin_message_id']);
 							if($debug) {
 								echo "Updating existing message from api: ";
 							}
 						}
-						$this->update('social_linkedin_id',$this->linkedin_account->get('social_linkedin_id'));
-						$this->update('social_linkedin_group_id',$this->linkedin_group->get('social_linkedin_group_id'));
+						$this->update('shub_linkedin_id',$this->linkedin_account->get('shub_linkedin_id'));
+						$this->update('shub_linkedin_group_id',$this->linkedin_group->get('shub_linkedin_group_id'));
 						$this->update('summary',$api_result['title']); // todo, figure out where teh summary is available in the API?
 						$this->update('title',$api_result['title']);
 						$this->update('last_active',time());
@@ -187,7 +187,7 @@ class ucm_linkedin_message{
 							$this->update('link','http://www.linkedin.com/groupItem?view=&gid='.$matches[1].'&type=member&item='.$matches[2]);
 						}
 						$this->update('linkedin_id', $api_result['id']);
-						$this->update('status',_SOCIAL_MESSAGE_STATUS_UNANSWERED);
+						$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
 						// find any comments.
 						$max_per_api_call = 20;
 						$api_result = $api->api('v1/posts/'.$linkedin_id.'/comments' , array(
@@ -240,16 +240,16 @@ class ucm_linkedin_message{
 
 	}
 
-    public function load($social_linkedin_message_id = false){
-	    if(!$social_linkedin_message_id)$social_linkedin_message_id = $this->social_linkedin_message_id;
+    public function load($shub_linkedin_message_id = false){
+	    if(!$shub_linkedin_message_id)$shub_linkedin_message_id = $this->shub_linkedin_message_id;
 	    $this->reset();
-	    $this->social_linkedin_message_id = $social_linkedin_message_id;
-        if($this->social_linkedin_message_id){
-	        $data = ucm_get_single('social_linkedin_message','social_linkedin_message_id',$this->social_linkedin_message_id);
+	    $this->shub_linkedin_message_id = $shub_linkedin_message_id;
+        if($this->shub_linkedin_message_id){
+	        $data = shub_get_single('shub_linkedin_message','shub_linkedin_message_id',$this->shub_linkedin_message_id);
 	        foreach($this->details as $key=>$val){
 		        $this->details[$key] = $data && isset($data[$key]) ? $data[$key] : $val;
 	        }
-	        if(!is_array($this->details) || !isset($this->details['social_linkedin_message_id']) || $this->details['social_linkedin_message_id'] != $this->social_linkedin_message_id){
+	        if(!is_array($this->details) || !isset($this->details['shub_linkedin_message_id']) || $this->details['shub_linkedin_message_id'] != $this->shub_linkedin_message_id){
 		        $this->reset();
 		        return false;
 	        }
@@ -257,13 +257,13 @@ class ucm_linkedin_message{
         foreach($this->details as $key=>$val){
             $this->{$key} = $val;
         }
-	    if(!$this->linkedin_account && $this->get('social_linkedin_id')){
-		    $this->linkedin_account = new ucm_linkedin_account($this->get('social_linkedin_id'));
+	    if(!$this->linkedin_account && $this->get('shub_linkedin_id')){
+		    $this->linkedin_account = new shub_linkedin_account($this->get('shub_linkedin_id'));
 	    }
-	    if(!$this->linkedin_group && $this->get('social_linkedin_group_id')) {
-		    $this->linkedin_group = new ucm_linkedin_group($this->linkedin_account, $this->get('social_linkedin_group_id'));
+	    if(!$this->linkedin_group && $this->get('shub_linkedin_group_id')) {
+		    $this->linkedin_group = new shub_linkedin_group($this->linkedin_account, $this->get('shub_linkedin_group_id'));
 	    }
-        return $this->social_linkedin_message_id;
+        return $this->shub_linkedin_message_id;
     }
 
 	public function get($field){
@@ -273,21 +273,21 @@ class ucm_linkedin_message{
 
     public function update($field,$value){
 	    // what fields to we allow? or not allow?
-	    if(in_array($field,array('social_linkedin_message_id')))return;
-        if($this->social_linkedin_message_id){
+	    if(in_array($field,array('shub_linkedin_message_id')))return;
+        if($this->shub_linkedin_message_id){
             $this->{$field} = $value;
-            ucm_update_insert('social_linkedin_message_id',$this->social_linkedin_message_id,'social_linkedin_message',array(
+            shub_update_insert('shub_linkedin_message_id',$this->shub_linkedin_message_id,'shub_linkedin_message',array(
 	            $field => $value,
             ));
 		    // special processing for certain fields.
 		    if($field == 'comments'){
-			    // we push all thsee comments into a social_linkedin_message_comment database table
+			    // we push all thsee comments into a shub_linkedin_message_comment database table
 			    // this is so we can do quick lookups on comment ids so we dont import duplicate items from graph (ie: a reply on a comment comes in as a separate item sometimes)
 			    $data = @json_decode($value,true);
 			    if(is_array($data)) {
 				    // clear previous comment history.
-				    $existing_comments = ucm_get_multiple('social_linkedin_message_comment',array('social_linkedin_message_id'=>$this->social_linkedin_message_id),'social_linkedin_message_comment_id');
-				    //ucm_delete_from_db('social_linkedin_message_comment','social_linkedin_message_id',$this->social_linkedin_message_id);
+				    $existing_comments = shub_get_multiple('shub_linkedin_message_comment',array('shub_linkedin_message_id'=>$this->shub_linkedin_message_id),'shub_linkedin_message_comment_id');
+				    //shub_delete_from_db('shub_linkedin_message_comment','shub_linkedin_message_id',$this->shub_linkedin_message_id);
 				    $remaining_comments = $this->_update_comments( $data , $existing_comments);
 				    // $remaining_comments contains any comments that no longer exist...
 				    // todo: remove these? yer prolly. do a quick test on removing a comment - i think the only thing is it will show the 'from' name still.
@@ -297,7 +297,7 @@ class ucm_linkedin_message{
     }
 
 	public function parse_links($content = false){
-		if(!$this->get('social_linkedin_message_id'))return;
+		if(!$this->get('shub_linkedin_message_id'))return;
 		// strip out any links in the tweet and write them to the linkedin_message_link table.
 		$url_clickable = '~
 		            ([\\s(<.,;:!?])                                        # 1: Leading whitespace, or punctuation
@@ -323,17 +323,17 @@ class ucm_linkedin_message{
 				$url = trim($url);
 				if(strlen($url)) {
 					// wack this url into the database and replace it with our rewritten url.
-					$social_linkedin_message_link_id = ucm_update_insert( 'social_linkedin_message_link_id', false, 'social_linkedin_message_link', array(
-						'social_linkedin_message_id' => $this->get('social_linkedin_message_id'),
+					$shub_linkedin_message_link_id = shub_update_insert( 'shub_linkedin_message_link_id', false, 'shub_linkedin_message_link', array(
+						'shub_linkedin_message_id' => $this->get('shub_linkedin_message_id'),
 						'link' => $url,
 					) );
-					if($social_linkedin_message_link_id) {
+					if($shub_linkedin_message_link_id) {
 						$new_link = trailingslashit( get_site_url() );
 						$new_link .= strpos( $new_link, '?' ) === false ? '?' : '&';
-						$new_link .= _support_hub_LINKEDIN_LINK_REWRITE_PREFIX . '=' . $social_linkedin_message_link_id;
+						$new_link .= _support_hub_LINKEDIN_LINK_REWRITE_PREFIX . '=' . $shub_linkedin_message_link_id;
 						// basic hash to stop brute force.
 						if(defined('AUTH_KEY')){
-							$new_link .= ':'.substr(md5(AUTH_KEY.' linkedin link '.$social_linkedin_message_link_id),1,5);
+							$new_link .= ':'.substr(md5(AUTH_KEY.' linkedin link '.$shub_linkedin_message_link_id),1,5);
 						}
 						$newsummary = trim(preg_replace('#'.preg_quote($url,'#').'#',$new_link,$summary, 1));
 						if(strlen($newsummary)){// just incase.
@@ -354,10 +354,10 @@ class ucm_linkedin_message{
 		    foreach($data as $comment){
 			    if($comment['id']){
 				    // does this id exist in the db already?
-				    $exists = ucm_get_single('social_linkedin_message_comment',array('linkedin_id','social_linkedin_message_id'),array($comment['id'],$this->social_linkedin_message_id));
+				    $exists = shub_get_single('shub_linkedin_message_comment',array('linkedin_id','shub_linkedin_message_id'),array($comment['id'],$this->shub_linkedin_message_id));
 
-				    $social_linkedin_message_comment_id = ucm_update_insert('social_linkedin_message_comment_id',$exists ? $exists['social_linkedin_message_comment_id'] : false,'social_linkedin_message_comment',array(
-					    'social_linkedin_message_id' => $this->social_linkedin_message_id,
+				    $shub_linkedin_message_comment_id = shub_update_insert('shub_linkedin_message_comment_id',$exists ? $exists['shub_linkedin_message_comment_id'] : false,'shub_linkedin_message_comment',array(
+					    'shub_linkedin_message_id' => $this->shub_linkedin_message_id,
 					    'linkedin_id' => $comment['id'],
 					    'time' => isset($comment['timestamp']) ? round($comment['timestamp']/1000) : (isset($comment['creationTimestamp']) ? round($comment['creationTimestamp']/1000) :0),
 					    'data' => json_encode($comment),
@@ -365,8 +365,8 @@ class ucm_linkedin_message{
 					    'message_to' => '',
 					    'comment_text' => isset($comment['text']) ? $comment['text'] : (isset($comment['comment']) ? $comment['comment'] : ''),
 				    ));
-				    if(isset($existing_comments[$social_linkedin_message_comment_id])){
-					    unset($existing_comments[$social_linkedin_message_comment_id]);
+				    if(isset($existing_comments[$shub_linkedin_message_comment_id])){
+					    unset($existing_comments[$shub_linkedin_message_comment_id]);
 				    }
 				    if(isset($comment['comments']) && is_array($comment['comments'])){
 					    $existing_comments = $this->_update_comments($comment['comments'], $existing_comments);
@@ -378,16 +378,16 @@ class ucm_linkedin_message{
 	}
 
 	public function delete(){
-		if($this->social_linkedin_message_id) {
-			ucm_delete_from_db( 'social_linkedin_message', 'social_linkedin_message_id', $this->social_linkedin_message_id );
+		if($this->shub_linkedin_message_id) {
+			shub_delete_from_db( 'shub_linkedin_message', 'shub_linkedin_message_id', $this->shub_linkedin_message_id );
 		}
 	}
 
 
 	public function mark_as_read(){
-		if($this->social_linkedin_message_id && get_current_user_id()){
-			$sql = "REPLACE INTO `"._support_hub_DB_PREFIX."social_linkedin_message_read` SET `social_linkedin_message_id` = ".(int)$this->social_linkedin_message_id.", `user_id` = ".(int)get_current_user_id().", read_time = ".(int)time();
-			ucm_query($sql);
+		if($this->shub_linkedin_message_id && get_current_user_id()){
+			$sql = "REPLACE INTO `"._support_hub_DB_PREFIX."shub_linkedin_message_read` SET `shub_linkedin_message_id` = ".(int)$this->shub_linkedin_message_id.", `user_id` = ".(int)get_current_user_id().", read_time = ".(int)time();
+			shub_query($sql);
 		}
 	}
 
@@ -420,16 +420,16 @@ class ucm_linkedin_message{
 					<?php } ?>
 				</div>
 				<div class="linkedin_comment_header">
-					<?php echo isset($linkedin_data,$linkedin_data['person']) ? ucm_linkedin::format_person($linkedin_data['person'], $this->linkedin_account) : 'N/A'; ?>
+					<?php echo isset($linkedin_data,$linkedin_data['person']) ? shub_linkedin::format_person($linkedin_data['person'], $this->linkedin_account) : 'N/A'; ?>
 					<span><?php $time = isset($linkedin_data['timestamp']) ? round($linkedin_data['timestamp']/1000) : false;
-					echo $time ? ' @ ' . ucm_print_date($time,true) : '';
+					echo $time ? ' @ ' . shub_print_date($time,true) : '';
 
 					// todo - better this! don't call on every comment, load list in main loop and pass through all results.
 					if ( isset( $linkedin_data['user_id'] ) && $linkedin_data['user_id'] ) {
 						$user_info = get_userdata($linkedin_data['user_id']);
 						echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
 					}else if(isset($linkedin_data['id']) && $linkedin_data['id']) {
-						$exists = ucm_get_single( 'social_linkedin_message_comment', array( 'linkedin_id', 'social_linkedin_message_id' ), array( $linkedin_data['id'], $this->social_linkedin_message_id ) );
+						$exists = shub_get_single( 'shub_linkedin_message_comment', array( 'linkedin_id', 'shub_linkedin_message_id' ), array( $linkedin_data['id'], $this->shub_linkedin_message_id ) );
 						if ( $exists && isset( $exists['user_id'] ) && $exists['user_id'] ) {
 							$user_info = get_userdata($exists['user_id']);
 							echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
@@ -440,7 +440,7 @@ class ucm_linkedin_message{
 				</div>
 				<div class="linkedin_comment_body">
 					<div>
-						<?php echo ucm_forum_text($linkedin_data['comment']);?>
+						<?php echo shub_forum_text($linkedin_data['comment']);?>
 					</div>
 				</div>
 				<div class="linkedin_comment_actions">
@@ -458,18 +458,18 @@ class ucm_linkedin_message{
 				<?php } ?>
 			</div>
 			<div class="linkedin_comment_header">
-				<?php echo isset($linkedin_data['creator']) ? ucm_linkedin::format_person($linkedin_data['creator'], $this->linkedin_account) : (
-					isset($linkedin_data['updateContent']['person']) ? ucm_linkedin::format_person($linkedin_data['updateContent']['person'], $this->linkedin_account) : 'N/A'
+				<?php echo isset($linkedin_data['creator']) ? shub_linkedin::format_person($linkedin_data['creator'], $this->linkedin_account) : (
+					isset($linkedin_data['updateContent']['person']) ? shub_linkedin::format_person($linkedin_data['updateContent']['person'], $this->linkedin_account) : 'N/A'
 				); ?>
 				<span><?php $time = isset($linkedin_data['creationTimestamp']) ? round($linkedin_data['creationTimestamp']/1000) : false;
-				echo $time ? ' @ ' . ucm_print_date($time,true) : '';
+				echo $time ? ' @ ' . shub_print_date($time,true) : '';
 
 				// todo - better this! don't call on every comment, load list in main loop and pass through all results.
 				if ( isset( $linkedin_data['user_id'] ) && $linkedin_data['user_id'] ) {
 					$user_info = get_userdata($linkedin_data['user_id']);
 					echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
 				}else if(isset($linkedin_data['id']) && $linkedin_data['id']) {
-					$exists = ucm_get_single( 'social_linkedin_message_comment', array( 'linkedin_id', 'social_linkedin_message_id' ), array( $linkedin_data['id'], $this->social_linkedin_message_id ) );
+					$exists = shub_get_single( 'shub_linkedin_message_comment', array( 'linkedin_id', 'shub_linkedin_message_id' ), array( $linkedin_data['id'], $this->shub_linkedin_message_id ) );
 					if ( $exists && isset( $exists['user_id'] ) && $exists['user_id'] ) {
 						$user_info = get_userdata($exists['user_id']);
 						echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
@@ -480,7 +480,7 @@ class ucm_linkedin_message{
 			</div>
 			<div class="linkedin_comment_body">
 				<div>
-					<?php echo ucm_forum_text(isset($linkedin_data['text']) ? $linkedin_data['text'] : (isset($linkedin_data['message']) ? $linkedin_data['message'] : 'Unknown Comment'));?>
+					<?php echo shub_forum_text(isset($linkedin_data['text']) ? $linkedin_data['text'] : (isset($linkedin_data['message']) ? $linkedin_data['message'] : 'Unknown Comment'));?>
 				</div>
 				<?php if(isset($linkedin_data['updateContent']['person']['currentShare']['content']['thumbnailUrl']) && $linkedin_data['updateContent']['person']['currentShare']['content']['thumbnailUrl']){ ?>
 				<div class="linkedin_picture">
@@ -531,7 +531,7 @@ class ucm_linkedin_message{
 
 	public function full_message_output($can_reply = false){
 		$this->can_reply = $can_reply;
-		// used in social_linkedin_list.php to display the full message and its comments
+		// used in shub_linkedin_list.php to display the full message and its comments
 		switch($this->get('type')){
 			default:
 				$linkedin_data = @json_decode($this->get('data'),true);
@@ -546,7 +546,7 @@ class ucm_linkedin_message{
 	}
 
 	public function reply_box($linkedin_id,$level=1){
-		if($this->linkedin_account && $this->social_linkedin_message_id) {
+		if($this->linkedin_account && $this->shub_linkedin_message_id) {
 			$user_data = @json_decode($this->linkedin_account->get('linkedin_data'),true);
 
 			?>
@@ -555,11 +555,11 @@ class ucm_linkedin_message{
 					<img src="<?php echo $user_data && isset($user_data['pictureUrl']) ? $user_data['pictureUrl'] : '#';?>">
 				</div>
 				<div class="linkedin_comment_header">
-					<?php echo ucm_linkedin::format_person( $user_data, $this->linkedin_account ); ?>
+					<?php echo shub_linkedin::format_person( $user_data, $this->linkedin_account ); ?>
 				</div>
 				<div class="linkedin_comment_reply">
 					<textarea placeholder="Write a reply..."></textarea>
-					<button data-linkedin-id="<?php echo htmlspecialchars($linkedin_id);?>" data-id="<?php echo (int)$this->social_linkedin_message_id;?>"><?php _e('Send');?></button>
+					<button data-linkedin-id="<?php echo htmlspecialchars($linkedin_id);?>" data-id="<?php echo (int)$this->shub_linkedin_message_id;?>"><?php _e('Send');?></button>
 					<br/>
 					(debug) <input type="checkbox" name="debug" class="reply-debug" value="1">
 				</div>
@@ -587,10 +587,10 @@ class ucm_linkedin_message{
 		}
 	}
 	public function send_queued($debug = false){
-		if($this->linkedin_account && $this->social_linkedin_message_id) {
+		if($this->linkedin_account && $this->shub_linkedin_message_id) {
 			// send this message out to linkedin.
 			// this is run when user is composing a new message from the UI,
-			if ( $this->get( 'status' ) == _SOCIAL_MESSAGE_STATUS_SENDING )
+			if ( $this->get( 'status' ) == _shub_MESSAGE_STATUS_SENDING )
 				return; // dont double up on cron.
 
 
@@ -603,7 +603,7 @@ class ucm_linkedin_message{
 						return false;
 					}
 
-					$this->update( 'status', _SOCIAL_MESSAGE_STATUS_SENDING );
+					$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
 					$api = $this->linkedin_account->get_api();
 					$linkedin_group_id = $this->linkedin_group->get('group_id');
 					if($debug)echo "Sending a new message to linkedin Group ID: $linkedin_group_id <br>\n";
@@ -629,13 +629,13 @@ class ucm_linkedin_message{
 					}
 
 					// successfully sent, mark is as answered.
-					$this->update( 'status', _SOCIAL_MESSAGE_STATUS_ANSWERED );
+					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
 					return true;
 
 					break;
 				case 'share':
 
-					$this->update( 'status', _SOCIAL_MESSAGE_STATUS_SENDING );
+					$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
 					$api = $this->linkedin_account->get_api();
 					if($debug)echo "Sending a new share update to linkedin account: " . $this->linkedin_account->get('linkedin_name') ."<br>\n";
 					$result = false;
@@ -688,7 +688,7 @@ class ucm_linkedin_message{
 					}
 
 					// successfully sent, mark is as answered.
-					$this->update( 'status', _SOCIAL_MESSAGE_STATUS_ANSWERED );
+					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
 					return true;
 
 					break;
@@ -700,7 +700,7 @@ class ucm_linkedin_message{
 		return false;
 	}
 	public function send_reply($linkedin_id, $message, $debug = false){
-		if($this->linkedin_account && $this->social_linkedin_message_id) {
+		if($this->linkedin_account && $this->shub_linkedin_message_id) {
 
 
 			$api = $this->linkedin_account->get_api();
@@ -725,10 +725,10 @@ class ucm_linkedin_message{
 
 					// hack to add the 'user_id' of who created this reply to the db for logging.
 					// the comment is added to our db in the "load_bu_linkedin_id" api call.
-					$existing_comments = ucm_get_multiple('social_linkedin_message_comment',array('social_linkedin_message_id'=>$this->get('social_linkedin_message_id')),'social_linkedin_message_comment_id');
+					$existing_comments = shub_get_multiple('shub_linkedin_message_comment',array('shub_linkedin_message_id'=>$this->get('shub_linkedin_message_id')),'shub_linkedin_message_comment_id');
 					foreach($existing_comments as $existing_comment){
 						if(!$existing_comment['user_id'] && $existing_comment['comment_text'] == $message){
-							ucm_update_insert('social_linkedin_message_comment_id',$existing_comment['social_linkedin_message_comment_id'],'social_linkedin_message_comment',array(
+							shub_update_insert('shub_linkedin_message_comment_id',$existing_comment['shub_linkedin_message_comment_id'],'shub_linkedin_message_comment',array(
 								'user_id' => get_current_user_id(),
 							));
 						}
@@ -758,10 +758,10 @@ class ucm_linkedin_message{
 
 					// hack to add the 'user_id' of who created this reply to the db for logging.
 					// the comment is added to our db in the "load_bu_linkedin_id" api call.
-					$existing_comments = ucm_get_multiple('social_linkedin_message_comment',array('social_linkedin_message_id'=>$this->get('social_linkedin_message_id')),'social_linkedin_message_comment_id');
+					$existing_comments = shub_get_multiple('shub_linkedin_message_comment',array('shub_linkedin_message_id'=>$this->get('shub_linkedin_message_id')),'shub_linkedin_message_comment_id');
 					foreach($existing_comments as $existing_comment){
 						if(!$existing_comment['user_id'] && $existing_comment['comment_text'] == $message){
-							ucm_update_insert('social_linkedin_message_comment_id',$existing_comment['social_linkedin_message_comment_id'],'social_linkedin_message_comment',array(
+							shub_update_insert('shub_linkedin_message_comment_id',$existing_comment['shub_linkedin_message_comment_id'],'shub_linkedin_message_comment',array(
 								'user_id' => get_current_user_id(),
 							));
 						}
@@ -806,7 +806,7 @@ class ucm_linkedin_message{
 	}
 
 	public function get_from() {
-		if($this->social_linkedin_message_id){
+		if($this->shub_linkedin_message_id){
 			$from = array();
 			$data = @json_decode($this->get('data'),true);
 			if(isset($data['creator']['id'])){
@@ -824,7 +824,7 @@ class ucm_linkedin_message{
 				);
 			}
 
-			$messages = ucm_get_multiple('social_linkedin_message_comment',array('social_linkedin_message_id'=>$this->social_linkedin_message_id),'social_linkedin_message_comment_id');
+			$messages = shub_get_multiple('shub_linkedin_message_comment',array('shub_linkedin_message_id'=>$this->shub_linkedin_message_id),'shub_linkedin_message_comment_id');
 			foreach($messages as $message){
 				if($message['message_from']){
 					$data = @json_decode($message['message_from'],true);
@@ -844,7 +844,7 @@ class ucm_linkedin_message{
 
 
 	public function link_open(){
-		return 'admin.php?page=support_hub_main&social_linkedin_id='.$this->linkedin_account->get('social_linkedin_id').'&social_linkedin_message_id='.$this->social_linkedin_message_id;
+		return 'admin.php?page=support_hub_main&shub_linkedin_id='.$this->linkedin_account->get('shub_linkedin_id').'&shub_linkedin_message_id='.$this->shub_linkedin_message_id;
 	}
 
 

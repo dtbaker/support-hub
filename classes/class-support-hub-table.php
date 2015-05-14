@@ -130,7 +130,7 @@ class support_hub_Account_Data_List_Table extends WP_List_Table {
 
 
 
-class SimpleSocialMessageList extends support_hub_Account_Data_List_Table{
+class SupportHubMessageList extends support_hub_Account_Data_List_Table{
     private $row_output = array();
 
 	public $available_networks = array(
@@ -151,9 +151,9 @@ class SimpleSocialMessageList extends support_hub_Account_Data_List_Table{
 
 	function column_cb( $item ) {
 		foreach($this->available_networks as $network){
-			if(isset($item['social_'.$network.'_message_id'])){
+			if(isset($item['shub_'.$network.'_message_id'])){
 			    return sprintf(
-				    '<input type="checkbox" name="social_message['.$network.'][]" value="%s" />', $item['social_'.$network.'_message_id']
+				    '<input type="checkbox" name="shub_message['.$network.'][]" value="%s" />', $item['shub_'.$network.'_message_id']
 			    );
 			}
 		}
@@ -177,14 +177,14 @@ class SimpleSocialMessageList extends support_hub_Account_Data_List_Table{
 	        }
 	        switch ( $action ) {
 	            case 'archive':
-					$messages = isset($_POST['social_message']) && is_array($_POST['social_message']) ? $_POST['social_message'] : array();
+					$messages = isset($_POST['shub_message']) && is_array($_POST['shub_message']) ? $_POST['shub_message'] : array();
 					// any facebook messages to process?
 					if(isset($messages) && isset($messages['facebook']) && is_array($messages['facebook'])){
 						foreach($messages['facebook'] as $facebook_message_id){
 							// archive this one.
-							$ucm_facebook_message = new ucm_facebook_message(false, false, $facebook_message_id);
-							if($ucm_facebook_message->get('social_facebook_message_id') == $facebook_message_id){
-								$ucm_facebook_message->update('status',_SOCIAL_MESSAGE_STATUS_ANSWERED);
+							$shub_facebook_message = new shub_facebook_message(false, false, $facebook_message_id);
+							if($shub_facebook_message->get('shub_facebook_message_id') == $facebook_message_id){
+								$shub_facebook_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
 								$change_count++;
 							}
 						}
@@ -192,9 +192,9 @@ class SimpleSocialMessageList extends support_hub_Account_Data_List_Table{
 					if(isset($messages) && isset($messages['twitter']) && is_array($messages['twitter'])){
 						foreach($messages['twitter'] as $twitter_message_id){
 							// archive this one.
-							$ucm_twitter_message = new ucm_twitter_message(false, $twitter_message_id);
-							if($ucm_twitter_message->get('social_twitter_message_id') == $twitter_message_id){
-								$ucm_twitter_message->update('status',_SOCIAL_MESSAGE_STATUS_ANSWERED);
+							$shub_twitter_message = new shub_twitter_message(false, $twitter_message_id);
+							if($shub_twitter_message->get('shub_twitter_message_id') == $twitter_message_id){
+								$shub_twitter_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
 								$change_count++;
 							}
 						}
@@ -202,23 +202,23 @@ class SimpleSocialMessageList extends support_hub_Account_Data_List_Table{
 					if(isset($messages) && isset($messages['google']) && is_array($messages['google'])){
 						foreach($messages['google'] as $google_message_id){
 							// archive this one.
-							$ucm_google_message = new ucm_google_message(false, $google_message_id);
-							if($ucm_google_message->get('social_google_message_id') == $google_message_id){
-								$ucm_google_message->update('status',_SOCIAL_MESSAGE_STATUS_ANSWERED);
+							$shub_google_message = new shub_google_message(false, $google_message_id);
+							if($shub_google_message->get('shub_google_message_id') == $google_message_id){
+								$shub_google_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
 								$change_count++;
 							}
 						}
 					}
 	                break;
 	            case 'un-archive':
-					$messages = isset($_POST['social_message']) && is_array($_POST['social_message']) ? $_POST['social_message'] : array();
+					$messages = isset($_POST['shub_message']) && is_array($_POST['shub_message']) ? $_POST['shub_message'] : array();
 					// any facebook messages to process?
 					if(isset($messages) && isset($messages['facebook']) && is_array($messages['facebook'])){
 						foreach($messages['facebook'] as $facebook_message_id){
 							// archive this one.
-							$ucm_facebook_message = new ucm_facebook_message(false, false, $facebook_message_id);
-							if($ucm_facebook_message->get('social_facebook_message_id') == $facebook_message_id){
-								$ucm_facebook_message->update('status',_SOCIAL_MESSAGE_STATUS_UNANSWERED);
+							$shub_facebook_message = new shub_facebook_message(false, false, $facebook_message_id);
+							if($shub_facebook_message->get('shub_facebook_message_id') == $facebook_message_id){
+								$shub_facebook_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
 								$change_count++;
 							}
 						}
@@ -226,9 +226,9 @@ class SimpleSocialMessageList extends support_hub_Account_Data_List_Table{
 					if(isset($messages) && isset($messages['twitter']) && is_array($messages['twitter'])){
 						foreach($messages['twitter'] as $twitter_message_id){
 							// archive this one.
-							$ucm_twitter_message = new ucm_twitter_message(false, $twitter_message_id);
-							if($ucm_twitter_message->get('social_twitter_message_id') == $twitter_message_id){
-								$ucm_twitter_message->update('status',_SOCIAL_MESSAGE_STATUS_UNANSWERED);
+							$shub_twitter_message = new shub_twitter_message(false, $twitter_message_id);
+							if($shub_twitter_message->get('shub_twitter_message_id') == $twitter_message_id){
+								$shub_twitter_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
 								$change_count++;
 							}
 						}
@@ -236,9 +236,9 @@ class SimpleSocialMessageList extends support_hub_Account_Data_List_Table{
 					if(isset($messages) && isset($messages['google']) && is_array($messages['google'])){
 						foreach($messages['google'] as $google_message_id){
 							// archive this one.
-							$ucm_google_message = new ucm_google_message(false, $google_message_id);
-							if($ucm_google_message->get('social_google_message_id') == $google_message_id){
-								$ucm_google_message->update('status',_SOCIAL_MESSAGE_STATUS_UNANSWERED);
+							$shub_google_message = new shub_google_message(false, $google_message_id);
+							if($shub_google_message->get('shub_google_message_id') == $google_message_id){
+								$shub_google_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
 								$change_count++;
 							}
 						}
@@ -256,20 +256,20 @@ class SimpleSocialMessageList extends support_hub_Account_Data_List_Table{
     function column_default($item, $column_name){
 
 	    foreach($this->available_networks as $network){
-			if(isset($item['social_'.$network.'_message_id'])){
+			if(isset($item['shub_'.$network.'_message_id'])){
 				// pass this row rendering off to the facebook plugin
 			    // todo - don't hack the <td> outputfrom the existing plugin, move that back into this table class
-			    if(!isset($this->row_output[$network][$item['social_'.$network.'_message_id']])){
+			    if(!isset($this->row_output[$network][$item['shub_'.$network.'_message_id']])){
 				    $this->row_output[$network] = array();
 				    ob_start();
 				    $item['message_manager']->output_row($item, array(
 					    'row_class' => $this->row_count++%2 ? 'alternate' : '',
 				    ));
-				    $this->row_output[$network][$item['social_'.$network.'_message_id']] = ob_get_clean();
+				    $this->row_output[$network][$item['shub_'.$network.'_message_id']] = ob_get_clean();
 			    }
-			    if(isset($this->row_output[$network][$item['social_'.$network.'_message_id']])){
+			    if(isset($this->row_output[$network][$item['shub_'.$network.'_message_id']])){
 				    // grep the <td class="column_name"></td>
-				    if(preg_match('#class="'.$column_name.'">(.*)</td>#imsU',$this->row_output[$network][$item['social_'.$network.'_message_id']],$matches)){
+				    if(preg_match('#class="'.$column_name.'">(.*)</td>#imsU',$this->row_output[$network][$item['shub_'.$network.'_message_id']],$matches)){
 					    return $matches[1];
 				    }
 			    }
@@ -280,7 +280,7 @@ class SimpleSocialMessageList extends support_hub_Account_Data_List_Table{
 }
 
 
-class SimpleSocialSentList extends support_hub_Account_Data_List_Table{
+class SupportHubSentList extends support_hub_Account_Data_List_Table{
     private $row_output = array();
 
 	function __construct($args = array()) {
@@ -302,22 +302,22 @@ class SimpleSocialSentList extends support_hub_Account_Data_List_Table{
 	private $column_details = array();
     function column_default($item, $column_name){
 
-	    if(!$item['social_message_id'])return 'DBERR';
-	    if(!isset($this->column_details[$item['social_message_id']])){
-		    $this->column_details[$item['social_message_id']] = array();
+	    if(!$item['shub_message_id'])return 'DBERR';
+	    if(!isset($this->column_details[$item['shub_message_id']])){
+		    $this->column_details[$item['shub_message_id']] = array();
 	    }
 	    // pass this off to our media managers and work out which social accounts sent this message.
 		foreach($this->message_managers as $type => $message_manager){
-			if(!isset($this->column_details[$item['social_message_id']][$type])) {
-				$this->column_details[ $item['social_message_id'] ][ $type ] = $message_manager->get_message_details( $item['social_message_id'] );
+			if(!isset($this->column_details[$item['shub_message_id']][$type])) {
+				$this->column_details[ $item['shub_message_id'] ][ $type ] = $message_manager->get_message_details( $item['shub_message_id'] );
 			}
 		}
 
 	    switch($column_name){
-		    case 'social_column_time':
+		    case 'shub_column_time':
 				$column_data = '';
-				foreach($this->column_details[ $item['social_message_id'] ] as $message_type => $data){
-					if(isset($data['message']) && $data['message']->get('status') == _SOCIAL_MESSAGE_STATUS_PENDINGSEND){
+				foreach($this->column_details[ $item['shub_message_id'] ] as $message_type => $data){
+					if(isset($data['message']) && $data['message']->get('status') == _shub_MESSAGE_STATUS_PENDINGSEND){
 						$time = $data['message']->get('last_active');
 						if(!$time)$time = $data['message']->get('message_time');
 						$now = current_time('timestamp');
@@ -333,13 +333,13 @@ class SimpleSocialSentList extends support_hub_Account_Data_List_Table{
 
 					}
 				}
-				$column_data = ucm_print_date($item['sent_time'],true);
+				$column_data = shub_print_date($item['sent_time'],true);
 				return $column_data;
 			    break;
-		    case 'social_column_action':
+		    case 'shub_column_action':
 			    return '<a href="#" class="button">'. __( 'Open','support_hub' ).'</a>';
 			    break;
-		    case 'social_column_post':
+		    case 'shub_column_post':
 			    if($item['post_id']){
 				    $post = get_post( $item['post_id'] );
 				    if(!$post){
@@ -351,10 +351,10 @@ class SimpleSocialSentList extends support_hub_Account_Data_List_Table{
 				    return __('No Post','support_hub');
 			    }
 			    break;
-		    case 'social_column_social':
+		    case 'shub_column_social':
 		    default:
 				$column_data = '';
-				foreach($this->column_details[ $item['social_message_id'] ] as $message_type => $data){
+				foreach($this->column_details[ $item['shub_message_id'] ] as $message_type => $data){
 					if(isset($data[$column_name]))$column_data .= $data[$column_name];
 				}
 				return $column_data;

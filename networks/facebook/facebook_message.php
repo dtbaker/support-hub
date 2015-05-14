@@ -1,15 +1,15 @@
 <?php
-if(!isset($social_facebook_id) || !isset($social_facebook_message_id)){
+if(!isset($shub_facebook_id) || !isset($shub_facebook_message_id)){
 	exit;
 } ?>
 
 	<?php
 
-if($social_facebook_id && $social_facebook_message_id){
-	$facebook = new ucm_facebook_account($social_facebook_id);
-    if($social_facebook_id && $facebook->get('social_facebook_id') == $social_facebook_id){
-	    $facebook_message = new ucm_facebook_message( $facebook, false, $social_facebook_message_id );
-	    if($social_facebook_message_id && $facebook_message->get('social_facebook_message_id') == $social_facebook_message_id && $facebook_message->get('social_facebook_id') == $social_facebook_id){
+if($shub_facebook_id && $shub_facebook_message_id){
+	$facebook = new shub_facebook_account($shub_facebook_id);
+    if($shub_facebook_id && $facebook->get('shub_facebook_id') == $shub_facebook_id){
+	    $facebook_message = new shub_facebook_message( $facebook, false, $shub_facebook_message_id );
+	    if($shub_facebook_message_id && $facebook_message->get('shub_facebook_message_id') == $shub_facebook_message_id && $facebook_message->get('shub_facebook_id') == $shub_facebook_id){
 
 		    $comments         = $facebook_message->get_comments();
 		    $facebook_message->mark_as_read();
@@ -19,13 +19,13 @@ if($social_facebook_id && $social_facebook_message_id){
 			<form action="" method="post" id="facebook_edit_form">
 				<div id="facebook_message_header">
 					<div style="float:right; text-align: right; margin-top:-4px;">
-						<small><?php echo ucm_print_date( $facebook_message->get('last_active'), true ); ?> </small><br/>
-					    <?php if($facebook_message->get('status') == _SOCIAL_MESSAGE_STATUS_ANSWERED){  ?>
+						<small><?php echo shub_print_date( $facebook_message->get('last_active'), true ); ?> </small><br/>
+					    <?php if($facebook_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 						    <a href="#" class="socialfacebook_message_action  btn btn-default btn-xs button"
-						       data-action="set-unanswered" data-id="<?php echo (int)$facebook_message->get('social_facebook_message_id');?>"><?php _e( 'Inbox' ); ?></a>
+						       data-action="set-unanswered" data-id="<?php echo (int)$facebook_message->get('shub_facebook_message_id');?>"><?php _e( 'Inbox' ); ?></a>
 					    <?php }else{ ?>
 						    <a href="#" class="socialfacebook_message_action  btn btn-default btn-xs button"
-						       data-action="set-answered" data-id="<?php echo (int)$facebook_message->get('social_facebook_message_id');?>"><?php _e( 'Archive' ); ?></a>
+						       data-action="set-answered" data-id="<?php echo (int)$facebook_message->get('shub_facebook_message_id');?>"><?php _e( 'Archive' ); ?></a>
 					    <?php } ?>
 					</div>
 					<img src="<?php echo plugins_url('networks/facebook/facebook.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="facebook_icon">
@@ -50,17 +50,17 @@ if($social_facebook_id && $social_facebook_message_id){
     }
 }
 
-if($social_facebook_id && !(int)$social_facebook_message_id){
-	$facebook = new ucm_facebook_account($social_facebook_id);
-    if($social_facebook_id && $facebook->get('social_facebook_id') == $social_facebook_id){
+if($shub_facebook_id && !(int)$shub_facebook_message_id){
+	$facebook = new shub_facebook_account($shub_facebook_id);
+    if($shub_facebook_id && $facebook->get('shub_facebook_id') == $shub_facebook_id){
 
-	    /* @var $pages ucm_facebook_page[] */
+	    /* @var $pages shub_facebook_page[] */
 	    $pages = $facebook->get('pages');
 	    //print_r($pages);
 	    ?>
 	    <form action="" method="post" enctype="multipart/form-data">
 		    <input type="hidden" name="_process" value="send_facebook_message">
-			<?php wp_nonce_field( 'send-facebook' . (int) $facebook->get( 'social_facebook_id' ) ); ?>
+			<?php wp_nonce_field( 'send-facebook' . (int) $facebook->get( 'shub_facebook_id' ) ); ?>
 		    <?php
 		    $fieldset_data = array(
 			    'heading' => array(
@@ -216,7 +216,7 @@ if($social_facebook_id && !(int)$social_facebook_message_id){
 				    '</div>'
 			    ;
 		    }
-			echo module_form::generate_fieldset($fieldset_data);
+			echo shub_module_form::generate_fieldset($fieldset_data);
 
 
 		    ?>

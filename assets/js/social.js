@@ -3,9 +3,9 @@ ucm.social = {
 
     modal_url: '',
     init: function(){
-        //jQuery('.social_modal').addClass('thickbox');
+        //jQuery('.shub_modal').addClass('thickbox');
 
-        /*var p = jQuery('#social_modal_popup');
+        /*var p = jQuery('#shub_modal_popup');
         p.dialog({
             autoOpen: false,
             width: 700,
@@ -36,7 +36,7 @@ ucm.social = {
         });*/
         jQuery('.support_hub_date_field').datepicker({ dateFormat: 'yy-mm-dd' });
         jQuery('.support_hub_time_field').timepicker();
-        jQuery('body').delegate('.social_modal','click',function(){
+        jQuery('body').delegate('.shub_modal','click',function(){
             ucm.social.open_modal(jQuery(this).attr('href'), jQuery(this).data('modaltitle'), jQuery(this).data());
             return false;
         });
@@ -44,7 +44,7 @@ ucm.social = {
     close_modal: function(){
         tb_remove();
         return;
-        var p = jQuery('#social_modal_popup');
+        var p = jQuery('#shub_modal_popup');
         p.dialog('close');
     },
     open_modal: function(url, title, data){
@@ -57,7 +57,7 @@ ucm.social = {
         url += '&height=' + (jQuery(window).height()-200);
         tb_show(title, url );
         return;
-        var p = jQuery('#social_modal_popup');
+        var p = jQuery('#shub_modal_popup');
         p.dialog('close');
         ucm.social.modal_url = url;
         p.dialog('option', 'title', title);

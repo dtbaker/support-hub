@@ -33,7 +33,7 @@ ucm.social.twitter = {
                             action: 'support_hub_send-message-reply',
                             wp_nonce: support_hub.wp_nonce,
                             id: jQuery(this).data('id'),
-                            social_twitter_id: jQuery(this).data('account-id'),
+                            shub_twitter_id: jQuery(this).data('account-id'),
                             message: message,
                             debug: jQuery(p).find('.reply-debug')[0].checked ? 1 : 0,
                             form_auth_key: ucm.form_auth_key
@@ -80,8 +80,8 @@ ucm.social.twitter = {
             data: {
                 action: 'support_hub_'+jQuery(this).data('action'),
                 wp_nonce: support_hub.wp_nonce,
-                social_twitter_message_id: jQuery(this).data('id'),
-                social_twitter_id: jQuery(this).data('social_twitter_id'),
+                shub_twitter_message_id: jQuery(this).data('id'),
+                shub_twitter_id: jQuery(this).data('shub_twitter_id'),
                 form_auth_key: ucm.form_auth_key
             },
             dataType: 'script',

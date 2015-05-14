@@ -1,12 +1,12 @@
-ucm.social.facebook = {
+ucm.social.linkedin = {
     api_url: '',
     init: function(){
 
-        jQuery('body').delegate('.facebook_reply_button','click',function(){
-            var f = jQuery(this).parents('.facebook_comment').first().next('.facebook_comment_replies').find('.facebook_comment_reply_box');
+        jQuery('body').delegate('.linkedin_reply_button','click',function(){
+            var f = jQuery(this).parents('.linkedin_comment').first().next('.linkedin_comment_replies').find('.linkedin_comment_reply_box');
             f.show();
             f.find('textarea')[0].focus();
-        }).delegate('.facebook_comment_reply textarea','keyup',function(){
+        }).delegate('.linkedin_comment_reply textarea','keyup',function(){
             var a = this;
             if (!jQuery(a).prop('scrollTop')) {
                 do {
@@ -17,7 +17,7 @@ ucm.social.facebook = {
                 while (b && (b != jQuery(a).prop('scrollHeight')));
             }
             jQuery(a).height(jQuery(a).prop('scrollHeight') + 10);
-        }).delegate('.facebook_comment_reply button','click',function(){
+        }).delegate('.linkedin_comment_reply button','click',function(){
             // send a message!
             var p = jQuery(this).parent();
             var txt = jQuery(p).find('textarea');
@@ -26,13 +26,13 @@ ucm.social.facebook = {
                 //txt[0].disabled = true;
                 // show a loading message in place of the box..
                 jQuery.ajax({
-                    url: ucm.social.facebook.api_url,
+                    url: ucm.social.linkedin.api_url,
                     method: 'POST',
                     data: {
                         action: 'support_hub_send-message-reply',
                         wp_nonce: support_hub.wp_nonce,
                         id: jQuery(this).data('id'),
-                        facebook_id: jQuery(this).data('facebook-id'),
+                        linkedin_id: jQuery(this).data('linkedin-id'),
                         message: message,
                         debug: jQuery(p).find('.reply-debug')[0].checked ? 1 : 0,
                         form_auth_key: ucm.form_auth_key
@@ -44,16 +44,16 @@ ucm.social.facebook = {
                         }else if(r && typeof r.message != 'undefined'){
                             p.html("Info: "+ r.message);
                         }else{
-                            p.html("Unknown error, please try reconnecting to Facebook in settings. "+r);
+                            p.html("Unknown error, please try reconnecting to linkedin in settings. "+r);
                         }
                     }
                 });
                 p.html('Sending...');
             }
             return false;
-        }).delegate('.socialfacebook_message_action','click',ucm.social.facebook.message_action);
-        jQuery('.facebook_message_summary a').click(function(){
-            var p = jQuery(this).parents('tr').first().find('.socialfacebook_message_open').click();
+        }).delegate('.sociallinkedin_message_action','click',ucm.social.linkedin.message_action);
+        jQuery('.linkedin_message_summary a').click(function(){
+            var p = jQuery(this).parents('tr').first().find('.sociallinkedin_message_open').click();
             return false;
         });
         /*jQuery('.pagination_links a').click(function(){
@@ -63,12 +63,12 @@ ucm.social.facebook = {
     },
     message_action: function(link){
         jQuery.ajax({
-            url: ucm.social.facebook.api_url,
+            url: ucm.social.linkedin.api_url,
             method: 'POST',
             data: {
                 action: 'support_hub_' + jQuery(this).data('action'),
                 wp_nonce: support_hub.wp_nonce,
-                social_facebook_message_id: jQuery(this).data('id'),
+                shub_linkedin_message_id: jQuery(this).data('id'),
                 form_auth_key: ucm.form_auth_key
             },
             dataType: 'script',
