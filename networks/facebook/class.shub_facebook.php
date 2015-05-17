@@ -1,10 +1,6 @@
 <?php
 
-class shub_facebook {
-
-	public function __construct( ) {
-		$this->reset();
-	}
+class shub_facebook extends SupportHub_network {
 
 
 	public $friendly_name = "Facebook";
@@ -42,8 +38,6 @@ class shub_facebook {
 	}
 
 	public function init_menu(){
-		$page = add_submenu_page( 'support_hub_main', __( 'Facebook Settings', 'support_hub' ) , __( 'Facebook Settings', 'support_hub' ) , 'manage_options' , 'support_hub_facebook_settings' ,  array( $this, 'facebook_settings_page' ) );
-		add_action( 'admin_print_styles-'.$page, array( $this, 'page_assets' ) );
 
 	}
 
@@ -57,7 +51,7 @@ class shub_facebook {
 
 	}
 
-	public function facebook_settings_page(){
+	public function settings_page(){
 		include( dirname(__FILE__) . '/facebook_settings.php');
 	}
 
@@ -594,7 +588,7 @@ class shub_facebook {
 				$facebook = new shub_facebook_account($shub_facebook_id);
 		        if(isset($_POST['butt_delete'])){
 	                $facebook->delete();
-			        $redirect = 'admin.php?page=support_hub_facebook_settings';
+			        $redirect = 'admin.php?page=support_hub_settings&tab=facebook';
 		        }else{
 			        $data = $_POST;
 			        if(isset($_POST['butt_save_reconnect'])){
@@ -713,6 +707,124 @@ class shub_facebook {
 			}
 		}
 		if($debug)echo "Finished Facebook Cron Job \n";
+	}
+
+	public function get_install_sql(){
+
+		global $wpdb;
+
+		$sql = <<< EOT
+
+CREATE TABLE {$wpdb->prefix}shub_facebook (
+  shub_facebook_id int(11) NOT NULL AUTO_INCREMENT,
+  facebook_name varchar(50) NOT NULL,
+  last_checked int(11) NOT NULL DEFAULT '0',
+  last_message int(11) NOT NULL DEFAULT '0',
+  facebook_data text NOT NULL,
+  facebook_token varchar(255) NOT NULL,
+  facebook_app_id varchar(255) NOT NULL,
+  facebook_app_secret varchar(255) NOT NULL,
+  import_personal int(1) NOT NULL DEFAULT '0',
+  machine_id varchar(255) NOT NULL,
+  PRIMARY KEY  shub_facebook_id (shub_facebook_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_facebook_message (
+  shub_facebook_message_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_id int(11) NOT NULL,
+  shub_message_id int(11) NOT NULL DEFAULT '0',
+  shub_facebook_page_id int(11) NOT NULL,
+  shub_facebook_group_id int(11) NOT NULL,
+  facebook_id varchar(255) NOT NULL,
+  summary text NOT NULL,
+  last_active int(11) NOT NULL DEFAULT '0',
+  comments text NOT NULL,
+  type varchar(20) NOT NULL,
+  link varchar(255) NOT NULL,
+  data text NOT NULL,
+  status tinyint(1) NOT NULL DEFAULT '0',
+  user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_facebook_message_id (shub_facebook_message_id),
+  KEY shub_facebook_id (shub_facebook_id),
+  KEY shub_message_id (shub_message_id),
+  KEY last_active (last_active),
+  KEY shub_facebook_page_id (shub_facebook_page_id),
+  KEY facebook_id (facebook_id),
+  KEY status (status)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_facebook_message_read (
+  shub_facebook_message_id int(11) NOT NULL,
+  read_time int(11) NOT NULL DEFAULT '0',
+  user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_facebook_message_id (shub_facebook_message_id,user_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_facebook_message_comment (
+  shub_facebook_message_comment_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_message_id int(11) NOT NULL,
+  facebook_id varchar(255) NOT NULL,
+  time int(11) NOT NULL,
+  message_from text NOT NULL,
+  message_to text NOT NULL,
+  data text NOT NULL,
+  user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_facebook_message_comment_id (shub_facebook_message_comment_id),
+  KEY shub_facebook_message_id (shub_facebook_message_id),
+  KEY facebook_id (facebook_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_facebook_message_link (
+  shub_facebook_message_link_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_message_id int(11) NOT NULL DEFAULT '0',
+  link varchar(255) NOT NULL,
+  PRIMARY KEY  shub_facebook_message_link_id (shub_facebook_message_link_id),
+  KEY shub_facebook_message_id (shub_facebook_message_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_facebook_message_link_click (
+  shub_facebook_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_message_link_id int(11) NOT NULL DEFAULT '0',
+  click_time int(11) NOT NULL,
+  ip_address varchar(20) NOT NULL,
+  user_agent varchar(100) NOT NULL,
+  url_referrer varchar(255) NOT NULL,
+  PRIMARY KEY  shub_facebook_message_link_click_id (shub_facebook_message_link_click_id),
+  KEY shub_facebook_message_link_id (shub_facebook_message_link_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+
+CREATE TABLE {$wpdb->prefix}shub_facebook_page (
+  shub_facebook_page_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_id int(11) NOT NULL,
+  page_name varchar(50) NOT NULL,
+  last_message int(11) NOT NULL DEFAULT '0',
+  last_checked int(11) NOT NULL,
+  page_id varchar(255) NOT NULL,
+  facebook_token varchar(255) NOT NULL,
+  PRIMARY KEY  shub_facebook_page_id (shub_facebook_page_id),
+  KEY shub_facebook_id (shub_facebook_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_facebook_group (
+  shub_facebook_group_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_facebook_id int(11) NOT NULL,
+  group_name varchar(50) NOT NULL,
+  last_message int(11) NOT NULL DEFAULT '0',
+  last_checked int(11) NOT NULL,
+  group_id varchar(255) NOT NULL,
+  administrator int(2) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_facebook_group_id (shub_facebook_group_id),
+  KEY shub_facebook_id (shub_facebook_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+EOT;
+		return $sql;
+
 	}
 
 }

@@ -8,11 +8,6 @@ class SupportHub {
 	private $assets_dir;
 	private $assets_url;
 
-	private $db_version = "1.48";
-	// 1.48 - added facebook group tables.
-	// 1.47 - added linkedin tables.
-	// 1.46 - added linkedin tables.
-
 	/* @var $message_managers shub_facebook[] */
 	public $message_managers = array();
 
@@ -257,6 +252,9 @@ class SupportHub {
 		$page = add_submenu_page('support_hub_main', __( 'Sent', 'support_hub' ), __('Sent' ,'support_hub'), 'edit_pages',  'support_hub_sent' , array($this, 'show_sent'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
+		$page = add_submenu_page('support_hub_main', __( 'Settings', 'support_hub' ), __('Settings' ,'support_hub'), 'edit_pages',  'support_hub_settings' , array($this, 'show_settings'));
+		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
+
 		foreach($this->message_managers as $name => $message_manager) {
 			$message_manager->init_menu();
 		}
@@ -301,6 +299,9 @@ class SupportHub {
 			include( trailingslashit( $this->dir ) . 'pages/setup.php');
 		}
 	}
+	public function show_settings(){
+		include( trailingslashit( $this->dir ) . 'pages/settings.php');
+	}
 
 	public function plugin_updates_page(){
 		include( trailingslashit( $this->dir ) . 'pages/plugin_updates.php');
@@ -328,20 +329,33 @@ class SupportHub {
 	}
 
 	public function db_upgrade_check(){
-        if(get_option("support_hub_db_version") != $this->db_version){
+		// hash the SQL used for install.
+		// if it has changed at all then we run the activation again.
+		$sql = '';
+		foreach($this->message_managers as $name => $message_manager) {
+			$sql .= $message_manager->get_install_sql();
+		}
+		$hash = md5($sql);
+        if(get_option("support_hub_db_hash") != $hash){
 	        $this->activation();
         }
 	}
 	public function deactivation(){
 		wp_clear_scheduled_hook( 'support_hub_cron_job' );
 	}
-	public function activation(){
+	public function activation() {
 
 
 		global $wpdb;
 
-$sql = <<< EOT
+		$sql = '';
+		foreach ( $this->message_managers as $name => $message_manager ) {
+			$sql .= $message_manager->get_install_sql();
+		}
+		$hash = md5( $sql );
 
+		// add our core stuff:
+		$sql .= <<< EOT
 
 CREATE TABLE {$wpdb->prefix}shub_message (
   shub_message_id int(11) NOT NULL AUTO_INCREMENT,
@@ -354,372 +368,20 @@ CREATE TABLE {$wpdb->prefix}shub_message (
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}shub_facebook (
-  shub_facebook_id int(11) NOT NULL AUTO_INCREMENT,
-  facebook_name varchar(50) NOT NULL,
-  last_checked int(11) NOT NULL DEFAULT '0',
-  last_message int(11) NOT NULL DEFAULT '0',
-  facebook_data text NOT NULL,
-  facebook_token varchar(255) NOT NULL,
-  facebook_app_id varchar(255) NOT NULL,
-  facebook_app_secret varchar(255) NOT NULL,
-  import_personal int(1) NOT NULL DEFAULT '0',
-  machine_id varchar(255) NOT NULL,
-  PRIMARY KEY  shub_facebook_id (shub_facebook_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_facebook_message (
-  shub_facebook_message_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_facebook_id int(11) NOT NULL,
-  shub_message_id int(11) NOT NULL DEFAULT '0',
-  shub_facebook_page_id int(11) NOT NULL,
-  shub_facebook_group_id int(11) NOT NULL,
-  facebook_id varchar(255) NOT NULL,
-  summary text NOT NULL,
-  last_active int(11) NOT NULL DEFAULT '0',
-  comments text NOT NULL,
-  type varchar(20) NOT NULL,
-  link varchar(255) NOT NULL,
-  data text NOT NULL,
-  status tinyint(1) NOT NULL DEFAULT '0',
-  user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_facebook_message_id (shub_facebook_message_id),
-  KEY shub_facebook_id (shub_facebook_id),
-  KEY shub_message_id (shub_message_id),
-  KEY last_active (last_active),
-  KEY shub_facebook_page_id (shub_facebook_page_id),
-  KEY facebook_id (facebook_id),
-  KEY status (status)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_facebook_message_read (
-  shub_facebook_message_id int(11) NOT NULL,
-  read_time int(11) NOT NULL DEFAULT '0',
-  user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_facebook_message_id (shub_facebook_message_id,user_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_facebook_message_comment (
-  shub_facebook_message_comment_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_facebook_message_id int(11) NOT NULL,
-  facebook_id varchar(255) NOT NULL,
-  time int(11) NOT NULL,
-  message_from text NOT NULL,
-  message_to text NOT NULL,
-  data text NOT NULL,
-  user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_facebook_message_comment_id (shub_facebook_message_comment_id),
-  KEY shub_facebook_message_id (shub_facebook_message_id),
-  KEY facebook_id (facebook_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_facebook_message_link (
-  shub_facebook_message_link_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_facebook_message_id int(11) NOT NULL DEFAULT '0',
-  link varchar(255) NOT NULL,
-  PRIMARY KEY  shub_facebook_message_link_id (shub_facebook_message_link_id),
-  KEY shub_facebook_message_id (shub_facebook_message_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_facebook_message_link_click (
-  shub_facebook_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_facebook_message_link_id int(11) NOT NULL DEFAULT '0',
-  click_time int(11) NOT NULL,
-  ip_address varchar(20) NOT NULL,
-  user_agent varchar(100) NOT NULL,
-  url_referrer varchar(255) NOT NULL,
-  PRIMARY KEY  shub_facebook_message_link_click_id (shub_facebook_message_link_click_id),
-  KEY shub_facebook_message_link_id (shub_facebook_message_link_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-
-CREATE TABLE {$wpdb->prefix}shub_facebook_page (
-  shub_facebook_page_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_facebook_id int(11) NOT NULL,
-  page_name varchar(50) NOT NULL,
-  last_message int(11) NOT NULL DEFAULT '0',
-  last_checked int(11) NOT NULL,
-  page_id varchar(255) NOT NULL,
-  facebook_token varchar(255) NOT NULL,
-  PRIMARY KEY  shub_facebook_page_id (shub_facebook_page_id),
-  KEY shub_facebook_id (shub_facebook_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_facebook_group (
-  shub_facebook_group_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_facebook_id int(11) NOT NULL,
-  group_name varchar(50) NOT NULL,
-  last_message int(11) NOT NULL DEFAULT '0',
-  last_checked int(11) NOT NULL,
-  group_id varchar(255) NOT NULL,
-  administrator int(2) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_facebook_group_id (shub_facebook_group_id),
-  KEY shub_facebook_id (shub_facebook_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_twitter (
-  shub_twitter_id int(11) NOT NULL AUTO_INCREMENT,
-  twitter_id varchar(255) NOT NULL,
-  twitter_name varchar(50) NOT NULL,
-  twitter_data text NOT NULL,
-  last_checked int(11) NOT NULL DEFAULT '0',
-  user_key varchar(255) NOT NULL,
-  user_secret varchar(255) NOT NULL,
-  import_dm tinyint(1) NOT NULL DEFAULT '0',
-  import_mentions tinyint(1) NOT NULL DEFAULT '0',
-  import_tweets tinyint(1) NOT NULL DEFAULT '0',
-  user_data text NOT NULL,
-  searches text NOT NULL,
-  account_name varchar(80) NOT NULL,
-  PRIMARY KEY  shub_twitter_id (shub_twitter_id),
-  KEY twitter_id (twitter_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_twitter_message (
-  shub_twitter_message_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_twitter_id int(11) NOT NULL,
-  shub_message_id int(11) NOT NULL DEFAULT '0',
-  reply_to_id int(11) NOT NULL DEFAULT '0',
-  twitter_message_id varchar(255) NOT NULL,
-  twitter_from_id varchar(80) NOT NULL,
-  twitter_to_id varchar(80) NOT NULL,
-  twitter_from_name varchar(80) NOT NULL,
-  twitter_to_name varchar(80) NOT NULL,
-  type tinyint(1) NOT NULL DEFAULT '0',
-  status tinyint(1) NOT NULL DEFAULT '0',
-  summary text NOT NULL,
-  message_time int(11) NOT NULL DEFAULT '0',
-  data text NOT NULL,
-  user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_twitter_message_id (shub_twitter_message_id),
-  KEY shub_twitter_id (shub_twitter_id),
-  KEY shub_message_id (shub_message_id),
-  KEY message_time (message_time),
-  KEY status (status),
-  KEY type (type),
-  KEY twitter_message_id (twitter_message_id),
-  KEY twitter_from_id (twitter_from_id,twitter_to_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_twitter_message_read (
-  shub_twitter_message_id int(11) NOT NULL,
-  read_time int(11) NOT NULL DEFAULT '0',
-  user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_twitter_message_id (shub_twitter_message_id,user_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_twitter_message_link (
-  shub_twitter_message_link_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_twitter_message_id int(11) NOT NULL DEFAULT '0',
-  link varchar(255) NOT NULL,
-  PRIMARY KEY  shub_twitter_message_link_id (shub_twitter_message_link_id),
-  KEY shub_twitter_message_id (shub_twitter_message_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_twitter_message_link_click (
-  shub_twitter_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_twitter_message_link_id int(11) NOT NULL DEFAULT '0',
-  click_time int(11) NOT NULL,
-  ip_address varchar(20) NOT NULL,
-  user_agent varchar(100) NOT NULL,
-  url_referrer varchar(255) NOT NULL,
-  PRIMARY KEY  shub_twitter_message_link_click_id (shub_twitter_message_link_click_id),
-  KEY shub_twitter_message_link_id (shub_twitter_message_link_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_google (
-  shub_google_id int(11) NOT NULL AUTO_INCREMENT,
-  username varchar(255) NOT NULL,
-  password varchar(255) NOT NULL,
-  google_id varchar(255) NOT NULL,
-  google_name varchar(50) NOT NULL,
-  google_data text NOT NULL,
-  last_checked int(11) NOT NULL DEFAULT '0',
-  import_comments tinyint(1) NOT NULL DEFAULT '0',
-  import_plusones tinyint(1) NOT NULL DEFAULT '0',
-  import_mentions tinyint(1) NOT NULL DEFAULT '0',
-  user_data text NOT NULL,
-  searches text NOT NULL,
-  api_cookies text NOT NULL,
-  account_name varchar(80) NOT NULL,
-  PRIMARY KEY  shub_google_id (shub_google_id),
-  KEY google_id (google_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_google_message (
-  shub_google_message_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_google_id int(11) NOT NULL,
-  shub_message_id int(11) NOT NULL DEFAULT '0',
-  google_message_id varchar(255) NOT NULL,
-  comment_count int(11) NOT NULL,
-  comments text NOT NULL,
-  share_count int(11) NOT NULL,
-  plusone_count int(11) NOT NULL,
-  google_actor text NOT NULL,
-  google_type varchar(80) NOT NULL,
-  type tinyint(1) NOT NULL DEFAULT '0',
-  status tinyint(1) NOT NULL DEFAULT '0',
-  summary text NOT NULL,
-  summary_latest text NOT NULL,
-  message_time int(11) NOT NULL DEFAULT '0',
-  data text NOT NULL,
-  user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_google_message_id (shub_google_message_id),
-  KEY shub_google_id (shub_google_id),
-  KEY shub_message_id (shub_message_id),
-  KEY message_time (message_time),
-  KEY status (status),
-  KEY type (type),
-  KEY google_message_id (google_message_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_google_message_read (
-  shub_google_message_id int(11) NOT NULL,
-  read_time int(11) NOT NULL DEFAULT '0',
-  user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_google_message_id (shub_google_message_id,user_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_google_message_link (
-  shub_google_message_link_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_google_message_id int(11) NOT NULL DEFAULT '0',
-  link varchar(255) NOT NULL,
-  PRIMARY KEY  shub_google_message_link_id (shub_google_message_link_id),
-  KEY shub_google_message_id (shub_google_message_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_google_message_link_click (
-  shub_google_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_google_message_link_id int(11) NOT NULL DEFAULT '0',
-  click_time int(11) NOT NULL,
-  ip_address varchar(20) NOT NULL,
-  user_agent varchar(100) NOT NULL,
-  url_referrer varchar(255) NOT NULL,
-  PRIMARY KEY  shub_google_message_link_click_id (shub_google_message_link_click_id),
-  KEY shub_google_message_link_id (shub_google_message_link_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_linkedin (
-  shub_linkedin_id int(11) NOT NULL AUTO_INCREMENT,
-  linkedin_name varchar(50) NOT NULL,
-  last_checked int(11) NOT NULL DEFAULT '0',
-  import_stream int(11) NOT NULL DEFAULT '0',
-  post_stream int(11) NOT NULL DEFAULT '0',
-  linkedin_data text NOT NULL,
-  linkedin_token varchar(255) NOT NULL,
-  linkedin_app_id varchar(255) NOT NULL,
-  linkedin_app_secret varchar(255) NOT NULL,
-  machine_id varchar(255) NOT NULL,
-  PRIMARY KEY  shub_linkedin_id (shub_linkedin_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_linkedin_message (
-  shub_linkedin_message_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_linkedin_id int(11) NOT NULL,
-  shub_message_id int(11) NOT NULL DEFAULT '0',
-  shub_linkedin_group_id int(11) NOT NULL,
-  linkedin_id varchar(255) NOT NULL,
-  summary text NOT NULL,
-  title text NOT NULL,
-  last_active int(11) NOT NULL DEFAULT '0',
-  comments text NOT NULL,
-  type varchar(20) NOT NULL,
-  link varchar(255) NOT NULL,
-  data text NOT NULL,
-  status tinyint(1) NOT NULL DEFAULT '0',
-  user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_linkedin_message_id (shub_linkedin_message_id),
-  KEY shub_linkedin_id (shub_linkedin_id),
-  KEY shub_message_id (shub_message_id),
-  KEY last_active (last_active),
-  KEY shub_linkedin_group_id (shub_linkedin_group_id),
-  KEY linkedin_id (linkedin_id),
-  KEY status (status)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_linkedin_message_read (
-  shub_linkedin_message_id int(11) NOT NULL,
-  read_time int(11) NOT NULL DEFAULT '0',
-  user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_linkedin_message_id (shub_linkedin_message_id,user_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_linkedin_message_comment (
-  shub_linkedin_message_comment_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_linkedin_message_id int(11) NOT NULL,
-  linkedin_id varchar(255) NOT NULL,
-  time int(11) NOT NULL,
-  message_from text NOT NULL,
-  message_to text NOT NULL,
-  comment_text text NOT NULL,
-  data text NOT NULL,
-  user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_linkedin_message_comment_id (shub_linkedin_message_comment_id),
-  KEY shub_linkedin_message_id (shub_linkedin_message_id),
-  KEY linkedin_id (linkedin_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_linkedin_message_link (
-  shub_linkedin_message_link_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_linkedin_message_id int(11) NOT NULL DEFAULT '0',
-  link varchar(255) NOT NULL,
-  PRIMARY KEY  shub_linkedin_message_link_id (shub_linkedin_message_link_id),
-  KEY shub_linkedin_message_id (shub_linkedin_message_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_linkedin_message_link_click (
-  shub_linkedin_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_linkedin_message_link_id int(11) NOT NULL DEFAULT '0',
-  click_time int(11) NOT NULL,
-  ip_address varchar(20) NOT NULL,
-  user_agent varchar(100) NOT NULL,
-  url_referrer varchar(255) NOT NULL,
-  PRIMARY KEY  shub_linkedin_message_link_click_id (shub_linkedin_message_link_click_id),
-  KEY shub_linkedin_message_link_id (shub_linkedin_message_link_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_linkedin_group (
-  shub_linkedin_group_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_linkedin_id int(11) NOT NULL,
-  group_name varchar(50) NOT NULL,
-  last_message int(11) NOT NULL DEFAULT '0',
-  last_checked int(11) NOT NULL,
-  group_id varchar(255) NOT NULL,
-  linkedin_token varchar(255) NOT NULL,
-  PRIMARY KEY  shub_linkedin_group_id (shub_linkedin_group_id),
-  KEY shub_linkedin_id (shub_linkedin_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
 EOT;
 
-		$bits = explode(';',$sql);
+		$bits = explode( ';', $sql );
 
-	   require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-		foreach($bits as $sql){
-			if(trim($sql)){
-				dbDelta( trim($sql).';' );
+		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+		foreach ( $bits as $sql ) {
+			if ( trim( $sql ) ) {
+				dbDelta( trim( $sql ) . ';' );
 			}
 		}
 
 		$wpdb->hide_errors();
 
-
-	   update_option( "support_hub_db_version", $this->db_version );
+		update_option( "support_hub_db_hash", $hash );
 	}
 
 	/**

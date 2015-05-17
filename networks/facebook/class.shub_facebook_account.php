@@ -421,23 +421,23 @@ class shub_facebook_account{
 	 * Links for wordpress
 	 */
 	public function link_connect(){
-		return 'admin.php?page=support_hub_facebook_settings&fbconnect&shub_facebook_id='.$this->get('shub_facebook_id');
+		return 'admin.php?page=support_hub_settings&tab=facebook&fbconnect&shub_facebook_id='.$this->get('shub_facebook_id');
 	}
 	public function link_edit(){
-		return 'admin.php?page=support_hub_facebook_settings&shub_facebook_id='.$this->get('shub_facebook_id');
+		return 'admin.php?page=support_hub_settings&tab=facebook&shub_facebook_id='.$this->get('shub_facebook_id');
 	}
 	public function link_new_message(){
 		return 'admin.php?page=support_hub_main&shub_facebook_id='.$this->get('shub_facebook_id').'&shub_facebook_message_id=new';
 	}
 
 	public function link_refresh(){
-		return 'admin.php?page=support_hub_facebook_settings&manualrefresh&shub_facebook_id='.$this->get('shub_facebook_id').'&facebook_feed=true';
+		return 'admin.php?page=support_hub_settings&tab=facebook&manualrefresh&shub_facebook_id='.$this->get('shub_facebook_id').'&facebook_feed=true';
 	}
 	public function link_refresh_groups(){
-		return 'admin.php?page=support_hub_facebook_settings&manualrefresh&shub_facebook_id='.$this->get('shub_facebook_id').'&refresh_data=groups';
+		return 'admin.php?page=support_hub_settings&tab=facebook&manualrefresh&shub_facebook_id='.$this->get('shub_facebook_id').'&refresh_data=groups';
 	}
 	public function link_refresh_pages(){
-		return 'admin.php?page=support_hub_facebook_settings&manualrefresh&shub_facebook_id='.$this->get('shub_facebook_id').'&refresh_data=pages';
+		return 'admin.php?page=support_hub_settings&tab=facebook&manualrefresh&shub_facebook_id='.$this->get('shub_facebook_id').'&refresh_data=pages';
 	}
 
 }

@@ -122,7 +122,7 @@ if($current_account !== false){
                 <ul>
                     <li>Go to <a href="https://www.linkedin.com/secure/developer" target="_blank">https://www.linkedin.com/secure/developer</a>  and click Add New Application</li>
                     <li>Fill out the details similar to this screenshot (use your own Company Name etc..) <a href="<?php echo plugins_url('networks/linkedin/app-setup.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>" target="_blank">click here for screenshot</a> </li>
-	                <li>In the OAuth 2.0 Redirect URLs box, put this address: <strong><?php echo admin_url('admin.php?page=support_hub_linkedin_settings&linkedin_do_oauth_connect');?></strong></li>
+	                <li>In the OAuth 2.0 Redirect URLs box, put this address: <strong><?php echo admin_url('admin.php?page=support_hub_settings&tab=linkedin&linkedin_do_oauth_connect');?></strong></li>
                     <li>After creating the application, copy the <strong>API Key</strong> and <strong>Secret Key</strong> into the boxes below.</li>
                 </ul>
 				<table class="form-table">
@@ -235,7 +235,7 @@ if($current_account !== false){
 	}
 }else{
 	// show account overview:
-	$myListTable = new support_hub_Account_Data_List_Table();
+	$myListTable = new SupportHub_Account_Data_List_Table();
 	$accounts = $shub_linkedin->get_accounts();
 	foreach($accounts as $account_id => $account){
 		$a = new shub_linkedin_account($account['shub_linkedin_id']);
@@ -249,7 +249,7 @@ if($current_account !== false){
 	<div class="wrap">
 		<h2>
 			<?php _e('LinkedIn Accounts','support_hub');?>
-			<a href="?page=<?php echo htmlspecialchars($_GET['page']);?>&shub_linkedin_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
+			<a href="?page=<?php echo esc_attr($_GET['page']);?>&tab=<?php echo esc_attr($_GET['tab']);?>&shub_linkedin_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
 		</h2>
 		<p>
 			<strong>Please Note:</strong> On May 12th, 2015 the LinkedIn API will be changing. LinkedIn integration will <em>stop working</em> on this date. We are working with LinkedIn to try and find an alternative in order to keep the product running smoothly. Check our website for updates.

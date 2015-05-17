@@ -1,10 +1,6 @@
 <?php
 
-class shub_linkedin {
-
-	public function __construct( ) {
-		$this->reset();
-	}
+class shub_linkedin extends SupportHub_network {
 
 	public $friendly_name = "LinkedIn";
 
@@ -40,8 +36,6 @@ class shub_linkedin {
 	}
 
 	public function init_menu(){
-		$page = add_submenu_page( 'support_hub_main', __( 'LinkedIn Settings', 'support_hub' ) , __( 'LinkedIn Settings', 'support_hub' ) , 'manage_options' , 'support_hub_linkedin_settings' ,  array( $this, 'linkedin_settings_page' ) );
-		add_action( 'admin_print_styles-'.$page, array( $this, 'page_assets' ) );
 
 	}
 
@@ -55,7 +49,7 @@ class shub_linkedin {
 
 	}
 
-	public function linkedin_settings_page(){
+	public function settings_page(){
 		include( dirname(__FILE__) . '/linkedin_settings.php');
 	}
 
@@ -472,7 +466,7 @@ class shub_linkedin {
 				$linkedin = new shub_linkedin_account($shub_linkedin_id);
 		        if(isset($_POST['butt_delete'])){
 	                $linkedin->delete();
-			        $redirect = 'admin.php?page=support_hub_linkedin_settings';
+			        $redirect = 'admin.php?page=support_hub_settings&tab=linkedin';
 		        }else{
 			        $linkedin->save_data($_POST);
 			        $shub_linkedin_id = $linkedin->get('shub_linkedin_id');
@@ -570,6 +564,112 @@ class shub_linkedin {
 			}
 		}
 		if($debug)echo "Finished LinkedIn Cron Job \n";
+	}
+
+	public function get_install_sql() {
+
+		global $wpdb;
+
+		$sql = <<< EOT
+
+
+
+CREATE TABLE {$wpdb->prefix}shub_linkedin (
+  shub_linkedin_id int(11) NOT NULL AUTO_INCREMENT,
+  linkedin_name varchar(50) NOT NULL,
+  last_checked int(11) NOT NULL DEFAULT '0',
+  import_stream int(11) NOT NULL DEFAULT '0',
+  post_stream int(11) NOT NULL DEFAULT '0',
+  linkedin_data text NOT NULL,
+  linkedin_token varchar(255) NOT NULL,
+  linkedin_app_id varchar(255) NOT NULL,
+  linkedin_app_secret varchar(255) NOT NULL,
+  machine_id varchar(255) NOT NULL,
+  PRIMARY KEY  shub_linkedin_id (shub_linkedin_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_linkedin_message (
+  shub_linkedin_message_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linkedin_id int(11) NOT NULL,
+  shub_message_id int(11) NOT NULL DEFAULT '0',
+  shub_linkedin_group_id int(11) NOT NULL,
+  linkedin_id varchar(255) NOT NULL,
+  summary text NOT NULL,
+  title text NOT NULL,
+  last_active int(11) NOT NULL DEFAULT '0',
+  comments text NOT NULL,
+  type varchar(20) NOT NULL,
+  link varchar(255) NOT NULL,
+  data text NOT NULL,
+  status tinyint(1) NOT NULL DEFAULT '0',
+  user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_linkedin_message_id (shub_linkedin_message_id),
+  KEY shub_linkedin_id (shub_linkedin_id),
+  KEY shub_message_id (shub_message_id),
+  KEY last_active (last_active),
+  KEY shub_linkedin_group_id (shub_linkedin_group_id),
+  KEY linkedin_id (linkedin_id),
+  KEY status (status)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_linkedin_message_read (
+  shub_linkedin_message_id int(11) NOT NULL,
+  read_time int(11) NOT NULL DEFAULT '0',
+  user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_linkedin_message_id (shub_linkedin_message_id,user_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_linkedin_message_comment (
+  shub_linkedin_message_comment_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linkedin_message_id int(11) NOT NULL,
+  linkedin_id varchar(255) NOT NULL,
+  time int(11) NOT NULL,
+  message_from text NOT NULL,
+  message_to text NOT NULL,
+  comment_text text NOT NULL,
+  data text NOT NULL,
+  user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_linkedin_message_comment_id (shub_linkedin_message_comment_id),
+  KEY shub_linkedin_message_id (shub_linkedin_message_id),
+  KEY linkedin_id (linkedin_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_linkedin_message_link (
+  shub_linkedin_message_link_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linkedin_message_id int(11) NOT NULL DEFAULT '0',
+  link varchar(255) NOT NULL,
+  PRIMARY KEY  shub_linkedin_message_link_id (shub_linkedin_message_link_id),
+  KEY shub_linkedin_message_id (shub_linkedin_message_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_linkedin_message_link_click (
+  shub_linkedin_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linkedin_message_link_id int(11) NOT NULL DEFAULT '0',
+  click_time int(11) NOT NULL,
+  ip_address varchar(20) NOT NULL,
+  user_agent varchar(100) NOT NULL,
+  url_referrer varchar(255) NOT NULL,
+  PRIMARY KEY  shub_linkedin_message_link_click_id (shub_linkedin_message_link_click_id),
+  KEY shub_linkedin_message_link_id (shub_linkedin_message_link_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_linkedin_group (
+  shub_linkedin_group_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linkedin_id int(11) NOT NULL,
+  group_name varchar(50) NOT NULL,
+  last_message int(11) NOT NULL DEFAULT '0',
+  last_checked int(11) NOT NULL,
+  group_id varchar(255) NOT NULL,
+  linkedin_token varchar(255) NOT NULL,
+  PRIMARY KEY  shub_linkedin_group_id (shub_linkedin_group_id),
+  KEY shub_linkedin_id (shub_linkedin_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+EOT;
+		return $sql;
 	}
 
 }

@@ -6,10 +6,12 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 	require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
 }
 
-class support_hub_Account_Data_List_Table extends WP_List_Table {
+class SupportHub_Account_Data_List_Table extends WP_List_Table {
 
 	public $action_key = 'ID';
 	public $table_data = array();
+	public $columns = array();
+	public $found_data = array();
 
 	function __construct($args = array()) {
 		global $status, $page;
@@ -27,22 +29,6 @@ class support_hub_Account_Data_List_Table extends WP_List_Table {
 			'last_checked'    => __( 'Last Checked', 'support_hub' ),
 		) );
 
-
-		add_action( 'admin_head', array( $this, 'admin_header' ) );
-
-	}
-
-	function admin_header() {
-		$page = ( isset( $_GET['page'] ) ) ? esc_attr( $_GET['page'] ) : false;
-		if ( 'my_list_test' != $page ) {
-			return;
-		}
-		echo '<style type="text/css">';
-		echo '.wp-list-table .column-id { width: 5%; }';
-		echo '.wp-list-table .column-booktitle { width: 40%; }';
-		echo '.wp-list-table .column-author { width: 35%; }';
-		echo '.wp-list-table .column-isbn { width: 20%;}';
-		echo '</style>';
 	}
 
 	function no_items() {
@@ -100,6 +86,7 @@ class support_hub_Account_Data_List_Table extends WP_List_Table {
 
 
 	function prepare_items() {
+
 		$columns               = $this->get_columns();
 		$hidden                = array();
 		$sortable              = array(); //
@@ -108,7 +95,6 @@ class support_hub_Account_Data_List_Table extends WP_List_Table {
 
 		$per_page     = 20;
 		$current_page = $this->get_pagenum();
-
 
 		$total_items  = count( $this->items );
 
@@ -130,7 +116,7 @@ class support_hub_Account_Data_List_Table extends WP_List_Table {
 
 
 
-class SupportHubMessageList extends support_hub_Account_Data_List_Table{
+class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
     private $row_output = array();
 
 	public $available_networks = array(
@@ -280,7 +266,7 @@ class SupportHubMessageList extends support_hub_Account_Data_List_Table{
 }
 
 
-class SupportHubSentList extends support_hub_Account_Data_List_Table{
+class SupportHubSentList extends SupportHub_Account_Data_List_Table{
     private $row_output = array();
 
 	function __construct($args = array()) {

@@ -134,7 +134,7 @@ if($current_account !== false){
 	}
 }else{
 	// show account overview:
-	$myListTable = new support_hub_Account_Data_List_Table();
+	$myListTable = new SupportHub_Account_Data_List_Table();
 	$accounts = $shub_twitter->get_accounts();
 	foreach($accounts as $account_id => $account){
 		$a = new shub_twitter_account($account['shub_twitter_id']);
@@ -148,7 +148,7 @@ if($current_account !== false){
 	<div class="wrap">
 		<h2>
 			<?php _e('Twitter Accounts','support_hub');?>
-			<a href="?page=<?php echo htmlspecialchars($_GET['page']);?>&shub_twitter_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
+			<a href="?page=<?php echo esc_attr($_GET['page']);?>&tab=<?php echo esc_attr($_GET['tab']);?>&shub_twitter_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
 		</h2>
 	    <?php
 	    //$myListTable->search_box( 'search', 'search_id' );

@@ -258,7 +258,7 @@ class shub_facebook_page{
 	}
 
 	public function link_refresh(){
-		return 'admin.php?page=support_hub_facebook_settings&manualrefresh&shub_facebook_id='.$this->get('shub_facebook_id').'&facebook_page_id='.$this->get('page_id');
+		return 'admin.php?page=support_hub_settings&tab=facebook&manualrefresh&shub_facebook_id='.$this->get('shub_facebook_id').'&facebook_page_id='.$this->get('page_id');
 	}
 
 

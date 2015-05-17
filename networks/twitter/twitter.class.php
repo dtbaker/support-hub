@@ -11,11 +11,8 @@ define('_TWITTER_MESSAGE_TYPE_DIRECT',6);
 
 define('_support_hub_TWITTER_LINK_REWRITE_PREFIX','sstlnk');
 
-class shub_twitter {
+class shub_twitter extends SupportHub_network {
 
-	public function __construct( ) {
-		$this->reset();
-	}
 
 	public $friendly_name = "Twitter";
 
@@ -54,9 +51,6 @@ class shub_twitter {
 
 	public function init_menu(){
 
-		$page = add_submenu_page( 'support_hub_main', __( 'Twitter Settings', 'support_hub' ) , __( 'Twitter Settings', 'support_hub' ) , 'manage_options' , 'support_hub_twitter_settings' ,  array( $this, 'twitter_settings_page' ) );
-		add_action( 'admin_print_styles-'.$page, array( $this, 'page_assets' ) );
-
 	}
 
 	public function page_assets($from_master=false){
@@ -73,7 +67,7 @@ class shub_twitter {
 	}
 
 
-	public function twitter_settings_page(){
+	public function settings_page(){
 		include( dirname(__FILE__) . '/twitter_settings.php');
 	}
 
@@ -390,7 +384,7 @@ class shub_twitter {
 				$twitter = new shub_twitter_account($shub_twitter_id);
 		        if(isset($_POST['butt_delete'])){
 	                $twitter->delete();
-			        $redirect = 'admin.php?page=support_hub_twitter_settings';
+			        $redirect = 'admin.php?page=support_hub_settings&tab=twitter';
 		        }else{
 			        $twitter->save_data($_POST);
 			        $shub_twitter_id = $twitter->get('shub_twitter_id');
@@ -529,6 +523,90 @@ class shub_twitter {
 			$shub_twitter_account->run_cron($debug);
 		}
 		if($debug)echo "Finished Twitter Cron Job \n";
+	}
+
+	public function get_install_sql() {
+
+		global $wpdb;
+
+		$sql = <<< EOT
+
+
+CREATE TABLE {$wpdb->prefix}shub_twitter (
+  shub_twitter_id int(11) NOT NULL AUTO_INCREMENT,
+  twitter_id varchar(255) NOT NULL,
+  twitter_name varchar(50) NOT NULL,
+  twitter_data text NOT NULL,
+  last_checked int(11) NOT NULL DEFAULT '0',
+  user_key varchar(255) NOT NULL,
+  user_secret varchar(255) NOT NULL,
+  import_dm tinyint(1) NOT NULL DEFAULT '0',
+  import_mentions tinyint(1) NOT NULL DEFAULT '0',
+  import_tweets tinyint(1) NOT NULL DEFAULT '0',
+  user_data text NOT NULL,
+  searches text NOT NULL,
+  account_name varchar(80) NOT NULL,
+  PRIMARY KEY  shub_twitter_id (shub_twitter_id),
+  KEY twitter_id (twitter_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_twitter_message (
+  shub_twitter_message_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_twitter_id int(11) NOT NULL,
+  shub_message_id int(11) NOT NULL DEFAULT '0',
+  reply_to_id int(11) NOT NULL DEFAULT '0',
+  twitter_message_id varchar(255) NOT NULL,
+  twitter_from_id varchar(80) NOT NULL,
+  twitter_to_id varchar(80) NOT NULL,
+  twitter_from_name varchar(80) NOT NULL,
+  twitter_to_name varchar(80) NOT NULL,
+  type tinyint(1) NOT NULL DEFAULT '0',
+  status tinyint(1) NOT NULL DEFAULT '0',
+  summary text NOT NULL,
+  message_time int(11) NOT NULL DEFAULT '0',
+  data text NOT NULL,
+  user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_twitter_message_id (shub_twitter_message_id),
+  KEY shub_twitter_id (shub_twitter_id),
+  KEY shub_message_id (shub_message_id),
+  KEY message_time (message_time),
+  KEY status (status),
+  KEY type (type),
+  KEY twitter_message_id (twitter_message_id),
+  KEY twitter_from_id (twitter_from_id,twitter_to_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_twitter_message_read (
+  shub_twitter_message_id int(11) NOT NULL,
+  read_time int(11) NOT NULL DEFAULT '0',
+  user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_twitter_message_id (shub_twitter_message_id,user_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_twitter_message_link (
+  shub_twitter_message_link_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_twitter_message_id int(11) NOT NULL DEFAULT '0',
+  link varchar(255) NOT NULL,
+  PRIMARY KEY  shub_twitter_message_link_id (shub_twitter_message_link_id),
+  KEY shub_twitter_message_id (shub_twitter_message_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_twitter_message_link_click (
+  shub_twitter_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_twitter_message_link_id int(11) NOT NULL DEFAULT '0',
+  click_time int(11) NOT NULL,
+  ip_address varchar(20) NOT NULL,
+  user_agent varchar(100) NOT NULL,
+  url_referrer varchar(255) NOT NULL,
+  PRIMARY KEY  shub_twitter_message_link_click_id (shub_twitter_message_link_click_id),
+  KEY shub_twitter_message_link_id (shub_twitter_message_link_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+EOT;
+		return $sql;
 	}
 
 }
@@ -1024,13 +1102,13 @@ class shub_twitter_account{
 	 * Links for wordpress
 	 */
 	public function link_connect(){
-		return 'admin.php?page=support_hub_twitter_settings&do_twitter_connect=1&shub_twitter_id='.$this->get('shub_twitter_id');
+		return 'admin.php?page=support_hub_settings&tab=twitter&do_twitter_connect=1&shub_twitter_id='.$this->get('shub_twitter_id');
 	}
 	public function link_edit(){
-		return 'admin.php?page=support_hub_twitter_settings&shub_twitter_id='.$this->get('shub_twitter_id');
+		return 'admin.php?page=support_hub_settings&tab=twitter&shub_twitter_id='.$this->get('shub_twitter_id');
 	}
 	public function link_refresh(){
-		return 'admin.php?page=support_hub_twitter_settings&do_twitter_refresh=1&shub_twitter_id='.$this->get('shub_twitter_id');
+		return 'admin.php?page=support_hub_settings&tab=twitter&do_twitter_refresh=1&shub_twitter_id='.$this->get('shub_twitter_id');
 	}
 	public function link_new_message(){
 		return 'admin.php?page=support_hub_main&shub_twitter_id='.$this->get('shub_twitter_id').'&shub_twitter_message_id=new';

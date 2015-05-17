@@ -2,11 +2,7 @@
 
 define('_support_hub_GOOGLE_LINK_REWRITE_PREFIX','ssglnk');
 
-class shub_google {
-
-	public function __construct( ) {
-		$this->reset();
-	}
+class shub_google extends SupportHub_network {
 
 	public $friendly_name = "Google+";
 
@@ -44,8 +40,6 @@ class shub_google {
 	}
 
 	public function init_menu(){
-		$page = add_submenu_page( 'support_hub_main', __( 'Google+ Settings', 'support_hub' ) , __( 'Google+ Settings', 'support_hub' ) , 'manage_options' , 'support_hub_google_settings' ,  array( $this, 'google_settings_page' ) );
-		add_action( 'admin_print_styles-'.$page, array( $this, 'page_assets' ) );
 	}
 
 	public function page_assets($from_master=false){
@@ -58,7 +52,7 @@ class shub_google {
 
 	}
 
-	public function google_settings_page(){
+	public function settings_page(){
 		include( dirname(__FILE__) . '/google_settings.php');
 	}
 
@@ -360,7 +354,7 @@ class shub_google {
 				$google = new shub_google_account($shub_google_id);
 		        if(isset($_POST['butt_delete'])){
 	                $google->delete();
-			        $redirect = 'admin.php?page=support_hub_google_settings';
+			        $redirect = 'admin.php?page=support_hub_settings&tab=google';
 		        }else{
 			        $google->save_data($_POST);
 			        $shub_google_id = $google->get('shub_google_id');
@@ -466,6 +460,95 @@ class shub_google {
 			$shub_google_account->run_cron($debug);
 		}
 		if($debug)echo "Finished Google Cron Job \n";
+	}
+
+	public function get_install_sql() {
+
+		global $wpdb;
+
+		$sql = <<< EOT
+
+
+
+CREATE TABLE {$wpdb->prefix}shub_google (
+  shub_google_id int(11) NOT NULL AUTO_INCREMENT,
+  username varchar(255) NOT NULL,
+  password varchar(255) NOT NULL,
+  google_id varchar(255) NOT NULL,
+  google_name varchar(50) NOT NULL,
+  google_data text NOT NULL,
+  last_checked int(11) NOT NULL DEFAULT '0',
+  import_comments tinyint(1) NOT NULL DEFAULT '0',
+  import_plusones tinyint(1) NOT NULL DEFAULT '0',
+  import_mentions tinyint(1) NOT NULL DEFAULT '0',
+  user_data text NOT NULL,
+  searches text NOT NULL,
+  api_cookies text NOT NULL,
+  account_name varchar(80) NOT NULL,
+  PRIMARY KEY  shub_google_id (shub_google_id),
+  KEY google_id (google_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_google_message (
+  shub_google_message_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_google_id int(11) NOT NULL,
+  shub_message_id int(11) NOT NULL DEFAULT '0',
+  google_message_id varchar(255) NOT NULL,
+  comment_count int(11) NOT NULL,
+  comments text NOT NULL,
+  share_count int(11) NOT NULL,
+  plusone_count int(11) NOT NULL,
+  google_actor text NOT NULL,
+  google_type varchar(80) NOT NULL,
+  type tinyint(1) NOT NULL DEFAULT '0',
+  status tinyint(1) NOT NULL DEFAULT '0',
+  summary text NOT NULL,
+  summary_latest text NOT NULL,
+  message_time int(11) NOT NULL DEFAULT '0',
+  data text NOT NULL,
+  user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_google_message_id (shub_google_message_id),
+  KEY shub_google_id (shub_google_id),
+  KEY shub_message_id (shub_message_id),
+  KEY message_time (message_time),
+  KEY status (status),
+  KEY type (type),
+  KEY google_message_id (google_message_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_google_message_read (
+  shub_google_message_id int(11) NOT NULL,
+  read_time int(11) NOT NULL DEFAULT '0',
+  user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_google_message_id (shub_google_message_id,user_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_google_message_link (
+  shub_google_message_link_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_google_message_id int(11) NOT NULL DEFAULT '0',
+  link varchar(255) NOT NULL,
+  PRIMARY KEY  shub_google_message_link_id (shub_google_message_link_id),
+  KEY shub_google_message_id (shub_google_message_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_google_message_link_click (
+  shub_google_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_google_message_link_id int(11) NOT NULL DEFAULT '0',
+  click_time int(11) NOT NULL,
+  ip_address varchar(20) NOT NULL,
+  user_agent varchar(100) NOT NULL,
+  url_referrer varchar(255) NOT NULL,
+  PRIMARY KEY  shub_google_message_link_click_id (shub_google_message_link_click_id),
+  KEY shub_google_message_link_id (shub_google_message_link_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+
+EOT;
+		return $sql;
 	}
 
 }
@@ -1155,13 +1238,13 @@ class shub_google_account{
 	 * Links for wordpress
 	 */
 	public function link_connect(){
-		return 'admin.php?page=support_hub_google_settings&do_google_connect=1&shub_google_id='.$this->get('shub_google_id');
+		return 'admin.php?page=support_hub_settings&tab=google&do_google_connect=1&shub_google_id='.$this->get('shub_google_id');
 	}
 	public function link_edit(){
-		return 'admin.php?page=support_hub_google_settings&shub_google_id='.$this->get('shub_google_id');
+		return 'admin.php?page=support_hub_settings&tab=google&shub_google_id='.$this->get('shub_google_id');
 	}
 	public function link_refresh(){
-		return 'admin.php?page=support_hub_google_settings&do_google_refresh=1&shub_google_id='.$this->get('shub_google_id');
+		return 'admin.php?page=support_hub_settings&tab=google&do_google_refresh=1&shub_google_id='.$this->get('shub_google_id');
 	}
 	public function link_new_message(){
 		return 'admin.php?page=support_hub_main&shub_google_id='.$this->get('shub_google_id').'&shub_google_message_id=new';

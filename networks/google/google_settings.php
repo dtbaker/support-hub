@@ -213,7 +213,7 @@ if($current_account !== false){
 	}
 }else{
 	// show account overview:
-	$myListTable = new support_hub_Account_Data_List_Table();
+	$myListTable = new SupportHub_Account_Data_List_Table();
 	$accounts = $shub_google->get_accounts();
 	foreach($accounts as $account_id => $account){
 		$a = new shub_google_account($account['shub_google_id']);
@@ -227,7 +227,7 @@ if($current_account !== false){
 	<div class="wrap">
 		<h2>
 			<?php _e('Google Page Accounts','support_hub');?>
-			<a href="?page=<?php echo htmlspecialchars($_GET['page']);?>&shub_google_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
+			<a href="?page=<?php echo esc_attr($_GET['page']);?>&tab=<?php echo esc_attr($_GET['tab']);?>&shub_google_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
 		</h2>
 	    <?php
 	    //$myListTable->search_box( 'search', 'search_id' );

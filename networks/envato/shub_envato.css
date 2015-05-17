@@ -1,0 +1,120 @@
+#envato_edit_form a{
+    text-decoration: none;
+}
+.envato_message_full{
+    display: none;
+    background: #edeff4;
+    border-radius: 5px;
+    padding: 0 5px;
+}
+.envato_comment_picture{
+    float: left;
+    width: 35px;
+    margin: 0 5px 0 0;
+}
+.envato_comment_picture img{
+    max-width: 100%;
+    height: auto;
+}
+.envato_comment_reply{
+    margin-left: 40px;
+}
+.envato_comment_reply button{
+    float: left;
+    height:2em;
+    border:1px solid #bdc7d8;
+    margin:0 0 0 5px;
+}
+.envato_comment_compose textarea{
+    background: #FFF;
+    border:1px solid #bdc7d8;
+    width:88%;
+    min-height:2em;
+    resize: none;
+}
+.envato_comment_reply textarea{
+    float: left;
+    background: #FFF;
+    border:1px solid #bdc7d8;
+    width:88%;
+    min-height:2em;
+    resize: none;
+}
+.envato_comment_body{
+    margin-left: 40px;
+}
+.envato_comment_actions{
+    clear: both;
+    font-size: 0.9em;
+    margin-left: 40px;
+    padding: 0 0 5px 0;
+}
+.envato_comment_header{
+    /*display: inline;
+    float: left;*/
+    padding: 0 5px 0 0;
+    font-weight: bold;
+}
+.envato_comment_header span{
+    font-weight: normal;
+    color:#CCC;
+}
+.envato_comment{
+    border-bottom: 1px solid #d0d4e4;
+    padding: 5px 0 0 5px;
+}
+#envato_edit_form > .envato_comment_replies{
+    margin-left: 0;
+    border-left: none;
+}
+.envato_comment_reply_box{
+    display: none;
+}
+.envato_comment_reply_box_level1{
+    display: block;
+}
+.envato_comment_replies{
+    margin-left: 40px;
+    border-left: 1px solid #d0d4e4;
+}
+.envato_picture{
+    background: #FFF;
+    padding: 4px;
+    display: inline-block;
+}
+.envato_picture img{
+    max-width: 100%;
+    height:auto;
+}
+.envato_icon{
+    height:27px;
+    width: auto;
+    margin: 5px 5px 0 0;
+    float: left;
+}
+.envato_icon.small{
+    height:15px;
+    float: none;
+    vertical-align: middle;
+    margin:0 5px 0 0;
+}
+
+#envato_message_header{
+    border:1px solid #d0d4e4;
+    background: #FFF;
+    margin:5px;
+    padding: 8px 5px 14px 10px;
+}
+#envato_message_holder{
+}
+
+.envato_message_summary.unread,
+.message_row_unread .envato_message_summary{
+    font-weight: bold;
+}
+.envato_compose_account_select img{
+    width:20px;
+    height:auto;
+    vertical-align: middle;
+    margin:0 5px;
+}

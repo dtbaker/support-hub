@@ -176,7 +176,7 @@ class shub_linkedin_group{
 	}
 
 	public function link_refresh(){
-		return 'admin.php?page=support_hub_linkedin_settings&manualrefresh&shub_linkedin_id='.$this->get('shub_linkedin_id').'&linkedin_group_id='.$this->get('group_id');
+		return 'admin.php?page=support_hub_settings&tab=linkedin&manualrefresh&shub_linkedin_id='.$this->get('shub_linkedin_id').'&linkedin_group_id='.$this->get('group_id');
 	}
 
 

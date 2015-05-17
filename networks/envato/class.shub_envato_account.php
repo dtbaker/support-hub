@@ -1,27 +1,27 @@
 <?php
 
-class shub_linkedin_account{
+class shub_envato_account{
 
-	public function __construct($shub_linkedin_id){
-		$this->load($shub_linkedin_id);
+	public function __construct($shub_envato_id){
+		$this->load($shub_envato_id);
 	}
 
-	private $shub_linkedin_id = false; // the current user id in our system.
+	private $shub_envato_id = false; // the current user id in our system.
     private $details = array();
 
-	/* @var $groups shub_linkedin_group[] */
+	/* @var $groups shub_envato_group[] */
     private $groups = array();
 
 	private function reset(){
-		$this->shub_linkedin_id = false;
+		$this->shub_envato_id = false;
 		$this->details = array(
-			'shub_linkedin_id' => false,
-			'linkedin_name' => false,
+			'shub_envato_id' => false,
+			'envato_name' => false,
 			'last_checked' => false,
-			'linkedin_data' => false,
-			'linkedin_app_id' => false,
-			'linkedin_app_secret' => false,
-			'linkedin_token' => false,
+			'envato_data' => false,
+			'envato_app_id' => false,
+			'envato_app_secret' => false,
+			'envato_token' => false,
 			'machine_id' => false,
 			'import_stream' => false,
 		);
@@ -33,20 +33,20 @@ class shub_linkedin_account{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_linkedin_id = shub_update_insert('shub_linkedin_id',false,'shub_linkedin',array());
-		$this->load($this->shub_linkedin_id);
+		$this->shub_envato_id = shub_update_insert('shub_envato_id',false,'shub_envato',array());
+		$this->load($this->shub_envato_id);
 	}
 
-    public function load($shub_linkedin_id = false){
-	    if(!$shub_linkedin_id)$shub_linkedin_id = $this->shub_linkedin_id;
+    public function load($shub_envato_id = false){
+	    if(!$shub_envato_id)$shub_envato_id = $this->shub_envato_id;
 	    $this->reset();
-	    $this->shub_linkedin_id = (int)$shub_linkedin_id;
-        if($this->shub_linkedin_id){
-            $data = shub_get_single('shub_linkedin','shub_linkedin_id',$this->shub_linkedin_id);
+	    $this->shub_envato_id = (int)$shub_envato_id;
+        if($this->shub_envato_id){
+            $data = shub_get_single('shub_envato','shub_envato_id',$this->shub_envato_id);
 	        foreach($this->details as $key=>$val){
 		        $this->details[$key] = $data && isset($data[$key]) ? $data[$key] : $val;
 	        }
-	        if(!is_array($this->details) || $this->details['shub_linkedin_id'] != $this->shub_linkedin_id){
+	        if(!is_array($this->details) || $this->details['shub_envato_id'] != $this->shub_envato_id){
 		        $this->reset();
 		        return false;
 	        }
@@ -55,12 +55,12 @@ class shub_linkedin_account{
             $this->{$key} = $val;
         }
 	    $this->groups = array();
-	    if(!$this->shub_linkedin_id)return false;
-	    foreach(shub_get_multiple('shub_linkedin_group',array('shub_linkedin_id'=>$this->shub_linkedin_id),'shub_linkedin_group_id') as $group){
-		    $group = new shub_linkedin_group($this, $group['shub_linkedin_group_id']);
+	    if(!$this->shub_envato_id)return false;
+	    foreach(shub_get_multiple('shub_envato_group',array('shub_envato_id'=>$this->shub_envato_id),'shub_envato_group_id') as $group){
+		    $group = new shub_envato_group($this, $group['shub_envato_group_id']);
 		    $this->groups[$group->get('group_id')] = $group;
 	    }
-        return $this->shub_linkedin_id;
+        return $this->shub_envato_id;
     }
 
 	public function get($field){
@@ -68,7 +68,7 @@ class shub_linkedin_account{
 	}
 
 	public function save_data($post_data){
-		if(!$this->get('shub_linkedin_id')){
+		if(!$this->get('shub_envato_id')){
 			$this->create_new();
 		}
 		if(is_array($post_data)){
@@ -81,25 +81,25 @@ class shub_linkedin_account{
 		if(!isset($post_data['import_stream'])){
 			$this->update('import_stream', 0);
 		}
-		// save the active linkedin groups.
-		if(isset($post_data['save_linkedin_groups']) && $post_data['save_linkedin_groups'] == 'yep') {
+		// save the active envato groups.
+		if(isset($post_data['save_envato_groups']) && $post_data['save_envato_groups'] == 'yep') {
 			$currently_active_groups = $this->groups;
-			$data = @json_decode($this->get('linkedin_data'),true);
+			$data = @json_decode($this->get('envato_data'),true);
 			$available_groups = isset($data['groups']) && is_array($data['groups']) ? $data['groups'] : array();
-			if(isset($post_data['linkedin_group']) && is_array($post_data['linkedin_group'])){
-				foreach($post_data['linkedin_group'] as $linkedin_group_id => $yesno){
-					if(isset($currently_active_groups[$linkedin_group_id])){
-						unset($currently_active_groups[$linkedin_group_id]);
+			if(isset($post_data['envato_group']) && is_array($post_data['envato_group'])){
+				foreach($post_data['envato_group'] as $envato_group_id => $yesno){
+					if(isset($currently_active_groups[$envato_group_id])){
+						unset($currently_active_groups[$envato_group_id]);
 					}
-					if($yesno && isset($available_groups[$linkedin_group_id])){
+					if($yesno && isset($available_groups[$envato_group_id])){
 						// we are adding this group to the list. check if it doesn't already exist.
-						if(!isset($this->groups[$linkedin_group_id])){
-							$group = new shub_linkedin_group($this);
+						if(!isset($this->groups[$envato_group_id])){
+							$group = new shub_envato_group($this);
 							$group->create_new();
-							$group->update('shub_linkedin_id', $this->shub_linkedin_id);
-							$group->update('linkedin_token', 'same'); // $available_groups[$linkedin_group_id]['access_token']
-							$group->update('group_name', $available_groups[$linkedin_group_id]['group']['name']);
-							$group->update('group_id', $linkedin_group_id);
+							$group->update('shub_envato_id', $this->shub_envato_id);
+							$group->update('envato_token', 'same'); // $available_groups[$envato_group_id]['access_token']
+							$group->update('group_name', $available_groups[$envato_group_id]['group']['name']);
+							$group->update('group_id', $envato_group_id);
 						}
 					}
 				}
@@ -110,26 +110,26 @@ class shub_linkedin_account{
 			}
 		}
 		$this->load();
-		return $this->get('shub_linkedin_id');
+		return $this->get('shub_envato_id');
 	}
     public function update($field,$value){
 	    // what fields to we allow? or not allow?
-	    if(in_array($field,array('shub_linkedin_id')))return;
-        if($this->shub_linkedin_id){
+	    if(in_array($field,array('shub_envato_id')))return;
+        if($this->shub_envato_id){
             $this->{$field} = $value;
-            shub_update_insert('shub_linkedin_id',$this->shub_linkedin_id,'shub_linkedin',array(
+            shub_update_insert('shub_envato_id',$this->shub_envato_id,'shub_envato',array(
 	            $field => $value,
             ));
         }
     }
 	public function delete(){
-		if($this->shub_linkedin_id) {
+		if($this->shub_envato_id) {
 			// delete all the groups for this twitter account.
 			$groups = $this->get('groups');
 			foreach($groups as $group){
 				$group->delete();
 			}
-			shub_delete_from_db( 'shub_linkedin', 'shub_linkedin_id', $this->shub_linkedin_id );
+			shub_delete_from_db( 'shub_envato', 'shub_envato_id', $this->shub_envato_id );
 		}
 	}
 
@@ -139,16 +139,16 @@ class shub_linkedin_account{
 			return false; // never checked this account, not active yet.
 		}else{
 			// do we have a token?
-			if($this->get('linkedin_token')){
-				// assume we have access, we remove the token if we get a linkedin failure at any point.
+			if($this->get('envato_token')){
+				// assume we have access, we remove the token if we get a envato failure at any point.
 				return true;
 			}
 		}
 		return false;
 	}
 
-	public function is_group_active($linkedin_group_id){
-		if(isset($this->groups[$linkedin_group_id]) && $this->groups[$linkedin_group_id]->get('group_id') == $linkedin_group_id && $this->groups[$linkedin_group_id]->get('linkedin_token')){
+	public function is_group_active($envato_group_id){
+		if(isset($this->groups[$envato_group_id]) && $this->groups[$envato_group_id]->get('group_id') == $envato_group_id && $this->groups[$envato_group_id]->get('envato_token')){
 			return true;
 		}else{
 			return false;
@@ -156,18 +156,18 @@ class shub_linkedin_account{
 	}
 
 	public function save_account_data($user_data){
-		// serialise this result into linkedin_data.
+		// serialise this result into envato_data.
 		if(is_array($user_data)){
 			// yes, this member has some groups, save these groups to the account ready for selection in the settings area.
-			$save_data = @json_decode($this->get('linkedin_data'),true);
+			$save_data = @json_decode($this->get('envato_data'),true);
 			if(!is_array($save_data))$save_data=array();
 			$save_data = array_merge($save_data,$user_data);
-			$this->update('linkedin_data',json_encode($save_data));
+			$this->update('envato_data',json_encode($save_data));
 		}
 	}
 
 	public function load_available_groups(){
-		// serialise this result into linkedin_data.
+		// serialise this result into envato_data.
 
 		$api = $this->get_api();
 		$api_result = $api->api('v1/people/~/group-memberships');
@@ -177,11 +177,11 @@ class shub_linkedin_account{
 				$groups[$group['_key']] = $group;
 			}
 			// yes, this member has some groups, save these groups to the account ready for selection in the settings area.
-			$save_data = @json_decode($this->get('linkedin_data'),true);
+			$save_data = @json_decode($this->get('envato_data'),true);
 			if(!is_array($save_data))$save_data=array();
 			$save_data['groups'] = $groups;
 
-			$this->update('linkedin_data',json_encode($save_data));
+			$this->update('envato_data',json_encode($save_data));
 		}
 
 		//$this->update('last_checked',time());
@@ -203,8 +203,8 @@ class shub_linkedin_account{
 
 					// skip private shares.
 					if(!isset($network_update['updateContent']['person']['currentShare']) || (isset($network_update['updateContent']['person']['firstName']) && $network_update['updateContent']['person']['firstName'] == 'private'))continue;
-					$share = new shub_linkedin_message( $this, false, false );
-					$share->load_by_linkedin_id( $network_update['updateKey'], $network_update, 'share', $debug );
+					$share = new shub_envato_message( $this, false, false );
+					$share->load_by_envato_id( $network_update['updateKey'], $network_update, 'share', $debug );
 				}
 			}
 		}else{
@@ -224,19 +224,19 @@ class shub_linkedin_account{
 	public function get_api($use_db_code = true){
 		if(!self::$api){
 
-			self::$api = new Happyr\LinkedIn\LinkedIn($this->get( 'linkedin_app_id' ), $this->get( 'linkedin_app_secret' ));
+			self::$api = new Happyr\envato\envato($this->get( 'envato_app_id' ), $this->get( 'envato_app_secret' ));
 
 			if($use_db_code){
 				// user isn't logging in again, set the code from our db:
-				//echo 'API set topen to '.$this->get('linkedin_token');
-				self::$api->setAccessToken($this->get('linkedin_token'));
+				//echo 'API set topen to '.$this->get('envato_token');
+				self::$api->setAccessToken($this->get('envato_token'));
 			}
 		}
 		return self::$api;
 	}
 
 	public function get_picture(){
-		$data = @json_decode($this->get('linkedin_data'),true);
+		$data = @json_decode($this->get('envato_data'),true);
 		return $data && isset($data['pictureUrl']) && !empty($data['pictureUrl']) ? $data['pictureUrl'] : false;
 	}
 	
@@ -245,18 +245,18 @@ class shub_linkedin_account{
 	 * Links for wordpress
 	 */
 	public function link_connect(){
-		return 'admin.php?page=support_hub_settings&tab=linkedin&linkedin_do_oauth_connect&shub_linkedin_id='.$this->get('shub_linkedin_id');
+		return 'admin.php?page=support_hub_settings&tab=envato&envato_do_oauth_connect&shub_envato_id='.$this->get('shub_envato_id');
 	}
 	public function link_edit(){
-		return 'admin.php?page=support_hub_settings&tab=linkedin&shub_linkedin_id='.$this->get('shub_linkedin_id');
+		return 'admin.php?page=support_hub_settings&tab=envato&shub_envato_id='.$this->get('shub_envato_id');
 	}
 	public function link_new_message(){
-		return 'admin.php?page=support_hub_main&shub_linkedin_id='.$this->get('shub_linkedin_id').'&shub_linkedin_message_id=new';
+		return 'admin.php?page=support_hub_main&shub_envato_id='.$this->get('shub_envato_id').'&shub_envato_message_id=new';
 	}
 
 
 	public function link_refresh(){
-		return 'admin.php?page=support_hub_settings&tab=linkedin&manualrefresh&shub_linkedin_id='.$this->get('shub_linkedin_id').'&linkedin_stream=true';
+		return 'admin.php?page=support_hub_settings&tab=envato&manualrefresh&shub_envato_id='.$this->get('shub_envato_id').'&envato_stream=true';
 	}
 
 }
