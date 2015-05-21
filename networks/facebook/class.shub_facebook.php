@@ -3,9 +3,6 @@
 class shub_facebook extends SupportHub_network {
 
 
-	public $friendly_name = "Facebook";
-
-
 	public function init(){
 		if(isset($_GET[_support_hub_FACEBOOK_LINK_REWRITE_PREFIX]) && strlen($_GET[_support_hub_FACEBOOK_LINK_REWRITE_PREFIX]) > 0){
 			// check hash
@@ -281,13 +278,13 @@ class shub_facebook extends SupportHub_network {
 		$messages = $this->load_all_messages(array('shub_message_id'=>$shub_message_id));
 		// we want data for our colum outputs in the WP table:
 		/*'shub_column_time'    => __( 'Date/Time', 'support_hub' ),
-	    'shub_column_social' => __( 'Social Accounts', 'support_hub' ),
+	    'shub_column_account' => __( 'Social Accounts', 'support_hub' ),
 		'shub_column_summary'    => __( 'Summary', 'support_hub' ),
 		'shub_column_links'    => __( 'Link Clicks', 'support_hub' ),
 		'shub_column_stats'    => __( 'Stats', 'support_hub' ),
 		'shub_column_action'    => __( 'Action', 'support_hub' ),*/
 		$data = array(
-			'shub_column_social' => '',
+			'shub_column_account' => '',
 			'shub_column_summary' => '',
 			'shub_column_links' => '',
 		);
@@ -296,7 +293,7 @@ class shub_facebook extends SupportHub_network {
 			$facebook_message = new shub_facebook_message(false, false, $message['shub_facebook_message_id']);
 			$data['message'] = $facebook_message;
 			$page_or_group = $facebook_message->get('facebook_page_or_group');
-			$data['shub_column_social'] .= '<div><img src="'.plugins_url('networks/facebook/facebook.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="facebook_icon small"><a href="'.$facebook_message->get_link().'" target="_blank">'.htmlspecialchars( $page_or_group ? $page_or_group->get( 'page_name' ) : 'Feed' ) .'</a></div>';
+			$data['shub_column_account'] .= '<div><img src="'.plugins_url('networks/facebook/facebook.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="facebook_icon small"><a href="'.$facebook_message->get_link().'" target="_blank">'.htmlspecialchars( $page_or_group ? $page_or_group->get( 'page_name' ) : 'Feed' ) .'</a></div>';
 			$data['shub_column_summary'] .= '<div><img src="'.plugins_url('networks/facebook/facebook.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="facebook_icon small"><a href="'.$facebook_message->get_link().'" target="_blank">'.htmlspecialchars( $facebook_message->get_summary() ) .'</a></div>';
 			// how many link clicks does this one have?
 			$sql = "SELECT count(*) AS `link_clicks` FROM ";
@@ -345,7 +342,7 @@ class shub_facebook extends SupportHub_network {
 		?>
 		<tr class="<?php echo isset($settings['row_class']) ? $settings['row_class'] : '';?> facebook_message_row <?php echo !isset($message['read_time']) || !$message['read_time'] ? ' message_row_unread' : '';?>"
 	        data-id="<?php echo (int) $message['shub_facebook_message_id']; ?>">
-		    <td class="shub_column_social">
+		    <td class="shub_column_account">
 			    <img src="<?php echo plugins_url('networks/facebook/facebook.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="facebook_icon">
 			    <?php $page_or_group = $facebook_message->get('facebook_page_or_group'); ?>
 			    <a href="<?php echo $facebook_message->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $page_or_group ? ($page_or_group->get( 'page_name' ) ? $page_or_group->get( 'page_name' ) : $page_or_group->get('group_name') )  : 'Feed' ); ?></a> <br/>
@@ -416,9 +413,8 @@ class shub_facebook extends SupportHub_network {
 	public function handle_process($process, $options = array()){
 		switch($process){
 			case 'send_shub_message':
-				check_admin_referer( 'shub_send-message' );
 				$message_count = 0;
-				if(isset($options['shub_message_id']) && (int)$options['shub_message_id'] > 0 && isset($_POST['facebook_message']) && !empty($_POST['facebook_message'])){
+				if(check_admin_referer( 'shub_send-message' ) && isset($options['shub_message_id']) && (int)$options['shub_message_id'] > 0 && isset($_POST['facebook_message']) && !empty($_POST['facebook_message'])){
 					// we have a social message id, ready to send!
 					// which facebook accounts are we sending too?
 					$facebook_accounts = isset($_POST['compose_facebook_id']) && is_array($_POST['compose_facebook_id']) ? $_POST['compose_facebook_id'] : array();
@@ -584,28 +580,29 @@ class shub_facebook extends SupportHub_network {
 				break;
 			case 'save_facebook':
 				$shub_facebook_id = isset($_REQUEST['shub_facebook_id']) ? (int)$_REQUEST['shub_facebook_id'] : 0;
-				check_admin_referer( 'save-facebook'.$shub_facebook_id );
-				$facebook = new shub_facebook_account($shub_facebook_id);
-		        if(isset($_POST['butt_delete'])){
-	                $facebook->delete();
-			        $redirect = 'admin.php?page=support_hub_settings&tab=facebook';
-		        }else{
-			        $data = $_POST;
-			        if(isset($_POST['butt_save_reconnect'])){
-				        // clear access tokens for a fresh re-login
-				        $data['facebook_token'] = '';
-				        $data['machine_id'] = '';
-			        }
-			        $facebook->save_data($data);
-			        $shub_facebook_id = $facebook->get('shub_facebook_id');
-			        if(isset($_POST['butt_save_reconnect'])){
-				        $redirect = $facebook->link_connect();
-			        }else {
-				        $redirect = $facebook->link_edit();
-			        }
-		        }
-				header("Location: $redirect");
-				exit;
+				if(check_admin_referer( 'save-facebook'.$shub_facebook_id )) {
+					$facebook = new shub_facebook_account( $shub_facebook_id );
+					if ( isset( $_POST['butt_delete'] ) ) {
+						$facebook->delete();
+						$redirect = 'admin.php?page=support_hub_settings&tab=facebook';
+					} else {
+						$data = $_POST;
+						if ( isset( $_POST['butt_save_reconnect'] ) ) {
+							// clear access tokens for a fresh re-login
+							$data['facebook_token'] = '';
+							$data['machine_id']     = '';
+						}
+						$facebook->save_data( $data );
+						$shub_facebook_id = $facebook->get( 'shub_facebook_id' );
+						if ( isset( $_POST['butt_save_reconnect'] ) ) {
+							$redirect = $facebook->link_connect();
+						} else {
+							$redirect = $facebook->link_edit();
+						}
+					}
+					header( "Location: $redirect" );
+					exit;
+				}
 
 				break;
 		}

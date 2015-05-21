@@ -8,7 +8,7 @@
     $myListTable = new SupportHubSentList();
     $myListTable->set_columns( array(
 	    'shub_column_time'    => __( 'Date/Time', 'support_hub' ),
-	    'shub_column_social' => __( 'Social Accounts', 'support_hub' ),
+	    'shub_column_account' => __( 'Social Accounts', 'support_hub' ),
 		'shub_column_summary'    => __( 'Summary', 'support_hub' ),
 		'shub_column_links'    => __( 'Link Clicks', 'support_hub' ),
 		//'shub_column_stats'    => __( 'Stats', 'support_hub' ),

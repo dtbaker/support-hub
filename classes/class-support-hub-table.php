@@ -119,12 +119,7 @@ class SupportHub_Account_Data_List_Table extends WP_List_Table {
 class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
     private $row_output = array();
 
-	public $available_networks = array(
-		'facebook',
-		'google',
-		'twitter',
-		'linkedin',
-	);
+	public $available_networks = array();
 
 	function __construct($args = array()) {
 		$args = wp_parse_args( $args, array(
@@ -133,10 +128,12 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 			'ajax'     => false,
 		) );
 		parent::__construct( $args );
+
+		$this->available_networks = SupportHub::getInstance()->message_managers;
 	}
 
 	function column_cb( $item ) {
-		foreach($this->available_networks as $network){
+		foreach($this->available_networks as $network => $mm){
 			if(isset($item['shub_'.$network.'_message_id'])){
 			    return sprintf(
 				    '<input type="checkbox" name="shub_message['.$network.'][]" value="%s" />', $item['shub_'.$network.'_message_id']
@@ -241,23 +238,17 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 	public $row_count = 0;
     function column_default($item, $column_name){
 
-	    foreach($this->available_networks as $network){
+	    foreach($this->available_networks as $network => $mm){
 			if(isset($item['shub_'.$network.'_message_id'])){
 				// pass this row rendering off to the facebook plugin
 			    // todo - don't hack the <td> outputfrom the existing plugin, move that back into this table class
 			    if(!isset($this->row_output[$network][$item['shub_'.$network.'_message_id']])){
-				    $this->row_output[$network] = array();
-				    ob_start();
-				    $item['message_manager']->output_row($item, array(
-					    'row_class' => $this->row_count++%2 ? 'alternate' : '',
-				    ));
-				    $this->row_output[$network][$item['shub_'.$network.'_message_id']] = ob_get_clean();
+				    if(!isset($this->row_output[$network]))$this->row_output[$network] = array();
+				    $this->row_output[$network][$item['shub_'.$network.'_message_id']] = $item['message_manager']->output_row($item);
+				    $this->row_output[$network][$item['shub_'.$network.'_message_id']]['row_class'] = $this->row_count++%2 ? 'alternate' : '';
 			    }
-			    if(isset($this->row_output[$network][$item['shub_'.$network.'_message_id']])){
-				    // grep the <td class="column_name"></td>
-				    if(preg_match('#class="'.$column_name.'">(.*)</td>#imsU',$this->row_output[$network][$item['shub_'.$network.'_message_id']],$matches)){
-					    return $matches[1];
-				    }
+			    if(isset($this->row_output[$network][$item['shub_'.$network.'_message_id']][$column_name])){
+				    return $this->row_output[$network][$item['shub_'.$network.'_message_id']][$column_name];
 			    }
 			}
 		}
@@ -337,7 +328,7 @@ class SupportHubSentList extends SupportHub_Account_Data_List_Table{
 				    return __('No Post','support_hub');
 			    }
 			    break;
-		    case 'shub_column_social':
+		    case 'shub_column_account':
 		    default:
 				$column_data = '';
 				foreach($this->column_details[ $item['shub_message_id'] ] as $message_type => $data){

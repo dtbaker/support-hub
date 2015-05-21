@@ -35,10 +35,12 @@ require_once( 'classes/ucm.form.php' );
 require_once( 'vendor/autoload.php' );
 
 // include the different network plugins:
-require_once( 'networks/facebook/facebook.class.php' );
-require_once( 'networks/twitter/twitter.class.php' );
-require_once( 'networks/google/google.class.php' );
-require_once( 'networks/linkedin/linkedin.class.php' );
+// these plugins hook on 'shub_init' to add their instance to the global message_manager variable
+require_once( 'networks/facebook/init.facebook.php' );
+require_once( 'networks/twitter/init.twitter.php' );
+require_once( 'networks/google/init.google.php' );
+require_once( 'networks/linkedin/init.linkedin.php' );
+require_once( 'networks/envato/init.envato.php' );
 
 // commence the awesome:
 SupportHub::getInstance( _DTBAKER_SUPPORT_HUB_CORE_FILE_ );

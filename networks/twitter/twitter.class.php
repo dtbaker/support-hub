@@ -1,6 +1,5 @@
 <?php
 
-
 define('_TWITTER_MESSAGE_TYPE_MENTION',1);
 define('_TWITTER_MESSAGE_TYPE_MYTWEET',2);
 define('_TWITTER_MESSAGE_TYPE_OTHERTWEET',3);
@@ -12,9 +11,6 @@ define('_TWITTER_MESSAGE_TYPE_DIRECT',6);
 define('_support_hub_TWITTER_LINK_REWRITE_PREFIX','sstlnk');
 
 class shub_twitter extends SupportHub_network {
-
-
-	public $friendly_name = "Twitter";
 
 	private $accounts = array();
 
@@ -186,13 +182,13 @@ class shub_twitter extends SupportHub_network {
 		$messages = $this->load_all_messages(array('shub_message_id'=>$shub_message_id));
 		// we want data for our colum outputs in the WP table:
 		/*'shub_column_time'    => __( 'Date/Time', 'support_hub' ),
-	    'shub_column_social' => __( 'Social Accounts', 'support_hub' ),
+	    'shub_column_account' => __( 'Social Accounts', 'support_hub' ),
 		'shub_column_summary'    => __( 'Summary', 'support_hub' ),
 		'shub_column_links'    => __( 'Link Clicks', 'support_hub' ),
 		'shub_column_stats'    => __( 'Stats', 'support_hub' ),
 		'shub_column_action'    => __( 'Action', 'support_hub' ),*/
 		$data = array(
-			'shub_column_social' => '',
+			'shub_column_account' => '',
 			'shub_column_summary' => '',
 			'shub_column_links' => '',
 		);
@@ -200,7 +196,7 @@ class shub_twitter extends SupportHub_network {
 		foreach($messages as $message){
 			$twitter_message = new shub_twitter_message(false, $message['shub_twitter_message_id']);
 			$data['message'] = $twitter_message;
-			$data['shub_column_social'] .= '<div><img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="twitter_icon small"><a href="'.$twitter_message->get_link().'" target="_blank">'.htmlspecialchars( $twitter_message->get('twitter_account')->get( 'account_name' ) ) .'</a></div>';
+			$data['shub_column_account'] .= '<div><img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="twitter_icon small"><a href="'.$twitter_message->get_link().'" target="_blank">'.htmlspecialchars( $twitter_message->get('twitter_account')->get( 'account_name' ) ) .'</a></div>';
 			$data['shub_column_summary'] .= '<div><img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="twitter_icon small"><a href="'.$twitter_message->get_link().'" target="_blank">'.htmlspecialchars( $twitter_message->get_summary() ) .'</a></div>';
 			// how many link clicks does this one have?
 			$sql = "SELECT count(*) AS `link_clicks` FROM ";
@@ -247,7 +243,7 @@ class shub_twitter extends SupportHub_network {
 		<tr class="<?php echo isset($settings['row_class']) ? $settings['row_class'] : '';?> twitter_message_row <?php echo !isset($message['read_time']) || !$message['read_time'] ? ' message_row_unread' : '';?>"
 	        data-id="<?php echo (int) $message['shub_twitter_message_id']; ?>"
 	        data-shub_twitter_id="<?php echo (int) $message['shub_twitter_id']; ?>">
-		    <td class="shub_column_social">
+		    <td class="shub_column_account">
 			    <img src="<?php echo plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="twitter_icon">
 			    <a href="<?php echo $twitter_message->get_link(); ?>"
 		           target="_blank"><?php echo htmlspecialchars( $twitter_message->get('twitter_account')->get( 'account_name' ) ); ?></a> <br/>
@@ -315,9 +311,8 @@ class shub_twitter extends SupportHub_network {
 	public function handle_process($process, $options = array()){
 		switch($process){
 			case 'send_shub_message':
-				check_admin_referer( 'shub_send-message' );
 				$message_count = 0;
-				if(isset($options['shub_message_id']) && (int)$options['shub_message_id'] > 0 && isset($_POST['twitter_message']) && !empty($_POST['twitter_message'])){
+				if(check_admin_referer( 'shub_send-message' ) && isset($options['shub_message_id']) && (int)$options['shub_message_id'] > 0 && isset($_POST['twitter_message']) && !empty($_POST['twitter_message'])){
 					// we have a social message id, ready to send!
 					// which twitter accounts are we sending too?
 					$twitter_accounts = isset($_POST['compose_twitter_id']) && is_array($_POST['compose_twitter_id']) ? $_POST['compose_twitter_id'] : array();
@@ -370,32 +365,34 @@ class shub_twitter extends SupportHub_network {
 				return $message_count;
 				break;
 			case 'save_twitter_settings':
-				check_admin_referer( 'save-twitter-settings' );
-				if(isset($_POST['twitter_app_api_key'])){
-					$this->update('api_key',$_POST['twitter_app_api_key']);
-				}
-				if(isset($_POST['twitter_app_api_secret'])){
-					$this->update('api_secret',$_POST['twitter_app_api_secret']);
+				if(check_admin_referer( 'save-twitter-settings' )) {
+					if ( isset( $_POST['twitter_app_api_key'] ) ) {
+						$this->update( 'api_key', $_POST['twitter_app_api_key'] );
+					}
+					if ( isset( $_POST['twitter_app_api_secret'] ) ) {
+						$this->update( 'api_secret', $_POST['twitter_app_api_secret'] );
+					}
 				}
 				break;
 			case 'save_twitter':
 				$shub_twitter_id = isset($_REQUEST['shub_twitter_id']) ? (int)$_REQUEST['shub_twitter_id'] : 0;
-				check_admin_referer( 'save-twitter'.$shub_twitter_id );
-				$twitter = new shub_twitter_account($shub_twitter_id);
-		        if(isset($_POST['butt_delete'])){
-	                $twitter->delete();
-			        $redirect = 'admin.php?page=support_hub_settings&tab=twitter';
-		        }else{
-			        $twitter->save_data($_POST);
-			        $shub_twitter_id = $twitter->get('shub_twitter_id');
-			        if(isset($_POST['butt_save_reconnect'])){
-				        $redirect = $twitter->link_connect();
-			        }else {
-				        $redirect = $twitter->link_edit();
-			        }
-		        }
-				header("Location: $redirect");
-				exit;
+				if(check_admin_referer( 'save-twitter'.$shub_twitter_id )) {
+					$twitter = new shub_twitter_account( $shub_twitter_id );
+					if ( isset( $_POST['butt_delete'] ) ) {
+						$twitter->delete();
+						$redirect = 'admin.php?page=support_hub_settings&tab=twitter';
+					} else {
+						$twitter->save_data( $_POST );
+						$shub_twitter_id = $twitter->get( 'shub_twitter_id' );
+						if ( isset( $_POST['butt_save_reconnect'] ) ) {
+							$redirect = $twitter->link_connect();
+						} else {
+							$redirect = $twitter->link_edit();
+						}
+					}
+					header( "Location: $redirect" );
+					exit;
+				}
 
 				break;
 		}

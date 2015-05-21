@@ -4,8 +4,6 @@ define('_support_hub_GOOGLE_LINK_REWRITE_PREFIX','ssglnk');
 
 class shub_google extends SupportHub_network {
 
-	public $friendly_name = "Google+";
-
 	private $accounts = array();
 
 	public function init(){
@@ -157,13 +155,13 @@ class shub_google extends SupportHub_network {
 		$messages = $this->load_all_messages(array('shub_message_id'=>$shub_message_id));
 		// we want data for our colum outputs in the WP table:
 		/*'shub_column_time'    => __( 'Date/Time', 'support_hub' ),
-	    'shub_column_social' => __( 'Social Accounts', 'support_hub' ),
+	    'shub_column_account' => __( 'Social Accounts', 'support_hub' ),
 		'shub_column_summary'    => __( 'Summary', 'support_hub' ),
 		'shub_column_links'    => __( 'Link Clicks', 'support_hub' ),
 		'shub_column_stats'    => __( 'Stats', 'support_hub' ),
 		'shub_column_action'    => __( 'Action', 'support_hub' ),*/
 		$data = array(
-			'shub_column_social' => '',
+			'shub_column_account' => '',
 			'shub_column_summary' => '',
 			'shub_column_links' => '',
 		);
@@ -171,7 +169,7 @@ class shub_google extends SupportHub_network {
 		foreach($messages as $message){
 			$google_message = new shub_google_message(false, $message['shub_google_message_id']);
 			$data['message'] = $google_message;
-			$data['shub_column_social'] .= '<div><img src="'.plugins_url('networks/google/google-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="google_icon small"><a href="'.$google_message->get_link().'" target="_blank">'.htmlspecialchars( $google_message->get('google_account')->get( 'account_name' ) ) .'</a></div>';
+			$data['shub_column_account'] .= '<div><img src="'.plugins_url('networks/google/google-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="google_icon small"><a href="'.$google_message->get_link().'" target="_blank">'.htmlspecialchars( $google_message->get('google_account')->get( 'account_name' ) ) .'</a></div>';
 			$data['shub_column_summary'] .= '<div><img src="'.plugins_url('networks/google/google-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="google_icon small"><a href="'.$google_message->get_link().'" target="_blank">'.htmlspecialchars( $google_message->get_summary() ) .'</a></div>';
 			// how many link clicks does this one have?
 			$sql = "SELECT count(*) AS `link_clicks` FROM ";
@@ -218,7 +216,7 @@ class shub_google extends SupportHub_network {
 		<tr class="<?php echo isset($settings['row_class']) ? $settings['row_class'] : '';?> google_message_row <?php echo !isset($message['read_time']) || !$message['read_time'] ? ' message_row_unread' : '';?>"
 	        data-id="<?php echo (int) $message['shub_google_message_id']; ?>"
 	        data-shub_google_id="<?php echo (int) $message['shub_google_id']; ?>">
-		    <td class="shub_column_social">
+		    <td class="shub_column_account">
 			    <img src="<?php echo plugins_url('networks/google/google-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="google_icon">
 			    <a href="<?php echo $google_message->get_link(); ?>"
 		           target="_blank"><?php echo htmlspecialchars( $google_message->get('google_account')->get( 'account_name' ) ); ?></a> <br/>
@@ -286,9 +284,8 @@ class shub_google extends SupportHub_network {
 	public function handle_process($process, $options = array()){
 		switch($process){
 			case 'send_shub_message':
-				check_admin_referer( 'shub_send-message' );
 				$message_count = 0;
-				if(isset($options['shub_message_id']) && (int)$options['shub_message_id'] > 0 && isset($_POST['google_message']) && !empty($_POST['google_message'])){
+				if(check_admin_referer( 'shub_send-message' ) && isset($options['shub_message_id']) && (int)$options['shub_message_id'] > 0 && isset($_POST['google_message']) && !empty($_POST['google_message'])){
 					// we have a social message id, ready to send!
 					// which google accounts are we sending too?
 					$google_accounts = isset($_POST['compose_google_id']) && is_array($_POST['compose_google_id']) ? $_POST['compose_google_id'] : array();
@@ -340,32 +337,34 @@ class shub_google extends SupportHub_network {
 				return $message_count;
 				break;
 			case 'save_google_settings':
-				check_admin_referer( 'save-google-settings' );
-				if(isset($_POST['google_app_api_key'])){
-					$this->update('api_key',$_POST['google_app_api_key']);
-				}
-				if(isset($_POST['google_app_api_secret'])){
-					$this->update('api_secret',$_POST['google_app_api_secret']);
+				if(check_admin_referer( 'save-google-settings' )) {
+					if ( isset( $_POST['google_app_api_key'] ) ) {
+						$this->update( 'api_key', $_POST['google_app_api_key'] );
+					}
+					if ( isset( $_POST['google_app_api_secret'] ) ) {
+						$this->update( 'api_secret', $_POST['google_app_api_secret'] );
+					}
 				}
 				break;
 			case 'save_google':
 				$shub_google_id = isset($_REQUEST['shub_google_id']) ? (int)$_REQUEST['shub_google_id'] : 0;
-				check_admin_referer( 'save-google'.$shub_google_id );
-				$google = new shub_google_account($shub_google_id);
-		        if(isset($_POST['butt_delete'])){
-	                $google->delete();
-			        $redirect = 'admin.php?page=support_hub_settings&tab=google';
-		        }else{
-			        $google->save_data($_POST);
-			        $shub_google_id = $google->get('shub_google_id');
-			        if(isset($_POST['butt_save_reconnect'])){
-				        $redirect = $google->link_connect();
-			        }else {
-				        $redirect = $google->link_edit();
-			        }
-		        }
-				header("Location: $redirect");
-				exit;
+				if(check_admin_referer( 'save-google'.$shub_google_id )) {
+					$google = new shub_google_account( $shub_google_id );
+					if ( isset( $_POST['butt_delete'] ) ) {
+						$google->delete();
+						$redirect = 'admin.php?page=support_hub_settings&tab=google';
+					} else {
+						$google->save_data( $_POST );
+						$shub_google_id = $google->get( 'shub_google_id' );
+						if ( isset( $_POST['butt_save_reconnect'] ) ) {
+							$redirect = $google->link_connect();
+						} else {
+							$redirect = $google->link_edit();
+						}
+					}
+					header( "Location: $redirect" );
+					exit;
+				}
 
 				break;
 		}

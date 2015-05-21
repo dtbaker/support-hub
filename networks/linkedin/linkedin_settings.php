@@ -22,7 +22,7 @@ if($current_account !== false){
 			?>
 			Manually refreshing group data... please wait...
 			<?php
-			$groups[ $linkedin_group_id ]->load_latest_group_data( true );
+			//$groups[ $linkedin_group_id ]->load_latest_group_data( true );
 			$groups[ $linkedin_group_id ]->run_cron( true );
 		}
 

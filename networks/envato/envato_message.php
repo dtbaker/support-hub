@@ -11,7 +11,7 @@ if($shub_envato_id && $shub_envato_message_id){
 	    $envato_message = new shub_envato_message( $envato, false, $shub_envato_message_id );
 	    if($shub_envato_message_id && $envato_message->get('shub_envato_message_id') == $shub_envato_message_id && $envato_message->get('shub_envato_id') == $shub_envato_id){
 
-		    $comments         = $envato_message->get_comments();
+		    $messages         = $envato_message->get_messages();
 		    $envato_message->mark_as_read();
 
 		    ?>
@@ -59,7 +59,7 @@ if($shub_envato_id && !(int)$shub_envato_message_id){
 		    $fieldset_data = array(
 			    'heading' => array(
 				    'type' => 'h3',
-				    'title' => 'Compose Message',
+				    'title' => 'Compose message',
 				),
 			    'class' => 'tableclass tableclass_form tableclass_full',
 			    'elements' => array(
@@ -68,7 +68,7 @@ if($shub_envato_id && !(int)$shub_envato_message_id){
 			            'fields' => array(),
 			        ),
 				    'message' => array(
-					    'title' => __('Message', 'support_hub'),
+					    'title' => __('message', 'support_hub'),
 					    'field' => array(
 						    'type' => 'textarea',
 						    'name' => 'message',

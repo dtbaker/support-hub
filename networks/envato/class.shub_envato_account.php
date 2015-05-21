@@ -9,8 +9,8 @@ class shub_envato_account{
 	private $shub_envato_id = false; // the current user id in our system.
     private $details = array();
 
-	/* @var $groups shub_envato_group[] */
-    private $groups = array();
+	/* @var $items shub_envato_item[] */
+    private $items = array();
 
 	private function reset(){
 		$this->shub_envato_id = false;
@@ -25,7 +25,7 @@ class shub_envato_account{
 			'machine_id' => false,
 			'import_stream' => false,
 		);
-	    $this->groups = array();
+	    $this->items = array();
 		foreach($this->details as $field_id => $field_data){
 			$this->{$field_id} = '';
 		}
@@ -54,11 +54,11 @@ class shub_envato_account{
         foreach($this->details as $key=>$val){
             $this->{$key} = $val;
         }
-	    $this->groups = array();
+	    $this->items = array();
 	    if(!$this->shub_envato_id)return false;
-	    foreach(shub_get_multiple('shub_envato_group',array('shub_envato_id'=>$this->shub_envato_id),'shub_envato_group_id') as $group){
-		    $group = new shub_envato_group($this, $group['shub_envato_group_id']);
-		    $this->groups[$group->get('group_id')] = $group;
+	    foreach(shub_get_multiple('shub_envato_item',array('shub_envato_id'=>$this->shub_envato_id),'shub_envato_item_id') as $item){
+		    $item = new shub_envato_item($this, $item['shub_envato_item_id']);
+		    $this->items[$item->get('item_id')] = $item;
 	    }
         return $this->shub_envato_id;
     }
@@ -81,32 +81,33 @@ class shub_envato_account{
 		if(!isset($post_data['import_stream'])){
 			$this->update('import_stream', 0);
 		}
-		// save the active envato groups.
-		if(isset($post_data['save_envato_groups']) && $post_data['save_envato_groups'] == 'yep') {
-			$currently_active_groups = $this->groups;
+		// save the active envato items.
+		if(isset($post_data['save_envato_items']) && $post_data['save_envato_items'] == 'yep') {
+			$currently_active_items = $this->items;
 			$data = @json_decode($this->get('envato_data'),true);
-			$available_groups = isset($data['groups']) && is_array($data['groups']) ? $data['groups'] : array();
-			if(isset($post_data['envato_group']) && is_array($post_data['envato_group'])){
-				foreach($post_data['envato_group'] as $envato_group_id => $yesno){
-					if(isset($currently_active_groups[$envato_group_id])){
-						unset($currently_active_groups[$envato_group_id]);
+			$available_items = isset($data['items']) && is_array($data['items']) ? $data['items'] : array();
+			if(isset($post_data['envato_item']) && is_array($post_data['envato_item'])){
+				foreach($post_data['envato_item'] as $envato_item_id => $yesno){
+					if(isset($currently_active_items[$envato_item_id])){
+						unset($currently_active_items[$envato_item_id]);
 					}
-					if($yesno && isset($available_groups[$envato_group_id])){
-						// we are adding this group to the list. check if it doesn't already exist.
-						if(!isset($this->groups[$envato_group_id])){
-							$group = new shub_envato_group($this);
-							$group->create_new();
-							$group->update('shub_envato_id', $this->shub_envato_id);
-							$group->update('envato_token', 'same'); // $available_groups[$envato_group_id]['access_token']
-							$group->update('group_name', $available_groups[$envato_group_id]['group']['name']);
-							$group->update('group_id', $envato_group_id);
+					if($yesno && isset($available_items[$envato_item_id])){
+						// we are adding this item to the list. check if it doesn't already exist.
+						if(!isset($this->items[$envato_item_id])){
+							$item = new shub_envato_item($this);
+							$item->create_new();
+							$item->update('shub_envato_id', $this->shub_envato_id);
+							$item->update('envato_token', 'same'); // $available_items[$envato_item_id]['access_token']
+							$item->update('item_name', $available_items[$envato_item_id]['item']);
+							$item->update('item_id', $envato_item_id);
+							$item->update('envato_data', json_encode($available_items[$envato_item_id]));
 						}
 					}
 				}
 			}
-			// remove any groups that are no longer active.
-			foreach($currently_active_groups as $group){
-				$group->delete();
+			// remove any items that are no longer active.
+			foreach($currently_active_items as $item){
+				$item->delete();
 			}
 		}
 		$this->load();
@@ -124,10 +125,10 @@ class shub_envato_account{
     }
 	public function delete(){
 		if($this->shub_envato_id) {
-			// delete all the groups for this twitter account.
-			$groups = $this->get('groups');
-			foreach($groups as $group){
-				$group->delete();
+			// delete all the items for this twitter account.
+			$items = $this->get('items');
+			foreach($items as $item){
+				$item->delete();
 			}
 			shub_delete_from_db( 'shub_envato', 'shub_envato_id', $this->shub_envato_id );
 		}
@@ -147,8 +148,8 @@ class shub_envato_account{
 		return false;
 	}
 
-	public function is_group_active($envato_group_id){
-		if(isset($this->groups[$envato_group_id]) && $this->groups[$envato_group_id]->get('group_id') == $envato_group_id && $this->groups[$envato_group_id]->get('envato_token')){
+	public function is_item_active($envato_item_id){
+		if(isset($this->items[$envato_item_id]) && $this->items[$envato_item_id]->get('item_id') == $envato_item_id && $this->items[$envato_item_id]->get('envato_token')){
 			return true;
 		}else{
 			return false;
@@ -158,7 +159,7 @@ class shub_envato_account{
 	public function save_account_data($user_data){
 		// serialise this result into envato_data.
 		if(is_array($user_data)){
-			// yes, this member has some groups, save these groups to the account ready for selection in the settings area.
+			// yes, this member has some items, save these items to the account ready for selection in the settings area.
 			$save_data = @json_decode($this->get('envato_data'),true);
 			if(!is_array($save_data))$save_data=array();
 			$save_data = array_merge($save_data,$user_data);
@@ -166,57 +167,33 @@ class shub_envato_account{
 		}
 	}
 
-	public function load_available_groups(){
+	public function load_available_items(){
 		// serialise this result into envato_data.
 
 		$api = $this->get_api();
-		$api_result = $api->api('v1/people/~/group-memberships');
-		if($api_result && isset($api_result['values']) && is_array($api_result['values'])){
-			$groups = array();
-			foreach($api_result['values'] as $group){
-				$groups[$group['_key']] = $group;
-			}
-			// yes, this member has some groups, save these groups to the account ready for selection in the settings area.
-			$save_data = @json_decode($this->get('envato_data'),true);
-			if(!is_array($save_data))$save_data=array();
-			$save_data['groups'] = $groups;
-
-			$this->update('envato_data',json_encode($save_data));
-		}
-
-		//$this->update('last_checked',time());
-	}
-
-	public function load_latest_stream_data( $debug = false ){
-		$api = $this->get_api();
-		$api_result = $api->api('v1/people/~/network',array(
-			'type' => 'SHAR',
-			'count' => 30, // only get the latest 30 network update message?
-		));
-		if($debug){
-			echo "Updating stream data: \n ";
-			echo isset($api_result['networkStats']) ? var_export($api_result['networkStats'],true) : '';
-		}
-		if($api_result && isset($api_result['updates']['values']) && is_array($api_result['updates']['values'])){
-			foreach($api_result['updates']['values'] as $network_update){
-				if(isset($network_update['updateKey']) && $network_update['updateKey']) {
-
-					// skip private shares.
-					if(!isset($network_update['updateContent']['person']['currentShare']) || (isset($network_update['updateContent']['person']['firstName']) && $network_update['updateContent']['person']['firstName'] == 'private'))continue;
-					$share = new shub_envato_message( $this, false, false );
-					$share->load_by_envato_id( $network_update['updateKey'], $network_update, 'share', $debug );
+		$api_result = $api->api('market/user-items-by-site:' . $this->get('envato_name') . '.json');
+		if($api_result && isset($api_result['user-items-by-site']) && is_array($api_result['user-items-by-site'])){
+			$items = array();
+			foreach($api_result['user-items-by-site'] as $items_by_site){
+				$site_api_result = $api->api('market/new-files-from-user:' . $this->get('envato_name') . ',' . strtolower($items_by_site['site']) .  '.json');
+				if($site_api_result && isset($site_api_result['new-files-from-user']) && is_array($site_api_result['new-files-from-user'])){
+					foreach($site_api_result['new-files-from-user'] as $item){
+						$item['site'] = $items_by_site['site'];
+						$items[$item['id']] = $item;
+					}
 				}
 			}
-		}else{
-			if($debug){
-				echo 'No stream updates found';
-			}
+			// yes, this member has some items, save these items to the account ready for selection in the settings area.
+			$save_data = @json_decode($this->get('envato_data'),true);
+			if(!is_array($save_data))$save_data=array();
+			$save_data['items'] = $items;
+			$this->update('envato_data',json_encode($save_data));
 		}
 	}
 
 	public function run_cron( $debug = false ){
 
-		$this->load_latest_stream_data($debug);
+		// todo: loop over all enabled items and grab latest comments.
 
 	}
 
@@ -224,13 +201,11 @@ class shub_envato_account{
 	public function get_api($use_db_code = true){
 		if(!self::$api){
 
-			self::$api = new Happyr\envato\envato($this->get( 'envato_app_id' ), $this->get( 'envato_app_secret' ));
+			require_once trailingslashit(dirname(_DTBAKER_SUPPORT_HUB_CORE_FILE_)) . 'networks/envato/class.envato-api.php';
 
-			if($use_db_code){
-				// user isn't logging in again, set the code from our db:
-				//echo 'API set topen to '.$this->get('envato_token');
-				self::$api->setAccessToken($this->get('envato_token'));
-			}
+			self::$api = envato_api_basic::getInstance();
+			self::$api->set_personal_token($this->get( 'envato_token' ));
+
 		}
 		return self::$api;
 	}

@@ -38,14 +38,8 @@ class SupportHub {
 		global $wpdb;
 		define('_support_hub_DB_PREFIX',$wpdb->prefix);
 
-		// todo: hook these into loop
-		// todo: option to disable a social method completely (tickboxes on settings page)
-		$this->message_managers = array(
-			'facebook' => new shub_facebook(),
-			'twitter' => new shub_twitter(),
-			'google' => new shub_google(),
-			'linkedin' => new shub_linkedin(),
-		);
+		$this->message_managers = array();
+		$this->message_managers = apply_filters( 'shub_managers', $this->message_managers);
 
 		// Add settings page to menu
 		add_action( 'admin_menu' , array( $this, 'add_menu_item' ) );
@@ -71,8 +65,9 @@ class SupportHub {
 	public function shub_init(){
 
 		if ( ! wp_next_scheduled( 'support_hub_cron_job' ) ) {
-			wp_schedule_event( time(), 'minutes_10', 'support_hub_cron_job' );
+			wp_schedule_event( time(), 'minutes_5', 'support_hub_cron_job' );
 		}
+
 		foreach($this->message_managers as $name => $message_manager){
 			$message_manager->init();
 		}
@@ -162,60 +157,72 @@ class SupportHub {
 			$process_action = $_REQUEST['_process'];
 			$process_options = array();
 			$shub_message_id = false;
-			if($process_action == 'send_shub_message'){
-				check_admin_referer( 'shub_send-message' );
+			if($process_action == 'send_shub_message' && check_admin_referer( 'shub_send-message' )) {
 				// we are sending a social message! yay!
 
-			    $send_time = time(); // default: now
-                if(isset($_POST['schedule_date']) && isset($_POST['schedule_time']) && !empty($_POST['schedule_date']) && !empty($_POST['schedule_time'])){
-                    $date = $_POST['schedule_date'];
-                    $time_hack = $_POST['schedule_time'];
-                    $time_hack = str_ireplace('am','',$time_hack);
-                    $time_hack = str_ireplace('pm','',$time_hack);
-                    $bits = explode(':',$time_hack);
-                    if(strpos($_POST['schedule_time'],'pm')){
-                        $bits[0] += 12;
-                    }
-                    // add the time if it exists
-                    $date .= ' '.implode(':',$bits).':00';
-	                $send_time = strtotime($date);
-	                //echo $date."<br>".$send_time."<br>".shub_print_date($send_time,true);exit;
-                }else if(isset($_POST['schedule_date']) && !empty($_POST['schedule_date'])){
-                    $send_time = strtotime($_POST['schedule_date']);
-                }
+				$send_time = time(); // default: now
+				if ( isset( $_POST['schedule_date'] ) && isset( $_POST['schedule_time'] ) && ! empty( $_POST['schedule_date'] ) && ! empty( $_POST['schedule_time'] ) ) {
+					$date      = $_POST['schedule_date'];
+					$time_hack = $_POST['schedule_time'];
+					$time_hack = str_ireplace( 'am', '', $time_hack );
+					$time_hack = str_ireplace( 'pm', '', $time_hack );
+					$bits      = explode( ':', $time_hack );
+					if ( strpos( $_POST['schedule_time'], 'pm' ) ) {
+						$bits[0] += 12;
+					}
+					// add the time if it exists
+					$date .= ' ' . implode( ':', $bits ) . ':00';
+					$send_time = strtotime( $date );
+					//echo $date."<br>".$send_time."<br>".shub_print_date($send_time,true);exit;
+				} else if ( isset( $_POST['schedule_date'] ) && ! empty( $_POST['schedule_date'] ) ) {
+					$send_time = strtotime( $_POST['schedule_date'] );
+				}
 				// wack a new entry into the shub_message database table and pass that onto our message_managers below
-				$shub_message_id = shub_update_insert('shub_message_id',false,'shub_message',array(
-					'post_id' => isset($_POST['post_id']) ? $_POST['post_id'] : 0, //todo
+				$shub_message_id = shub_update_insert( 'shub_message_id', false, 'shub_message', array(
+					'post_id'   => isset( $_POST['post_id'] ) ? $_POST['post_id'] : 0, //todo
 					'sent_time' => $send_time,
-				));
-				if($shub_message_id){
+				) );
+				if ( $shub_message_id ) {
 					$process_options['shub_message_id'] = $shub_message_id;
-					$process_options['send_time'] = $send_time;
-				}else{
-					die('Failed to create social message');
+					$process_options['send_time']       = $send_time;
+				} else {
+					die( 'Failed to create social message' );
 				}
 				/* @var $message_manager shub_facebook */
 				$message_count = 0;
-				foreach($this->message_managers as $name => $message_manager){
-					$message_count += $message_manager->handle_process($process_action, $process_options);
+				foreach ( $this->message_managers as $name => $message_manager ) {
+					$message_count += $message_manager->handle_process( $process_action, $process_options );
 				}
-				if($shub_message_id && !$message_count){
+				if ( $shub_message_id && ! $message_count ) {
 					// remove the gobal social message as nothing worked.
-					shub_delete_from_db('shub_message','shub_message_id',$shub_message_id);
-				}else if($shub_message_id){
-					shub_update_insert('shub_message_id',$shub_message_id,'shub_message',array(
+					shub_delete_from_db( 'shub_message', 'shub_message_id', $shub_message_id );
+				} else if ( $shub_message_id ) {
+					shub_update_insert( 'shub_message_id', $shub_message_id, 'shub_message', array(
 						'message_count' => $message_count,
-					));
+					) );
 				}
-				if(isset($_POST['debug']) && $_POST['debug']){
+				if ( isset( $_POST['debug'] ) && $_POST['debug'] ) {
 					echo "<br><hr> Successfully sent $message_count messages <hr><br><pre>";
-					print_r($_POST);
-					print_r($process_options);
+					print_r( $_POST );
+					print_r( $process_options );
 					echo "</pre><hr><br>Completed";
 					exit;
 				}
-				header("Location: admin.php?page=support_hub_sent");
+				header( "Location: admin.php?page=support_hub_sent" );
 				exit;
+			}else if($process_action == 'save_general_settings' && isset($_POST['possible_shub_manager_enabled'])){
+				if(check_admin_referer( 'save-general-settings' )){
+					foreach($_POST['possible_shub_manager_enabled'] as $id=> $tf){
+						if(isset($_POST['shub_manager_enabled'][$id]) && $_POST['shub_manager_enabled'][$id]){
+							update_option('shub_manager_enabled_'.$id,1);
+						}else{
+							update_option('shub_manager_enabled_'.$id,0);
+						}
+					}
+					header( "Location: admin.php?page=support_hub_settings" );
+					exit;
+				}
+
 			}else{
 				// just process each request normally:
 
@@ -307,22 +314,58 @@ class SupportHub {
 		include( trailingslashit( $this->dir ) . 'pages/plugin_updates.php');
 	}
 	public function cron_new_interval($interval){
-		$interval['minutes_10'] = array('interval' => 10 * 60, 'display' => 'Once 10 minutes');
+		$interval['minutes_5'] = array('interval' => 5 * 60, 'display' => 'Once 5 minutes');
 	    return $interval;
 	}
 	function cron_run( $debug = false ){
 		// running the cron job every 10 minutes.
 		// we get a list of accounts and refresh them all.
-		//@set_time_limit(0);
+		@set_time_limit(0);
 		//mail('dtbaker@gmail.com','cron job running','test');
 		//ob_start();
 		//echo 'Checking cron job...';
-
-		// todo: $debug as config variable in settings
+		$cron_timeout = 5 * 60; // 5 mins
+		$cron_start = time();
+		$last_cron_task = get_option('last_support_hub_cron',false);
+		if($last_cron_task && $last_cron_task['time'] < time() - $cron_timeout){
+			// the last cron job didn't complete fully or timed out.
+			// start where we left off:
+		}else{
+			$last_cron_task = false;
+		}
+		$cron_completed = true;
+		$this->log_data(0,'cron','Starting Cron Jobs',array(
+			'from' => $last_cron_task ? 'start' : $last_cron_task,
+		));
 
 		foreach($this->message_managers as $name => $message_manager) {
+			if($last_cron_task){
+				if($last_cron_task['name'] == $name) {
+					// we got here last time, start at the next cron task.
+					$last_cron_task = false;
+				}
+				continue;
+			}
+			// recording where we get up to in the (sometimes very long) cron tasks.
+			update_option('last_support_hub_cron',array(
+				'name' => $name,
+				'time' => time(),
+			));
+			$this->log_data(0,'cron','Starting Extension Cron: '.$name);
 			$message_manager->run_cron( $debug );
+			// this cron job has completed successfully.
+			// if we've been running more than timeout, quit.
+			if($cron_start + $cron_timeout < time()){
+				$cron_completed = false;
+				break;
+			}
 		}
+		if($cron_completed){
+			update_option('last_support_hub_cron',false);
+		}
+		$this->log_data(0,'cron','Finished Cron Jobs',array(
+			'all' => $cron_completed ? 'yes' : 'no, finished at '.$name,
+		));
 
 		//echo 'completed cron job';
 		//mail('dtbaker@gmail.com','Support Hub cron',ob_get_clean());
@@ -335,26 +378,8 @@ class SupportHub {
 		foreach($this->message_managers as $name => $message_manager) {
 			$sql .= $message_manager->get_install_sql();
 		}
-		$hash = md5($sql);
-        if(get_option("support_hub_db_hash") != $hash){
-	        $this->activation();
-        }
-	}
-	public function deactivation(){
-		wp_clear_scheduled_hook( 'support_hub_cron_job' );
-	}
-	public function activation() {
-
-
-		global $wpdb;
-
-		$sql = '';
-		foreach ( $this->message_managers as $name => $message_manager ) {
-			$sql .= $message_manager->get_install_sql();
-		}
-		$hash = md5( $sql );
-
 		// add our core stuff:
+		global $wpdb;
 		$sql .= <<< EOT
 
 CREATE TABLE {$wpdb->prefix}shub_message (
@@ -367,8 +392,31 @@ CREATE TABLE {$wpdb->prefix}shub_message (
   KEY post_id (post_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
+CREATE TABLE {$wpdb->prefix}shub_log (
+  shub_log_id int(11) NOT NULL AUTO_INCREMENT,
+  log_error_level int(11) NOT NULL DEFAULT '0',
+  log_extension varchar(50) NOT NULL,
+  log_subject varchar(255) NOT NULL DEFAULT '',
+  log_time int(11) NOT NULL DEFAULT '0',
+  log_data mediumtext NOT NULL,
+  PRIMARY KEY  shub_log_id (shub_log_id),
+  KEY log_time (log_time)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
 
 EOT;
+		$hash = md5($sql);
+        if(get_option("support_hub_db_hash") != $hash){
+	        $this->activation($sql);
+	        $this->log_data(0,'core','Ran SQL Update');
+	        update_option( "support_hub_db_hash", $hash );
+        }
+	}
+	public function deactivation(){
+		wp_clear_scheduled_hook( 'support_hub_cron_job' );
+	}
+	public function activation($sql) {
+		global $wpdb;
 
 		$bits = explode( ';', $sql );
 
@@ -380,8 +428,16 @@ EOT;
 		}
 
 		$wpdb->hide_errors();
+	}
 
-		update_option( "support_hub_db_hash", $hash );
+	public function log_data($error_level, $extension, $subject, $data = array()){
+        shub_update_insert('shub_log_id',false,'shub_log',array(
+            'log_time' => time(),
+            'log_error_level' => $error_level,
+            'log_extension' => $extension,
+            'log_subject' => $subject,
+            'log_data' => $data ? serialize($data) : '',
+        ));
 	}
 
 	/**

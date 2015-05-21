@@ -20,7 +20,7 @@
     $myListTable = new SupportHubMessageList();
     $myListTable->set_columns( array(
 		'cb' => '',
-		'shub_column_social' => __( 'Social Account', 'support_hub' ),
+		'shub_column_account' => __( 'Social Account', 'support_hub' ),
 		'shub_column_time'    => __( 'Date/Time', 'support_hub' ),
 		'shub_column_from'    => __( 'From', 'support_hub' ),
 		'shub_column_summary'    => __( 'Summary', 'support_hub' ),
