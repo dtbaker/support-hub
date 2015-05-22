@@ -141,8 +141,11 @@ class shub_twitter extends SupportHub_network {
 		return $return;
 	}
 
-	private $all_messages = false;
-	public function load_all_messages($search=array(),$order=array()){
+
+	public function load_all_messages($search=array(),$order=array(),$limit_batch=0){
+		$this->search_params = $search;
+		$this->search_order = $order;
+		$this->search_limit = $limit_batch;
 
 		$sql = "SELECT m.*, mr.read_time FROM `"._support_hub_DB_PREFIX."shub_twitter_message` m ";
 		$sql .= " LEFT OUTER JOIN `"._support_hub_DB_PREFIX."shub_twitter_message_read` mr ON m.shub_twitter_message_id = mr.shub_twitter_message_id";
@@ -162,18 +165,16 @@ class shub_twitter extends SupportHub_network {
 			$sql .= " AND `type` != "._TWITTER_MESSAGE_TYPE_OTHERTWEET;
 		}
 		$sql .= " ORDER BY `message_time` DESC ";
+		if($limit_batch){
+			$sql .= " LIMIT ".$this->limit_start.', '.$limit_batch;
+			$this->limit_start += $limit_batch;
+		}
 		//$this->all_messages = shub_query($sql);
 		global $wpdb;
 		$this->all_messages = $wpdb->get_results($sql, ARRAY_A);
 		return $this->all_messages;
 	}
-	public function get_next_message(){
-		return !empty($this->all_messages) ? array_shift($this->all_messages) : false;
-		/*if(mysql_num_rows($this->all_messages)){
-			return mysql_fetch_assoc($this->all_messages);
-		}
-		return false;*/
-	}
+
 
 
 	// used in our Wp "outbox" view showing combined messages.

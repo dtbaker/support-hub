@@ -108,7 +108,7 @@ class shub_module_form{
                     ?>
                     <select name="<?php echo $setting['name'];?>"<?php echo $attributes;?>>
                         <?php if(!isset($setting['blank'])||$setting['blank']){ ?>
-                        <option value=""><?php echo (!isset($setting['blank'])||$setting['blank'] === true) ? _l('- Select -') : htmlspecialchars($setting['blank']);?></option>
+                        <option value=""><?php echo (!isset($setting['blank'])||$setting['blank'] === true) ? __('- Select -') : htmlspecialchars($setting['blank']);?></option>
                         <?php }
 
                         $found_selected = false;
@@ -196,7 +196,7 @@ class shub_module_form{
         }*/
         echo $html;
         if(isset($setting['label']) && strlen($setting['label'])){
-            echo '<label for="'.htmlspecialchars($setting['id']).'">' . _l($setting['label']) .'</label>';
+            echo '<label for="'.htmlspecialchars($setting['id']).'">' . __($setting['label']) .'</label>';
         }
         /*if(isset($setting['help']) && (count($setting['help']) || strlen($setting['help']))){
             _h($setting['help']);

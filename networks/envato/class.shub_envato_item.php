@@ -11,20 +11,22 @@ class shub_envato_item{
 	private $envato_account = false;
 	private $shub_envato_item_id = false; // the current user id in our system.
     private $details = array();
+	private $json_fields = array('envato_data');
 
 	private function reset(){
 		$this->shub_envato_item_id = false;
 		$this->details = array(
 			'shub_envato_item_id' => '',
 			'shub_envato_id' => '',
+			'shub_product_id' => '',
 			'item_name' => '',
 			'last_message' => '',
 			'last_checked' => '',
 			'item_id' => '',
-			'envato_data' => '',
+			'envato_data' => array(),
 		);
 		foreach($this->details as $field_id => $field_data){
-			$this->{$field_id} = '';
+			$this->{$field_id} = $field_data;
 		}
 	}
 
@@ -42,6 +44,10 @@ class shub_envato_item{
 	        $data = shub_get_single('shub_envato_item','shub_envato_item_id',$this->shub_envato_item_id);
 	        foreach($this->details as $key=>$val){
 		        $this->details[$key] = $data && isset($data[$key]) ? $data[$key] : $val;
+		        if(in_array($key,$this->json_fields)){
+			        $this->details[$key] = @json_decode($this->details[$key],true);
+			        if(!is_array($this->details[$key]))$this->details[$key] = array();
+		        }
 	        }
 	        if(!is_array($this->details) || $this->details['shub_envato_item_id'] != $this->shub_envato_item_id){
 		        $this->reset();
@@ -63,6 +69,9 @@ class shub_envato_item{
 	    if(in_array($field,array('shub_envato_item_id')))return;
         if($this->shub_envato_item_id){
             $this->{$field} = $value;
+	        if(in_array($field,$this->json_fields)){
+		        $value = json_encode($value);
+	        }
             shub_update_insert('shub_envato_item_id',$this->shub_envato_item_id,'shub_envato_item',array(
 	            $field => $value,
             ));
@@ -131,7 +140,6 @@ class shub_envato_item{
 
 		$endpoint = 'discovery/search/search/comment?term=&item_id='.$envato_item_id.'&sort_by=newest&page_size=20';
 		$api_result = $api->api($endpoint);
-		SupportHub::getInstance()->log_data(0, 'envato', 'API Call: '.$endpoint,$api_result);
 		if($debug){
 			echo "API Result took :".$api_result['took'].' seconds and produced '.count($api_result['matches']).' results';
 		}

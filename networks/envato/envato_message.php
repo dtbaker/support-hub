@@ -11,7 +11,7 @@ if($shub_envato_id && $shub_envato_message_id){
 	    $envato_message = new shub_envato_message( $envato, false, $shub_envato_message_id );
 	    if($shub_envato_message_id && $envato_message->get('shub_envato_message_id') == $shub_envato_message_id && $envato_message->get('shub_envato_id') == $shub_envato_id){
 
-		    $messages         = $envato_message->get_messages();
+		    $messages         = $envato_message->get_comments();
 		    $envato_message->mark_as_read();
 
 		    ?>
@@ -30,8 +30,26 @@ if($shub_envato_id && $shub_envato_message_id){
 					</div>
 					<img src="<?php echo plugins_url('networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="envato_icon">
 						    <strong><?php _e('Account:');?></strong> <a href="<?php echo $envato_message->get_link(); ?>"
-					           target="_blank"><?php echo htmlspecialchars( $envato_message->get('envato_group') ? $envato_message->get('envato_group')->get( 'group_name' ) : 'Share' ); ?></a> <br/>
-						    <strong><?php _e('Type:');?></strong> <?php echo htmlspecialchars( $envato_message->get_type_pretty() ); ?>
+					           target="_blank"><?php echo htmlspecialchars( $envato_message->get('envato_account') ? $envato_message->get('envato_account')->get( 'envato_name' ) : 'N/A' ); ?></a> <br/>
+						    <strong><?php _e('Product:');?></strong> <?php
+					$shub_product_id = $envato_message->get('envato_item')->get('shub_product_id');
+		if($shub_product_id) {
+			$shub_product = new SupportHubProduct();
+			$shub_product->load($shub_product_id);
+			$product_data = $shub_product->get('product_data');
+			if(isset($product_data['envato_item_data'])){
+				?>
+				<img
+					src="<?php echo isset( $product_data['envato_item_data']['thumbnail'] ) ? $product_data['envato_item_data']['thumbnail'] : plugins_url( 'networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"
+					class="envato_icon">
+				<a href="<?php echo isset( $product_data['envato_item_data']['url'] ) ? $product_data['envato_item_data']['url'] : $envato_message->get_link(); ?>"
+				   target="_blank"><?php
+					echo htmlspecialchars( $shub_product->get('product_name') ); ?></a>
+				<br/>
+			<?php
+			}
+		}
+					?>
 				</div>
 				<div id="envato_message_holder">
 		    <?php
@@ -48,7 +66,7 @@ if($shub_envato_id && !(int)$shub_envato_message_id){
 	$envato = new shub_envato_account($shub_envato_id);
     if($shub_envato_id && $envato->get('shub_envato_id') == $shub_envato_id){
 
-	    /* @var $groups shub_envato_group[] */
+	    /* @var $groups shub_envato_item[] */
 	    $groups = $envato->get('groups');
 	    //print_r($groups);
 	    ?>
@@ -63,7 +81,7 @@ if($shub_envato_id && !(int)$shub_envato_message_id){
 				),
 			    'class' => 'tableclass tableclass_form tableclass_full',
 			    'elements' => array(
-			       'envato_group' => array(
+			       'envato_item' => array(
 			            'title' => __('envato Group', 'support_hub'),
 			            'fields' => array(),
 			        ),
@@ -201,12 +219,12 @@ if($shub_envato_id && !(int)$shub_envato_message_id){
 				    ),
 			    )
 			);
-		    foreach($groups as $envato_group_id => $group){
-			    $fieldset_data['elements']['envato_group']['fields'][] =
+		    foreach($groups as $envato_item_id => $group){
+			    $fieldset_data['elements']['envato_item']['fields'][] =
 				    '<div id="envato_compose_group_select">' .
-				    '<input type="checkbox" name="compose_group_id['.$envato_group_id.']" value="1" checked> ' .
-				    '<img src="//graph.envato.com/'.$envato_group_id.'/picture"> ' .
-				    htmlspecialchars($group->get('group_name')) .
+				    '<input type="checkbox" name="compose_group_id['.$envato_item_id.']" value="1" checked> ' .
+				    '<img src="//graph.envato.com/'.$envato_item_id.'/picture"> ' .
+				    htmlspecialchars($group->get('item_name')) .
 				    '</div>'
 			    ;
 		    }

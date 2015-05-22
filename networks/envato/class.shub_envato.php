@@ -163,8 +163,11 @@ class shub_envato extends SupportHub_network {
 		return $return;
 	}
 
-	private $all_messages = false;
-	public function load_all_messages($search=array(),$order=array()){
+	public function load_all_messages($search=array(),$order=array(),$limit_batch=0){
+		$this->search_params = $search;
+		$this->search_order = $order;
+		$this->search_limit = $limit_batch;
+
 		$sql = "SELECT m.*, m.last_active AS `message_time`, mr.read_time FROM `"._support_hub_DB_PREFIX."shub_envato_message` m ";
 		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_envato_message_read` mr ON m.shub_envato_message_id = mr.shub_envato_message_id";
 		$sql .= " WHERE 1 ";
@@ -184,18 +187,16 @@ class shub_envato extends SupportHub_network {
 			$sql .= " AND `summary` LIKE '%".mysql_real_escape_string($search['generic'])."%'";
 		}
 		$sql .= " ORDER BY `last_active` DESC ";
+		if($limit_batch){
+			$sql .= " LIMIT ".$this->limit_start.', '.$limit_batch;
+			$this->limit_start += $limit_batch;
+		}
 		//$this->all_messages = query($sql);
 		global $wpdb;
 		$this->all_messages = $wpdb->get_results($sql, ARRAY_A);
 		return $this->all_messages;
 	}
-	public function get_next_message(){
-		return !empty($this->all_messages) ? array_shift($this->all_messages) : false;
-		/*if(mysql_num_rows($this->all_messages)){
-			return mysql_fetch_assoc($this->all_messages);
-		}
-		return false;*/
-	}
+
 
 
 	// used in our Wp "outbox" view showing combined messages.
@@ -263,7 +264,7 @@ class shub_envato extends SupportHub_network {
 
 	public function output_row($message){
 		$envato_message = new shub_envato_message(false, false, $message['shub_envato_message_id']);
-	    $messages         = $envato_message->get_messages();
+	    $messages         = $envato_message->get_comments();
 		$return = array();
 
 		ob_start();
@@ -277,13 +278,23 @@ class shub_envato extends SupportHub_network {
 		$return['shub_column_account'] = ob_get_clean();
 
 		ob_start();
-		$item_data = @json_decode($envato_message->get('envato_item')->get('envato_data'),true);
-		?>
-			<img src="<?php echo $item_data && isset($item_data['thumbnail']) ? $item_data['thumbnail'] : plugins_url('networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="envato_icon">
-		    <a href="<?php echo $item_data && isset($item_data['url']) ? $item_data['url'] : $envato_message->get_link(); ?>"
-	           target="_blank"><?php
-		    echo htmlspecialchars( $envato_message->get('envato_item') ? $envato_message->get('envato_item')->get( 'item_name' ) : 'Item' ); ?></a> <br/>
-		<?php
+		$shub_product_id = $envato_message->get('envato_item')->get('shub_product_id');
+		if($shub_product_id) {
+			$shub_product = new SupportHubProduct();
+			$shub_product->load($shub_product_id);
+			$product_data = $shub_product->get('product_data');
+			if(isset($product_data['envato_item_data'])){
+				?>
+				<img
+					src="<?php echo isset( $product_data['envato_item_data']['thumbnail'] ) ? $product_data['envato_item_data']['thumbnail'] : plugins_url( 'networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"
+					class="envato_icon">
+				<a href="<?php echo isset( $product_data['envato_item_data']['url'] ) ? $product_data['envato_item_data']['url'] : $envato_message->get_link(); ?>"
+				   target="_blank"><?php
+					echo htmlspecialchars( $shub_product->get('product_name') ); ?></a>
+				<br/>
+			<?php
+			}
+		}
 		$return['shub_column_product'] = ob_get_clean();
 
 		$return['shub_column_time'] = shub_print_date( $message['message_time'], true );
@@ -324,8 +335,9 @@ class shub_envato extends SupportHub_network {
 		    <?php echo count( $messages ) > 0 ? '('.count( $messages ).')' : ''; ?>
 	    </span>
 	    <div class="envato_message_summary<?php echo !isset($message['read_time']) || !$message['read_time'] ? ' unread' : '';?>"> <?php
-		    $summary = $envato_message->get_summary();
-		    echo $summary;
+		    $title = $envato_message->get( 'title' );
+			$summary = $envato_message->get( 'summary' );
+		    echo htmlspecialchars( strlen( $title ) > 80 ? substr( $title, 0, 80 ) . '...' : $title ) . ($summary!=$title ? '<br/>' .htmlspecialchars( strlen( $summary ) > 80 ? substr( $summary, 0, 80 ) . '...' : $summary ) : '');
 		    ?>
 	    </div>
 		<?php
@@ -333,7 +345,7 @@ class shub_envato extends SupportHub_network {
 
 		ob_start();
 		?>
-		<a href="<?php echo $envato_message->link_open();?>" class="socialenvato_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($summary);?>" data-socialenvatomessageid="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Open' );?></a>
+		<a href="<?php echo $envato_message->link_open();?>" class="socialenvato_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($title);?>" data-socialenvatomessageid="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Open' );?></a>
 	    <?php if($envato_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 		    <a href="#" class="socialenvato_message_action  button"
 		       data-action="set-unanswered" data-id="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Inbox' ); ?></a>
@@ -635,8 +647,8 @@ CREATE TABLE {$wpdb->prefix}shub_envato_message_read (
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}shub_envato_message_message (
-  shub_envato_message_message_id int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE {$wpdb->prefix}shub_envato_message_comment (
+  shub_envato_message_comment_id int(11) NOT NULL AUTO_INCREMENT,
   shub_envato_message_id int(11) NOT NULL,
   envato_id varchar(255) NOT NULL,
   time int(11) NOT NULL,
@@ -645,7 +657,7 @@ CREATE TABLE {$wpdb->prefix}shub_envato_message_message (
   message_text text NOT NULL,
   data text NOT NULL,
   user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_envato_message_message_id (shub_envato_message_message_id),
+  PRIMARY KEY  shub_envato_message_comment_id (shub_envato_message_comment_id),
   KEY shub_envato_message_id (shub_envato_message_id),
   KEY envato_id (envato_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
@@ -673,6 +685,7 @@ CREATE TABLE {$wpdb->prefix}shub_envato_message_link_click (
 CREATE TABLE {$wpdb->prefix}shub_envato_item (
   shub_envato_item_id int(11) NOT NULL AUTO_INCREMENT,
   shub_envato_id int(11) NOT NULL,
+  shub_product_id int(11) NOT NULL DEFAULT '0',
   item_name varchar(50) NOT NULL,
   last_message int(11) NOT NULL DEFAULT '0',
   last_checked int(11) NOT NULL,

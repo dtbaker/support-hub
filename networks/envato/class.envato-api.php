@@ -23,11 +23,14 @@ class envato_api_basic{
 		    ),
 		));
 		if( is_array($response) && isset($response['body']) && isset($response['response']['code']) && $response['response']['code'] == 200 ) {
+			SupportHub::getInstance()->log_data(0, 'envato', 'API Call: '.$endpoint,$response['body']);
 		    $header = $response['headers'];
 		    $body = @json_decode($response['body'],true);
 			return $body;
-		}else{
+		}else if(is_array($response) && isset($response['response']['code']) && $response['response']['code']){
 			SupportHub::getInstance()->log_data(2, 'envato', 'API Error: '.$endpoint. ' '.(isset($response['response']['code']) ? $response['response']['code'] .' / ': '').(isset($response['body']) ? $response['body'] : ''), $response);
+		}else if(is_wp_error($response)){
+			SupportHub::getInstance()->log_data(2, 'envato', 'API Error: '.$endpoint. ' '.$response->get_error_message());
 		}
 		return false;
 	}

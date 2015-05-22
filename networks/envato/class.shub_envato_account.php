@@ -12,13 +12,16 @@ class shub_envato_account{
 	/* @var $items shub_envato_item[] */
     private $items = array();
 
+
+	private $json_fields = array('envato_data');
+
 	private function reset(){
 		$this->shub_envato_id = false;
 		$this->details = array(
 			'shub_envato_id' => false,
 			'envato_name' => false,
 			'last_checked' => false,
-			'envato_data' => false,
+			'envato_data' => array(),
 			'envato_app_id' => false,
 			'envato_app_secret' => false,
 			'envato_token' => false,
@@ -27,7 +30,7 @@ class shub_envato_account{
 		);
 	    $this->items = array();
 		foreach($this->details as $field_id => $field_data){
-			$this->{$field_id} = '';
+			$this->{$field_id} = $field_data;
 		}
 	}
 
@@ -45,6 +48,10 @@ class shub_envato_account{
             $data = shub_get_single('shub_envato','shub_envato_id',$this->shub_envato_id);
 	        foreach($this->details as $key=>$val){
 		        $this->details[$key] = $data && isset($data[$key]) ? $data[$key] : $val;
+		        if(in_array($key,$this->json_fields)){
+			        $this->details[$key] = @json_decode($this->details[$key],true);
+			        if(!is_array($this->details[$key]))$this->details[$key] = array();
+		        }
 	        }
 	        if(!is_array($this->details) || $this->details['shub_envato_id'] != $this->shub_envato_id){
 		        $this->reset();
@@ -74,6 +81,7 @@ class shub_envato_account{
 		if(is_array($post_data)){
 			foreach($this->details as $details_key => $details_val){
 				if(isset($post_data[$details_key])){
+					if(($details_key == 'envato_app_secret' || $details_key == 'envato_token') && $post_data[$details_key] == 'password')continue;
 					$this->update($details_key,$post_data[$details_key]);
 				}
 			}
@@ -84,11 +92,14 @@ class shub_envato_account{
 		// save the active envato items.
 		if(isset($post_data['save_envato_items']) && $post_data['save_envato_items'] == 'yep') {
 			$currently_active_items = $this->items;
-			$data = @json_decode($this->get('envato_data'),true);
+			$data = $this->get('envato_data');
 			$available_items = isset($data['items']) && is_array($data['items']) ? $data['items'] : array();
 			if(isset($post_data['envato_item']) && is_array($post_data['envato_item'])){
 				foreach($post_data['envato_item'] as $envato_item_id => $yesno){
 					if(isset($currently_active_items[$envato_item_id])){
+						if(isset($post_data['envato_item_product'][$envato_item_id])){
+							$currently_active_items[$envato_item_id]->update('shub_product_id',$post_data['envato_item_product'][$envato_item_id]);
+						}
 						unset($currently_active_items[$envato_item_id]);
 					}
 					if($yesno && isset($available_items[$envato_item_id])){
@@ -100,7 +111,8 @@ class shub_envato_account{
 							$item->update('envato_token', 'same'); // $available_items[$envato_item_id]['access_token']
 							$item->update('item_name', $available_items[$envato_item_id]['item']);
 							$item->update('item_id', $envato_item_id);
-							$item->update('envato_data', json_encode($available_items[$envato_item_id]));
+							$item->update('envato_data', $available_items[$envato_item_id]);
+							$item->update('shub_product_id', isset($post_data['envato_item_product'][$envato_item_id]) ? $post_data['envato_item_product'][$envato_item_id] : 0);
 						}
 					}
 				}
@@ -118,6 +130,9 @@ class shub_envato_account{
 	    if(in_array($field,array('shub_envato_id')))return;
         if($this->shub_envato_id){
             $this->{$field} = $value;
+	        if(in_array($field,$this->json_fields)){
+		        $value = json_encode($value);
+	        }
             shub_update_insert('shub_envato_id',$this->shub_envato_id,'shub_envato',array(
 	            $field => $value,
             ));
@@ -149,7 +164,7 @@ class shub_envato_account{
 	}
 
 	public function is_item_active($envato_item_id){
-		if(isset($this->items[$envato_item_id]) && $this->items[$envato_item_id]->get('item_id') == $envato_item_id && $this->items[$envato_item_id]->get('envato_token')){
+		if(isset($this->items[$envato_item_id]) && $this->items[$envato_item_id]->get('item_id') == $envato_item_id){
 			return true;
 		}else{
 			return false;
@@ -160,10 +175,10 @@ class shub_envato_account{
 		// serialise this result into envato_data.
 		if(is_array($user_data)){
 			// yes, this member has some items, save these items to the account ready for selection in the settings area.
-			$save_data = @json_decode($this->get('envato_data'),true);
+			$save_data = $this->get('envato_data');
 			if(!is_array($save_data))$save_data=array();
 			$save_data = array_merge($save_data,$user_data);
-			$this->update('envato_data',json_encode($save_data));
+			$this->update('envato_data',$save_data);
 		}
 	}
 
@@ -184,10 +199,33 @@ class shub_envato_account{
 				}
 			}
 			// yes, this member has some items, save these items to the account ready for selection in the settings area.
-			$save_data = @json_decode($this->get('envato_data'),true);
+			$save_data = $this->get('envato_data');
 			if(!is_array($save_data))$save_data=array();
+			// create a product for each of these items (if a matching one doesn't already exist)
+			$existing_products = SupportHub::getInstance()->get_products();
+			foreach($items as $key => $envato_item){
+				// check if this item exists already
+				$exists = false;
+				foreach($existing_products as $existing_product){
+					if(isset($existing_product['product_data']['envato_item_id']) && $existing_product['product_data']['envato_item_id'] == $envato_item['id']){
+						$exists = $existing_product['shub_product_id'];
+					}
+				}
+				$newproduct = new SupportHubProduct();
+				if(!$exists) {
+					$newproduct->create_new();
+				}else {
+					$newproduct->load( $exists );
+				}
+				$newproduct->update('product_name',$envato_item['item']);
+				$newproduct->update('product_data',array(
+					'envato_item_id' => $envato_item['id'],
+					'envato_item_data' => $envato_item,
+				));
+				$items[$key]['shub_product_id'] = $newproduct->get('shub_product_id');
+			}
 			$save_data['items'] = $items;
-			$this->update('envato_data',json_encode($save_data));
+			$this->update('envato_data',$save_data);
 		}
 	}
 
@@ -211,7 +249,7 @@ class shub_envato_account{
 	}
 
 	public function get_picture(){
-		$data = @json_decode($this->get('envato_data'),true);
+		$data = $this->get('envato_data');
 		return $data && isset($data['pictureUrl']) && !empty($data['pictureUrl']) ? $data['pictureUrl'] : false;
 	}
 	

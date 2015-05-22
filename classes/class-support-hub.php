@@ -371,6 +371,16 @@ class SupportHub {
 		//mail('dtbaker@gmail.com','Support Hub cron',ob_get_clean());
 	}
 
+	public function get_products(){
+		$products = shub_get_multiple('shub_product',array(),'shub_product_id');
+		foreach($products as $key=>$val){
+			if(isset($val['product_data'])){
+				$products[$key]['product_data'] = @json_decode($val['product_data'],true);
+			}
+		}
+		return $products;
+	}
+
 	public function db_upgrade_check(){
 		// hash the SQL used for install.
 		// if it has changed at all then we run the activation again.
@@ -401,6 +411,35 @@ CREATE TABLE {$wpdb->prefix}shub_log (
   log_data mediumtext NOT NULL,
   PRIMARY KEY  shub_log_id (shub_log_id),
   KEY log_time (log_time)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_product (
+  shub_product_id int(11) NOT NULL AUTO_INCREMENT,
+  product_name varchar(100) NOT NULL DEFAULT '',
+  product_data text NOT NULL,
+  PRIMARY KEY  shub_product_id (shub_product_id),
+  KEY product_name (product_name)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_user (
+  shub_user_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linked_user_id int(11) NOT NULL DEFAULT '0',
+  user_fname varchar(255) NOT NULL,
+  user_lname varchar(255) NOT NULL,
+  user_email varchar(255) NOT NULL,
+  user_data mediumtext NOT NULL,
+  PRIMARY KEY  shub_user_id (shub_user_id),
+  KEY user_email (user_email),
+  KEY shub_linked_user_id (shub_linked_user_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_timer (
+  shub_timer_id int(11) NOT NULL AUTO_INCREMENT,
+  wp_user_id int(11) NOT NULL DEFAULT '0',
+  how_long int(11) NOT NULL DEFAULT '0',
+  timer_comment text NOT NULL,
+  PRIMARY KEY  shub_timer_id (shub_timer_id),
+  KEY wp_user_id (wp_user_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 

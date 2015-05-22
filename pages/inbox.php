@@ -31,15 +31,18 @@
 
 
 	/* @var $message_manager shub_facebook */
+    $limit_each = 40;
+    $limit_pages = 2; // get about 10 pages of data to display in WordPress.
 	foreach($this->message_managers as $message_manager_id => $message_manager){
 		if(isset($search['type']) && !empty($search['type']) && $search['type'] != $message_manager_id)continue;
-		$message_manager->load_all_messages($search, $order);
+		$message_manager->load_all_messages($search, $order, $limit_each);
 	}
 
 	// filter through each mysql resource so we get the date views. output each row using their individual classes.
 	$all_messages = array();
 	$loop_messages = array();
 	$last_timestamp = false;
+    $has_more = false;
 	while(true){
 		// fill them up
 		$has_messages = false;
@@ -56,6 +59,8 @@
 			}
 		}
 		if(!$has_messages && empty($loop_messages)){
+			// we didn't get any more messages from any of the message_managers
+			//
 			break;
 		}// todo - limit count here.
 		// pick the lowest one and replenish its spot
@@ -66,10 +71,18 @@
 				$last_timestamp = $message['message_time'];
 			}
 		}
+
+
+		if(count($all_messages) >= ($myListTable->get_pagenum() * $myListTable->items_per_page) + ($limit_pages * $myListTable->items_per_page)){
+			$has_more = true; // a flag so we can show "more" in the pagination listing.
+			break;
+		}
+
 		//echo "Message $next_type : <br>\n";
 		$all_messages[] = $loop_messages[$next_type];
 		unset($loop_messages[$next_type]);
 		// repeat.
+
 
 	}
 
@@ -79,6 +92,7 @@
 
 	$myListTable->set_data($all_messages);
 	$myListTable->prepare_items();
+    $myListTable->pagination_has_more = $has_more;
     ?>
 	<form method="post">
 	    <input type="hidden" name="page" value="<?php echo htmlspecialchars($_REQUEST['page']); ?>" />
@@ -89,6 +103,13 @@
 			<option value=""><?php _e('All','support_hub');?></option>
 			<?php foreach($this->message_managers as $message_manager_id => $message_manager){ ?>
 			<option value="<?php echo $message_manager_id;?>"<?php echo isset($search['type']) && $search['type'] == $message_manager_id ? ' selected' : '';?>><?php echo $message_manager->friendly_name;?></option>
+			<?php } ?>
+		</select>
+		<label for="simple_inbox-search-product"><?php _e('Product:','support_hub');?></label>
+		<select id="simple_inbox-search-product" name="search[product_id]">
+			<option value=""><?php _e('All','support_hub');?></option>
+			<?php foreach(SupportHub::getInstance()->get_products() as $product){ ?>
+			<option value="<?php echo $product['shub_product_id'];?>"<?php echo isset($search['product_id']) && $search['product_id'] == $product['shub_product_id'] ? ' selected' : '';?>><?php echo esc_attr( $product['product_name'] );?></option>
 			<?php } ?>
 		</select>
 		<label for="simple_inbox-search-input"><?php _e('Message Content:','support_hub');?></label>

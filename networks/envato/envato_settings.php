@@ -95,8 +95,7 @@ if($current_account !== false){
                             <?php _e( 'App Secret Key', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="text" name="envato_app_secret"
-							       value="<?php echo esc_attr( $shub_envato_account->get( 'envato_app_secret' ) ); ?>">
+                            <input type="password" name="envato_app_secret" value="<?php echo $shub_envato_account->get( 'envato_app_secret' ) ? 'password' : ''; ?>">
                         </td>
                     </tr>
                     <tr>
@@ -104,8 +103,7 @@ if($current_account !== false){
                             <?php _e( 'App Client ID', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="text" name="envato_app_id"
-							       value="<?php echo esc_attr( $shub_envato_account->get( 'envato_app_id' ) ); ?>">
+                            <input type="text" name="envato_app_id" value="<?php echo esc_attr( $shub_envato_account->get( 'envato_app_id' ) ); ?>">
                         </td>
                     </tr>
                     <tr>
@@ -113,8 +111,7 @@ if($current_account !== false){
                             <?php _e( 'Personal Token', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="text" name="envato_token"
-							       value="<?php echo esc_attr( $shub_envato_account->get( 'envato_token' ) ); ?>">
+                            <input type="password" name="envato_token" value="<?php echo $shub_envato_account->get( 'envato_token' ) ? 'password' : ''; ?>">
                         </td>
                     </tr>
 					<?php if ( $shub_envato_account->get( 'shub_envato_id' ) ) { ?>
@@ -133,9 +130,9 @@ if($current_account !== false){
 							<td class="">
 								<input type="hidden" name="save_envato_items" value="yep">
 								<strong><?php _e( 'Choose which Envato items you would like to manage:', 'support_hub' ); ?></strong><br>
-								(note: We haven't yet tested this with more than 50 items) <br/><br/>
+								(note: We haven't yet tested this with more than 50 items, but it should work ok) <br/><br/>
 								<?php
-								$data = @json_decode( $shub_envato_account->get( 'envato_data' ), true );
+								$data = $shub_envato_account->get( 'envato_data' );
 								if ( $data && isset( $data['items'] ) && is_array( $data['items'] ) && count( $data['items'] ) > 0 ) {
 									$envato_items = $shub_envato_account->get('items');
 									?>
@@ -144,30 +141,60 @@ if($current_account !== false){
 									</div>
 									<br/><br/>
 
-									<table>
+									<table class="wp-list-table widefat fixed striped">
 										<thead>
 										<tr>
-											<th>Enable</th>
+											<th>Enabled</th>
+											<th>Market</th>
+											<th>Envato Item</th>
+											<th>Support Hub Product</th>
+											<th>Last Checked</th>
+											<th>Action</th>
 										</tr>
 										</thead>
+										<tbody>
+										<?php
+										$products = SupportHub::getInstance()->get_products();
+										foreach ( $data['items'] as $item_id => $item_data ) {
+											?>
+											<tr>
+												<td>
+													<input type="checkbox" name="envato_item[<?php echo $item_id; ?>]" class="check_envato_item"
+													       value="1" <?php echo $shub_envato_account->is_item_active( $item_id ) ? ' checked' : ''; ?>>
+												</td>
+												<td>
+													<?php echo htmlspecialchars( $item_data['site'] ); ?>
+												</td>
+												<td>
+													<?php echo htmlspecialchars( $item_data['item'] ); ?>
+												</td>
+												<td>
+													<?php shub_module_form::generate_form_element(array(
+														'name' => 'envato_item_product['.$item_id.']',
+														'type' => 'select',
+														'blank' => __('- None -','support_hub'),
+														'value' => $shub_envato_account->is_item_active( $item_id ) ? $envato_items[ $item_id ]->get( 'shub_product_id' ) : $item_data['shub_product_id'],
+														'options' => $products,
+														'options_array_id' => 'product_name',
+														'class' => 'shub_product_dropdown',
+													)); ?>
+												</td>
+												<td>
+													<?php echo $shub_envato_account->is_item_active( $item_id ) && $envato_items[ $item_id ]->get( 'last_checked' ) ? shub_print_date( $envato_items[ $item_id ]->get( 'last_checked' ), true ): 'N/A';?>
+												</td>
+												<td>
+													<?php
+													if ( $shub_envato_account->is_item_active( $item_id ) ) {
+														echo '<a href="' . $envato_items[ $item_id ]->link_refresh() . '" target="_blank">re-load item comments</a>';
+													} ?>
+												</td>
+											</tr>
+										<?php
+										}
+										?>
+										</tbody>
 									</table>
 									<?php
-									foreach ( $data['items'] as $item_id => $item_data ) {
-										?>
-										<div>
-											<input type="checkbox" name="envato_item[<?php echo $item_id; ?>]" class="check_envato_item"
-											       value="1" <?php echo $shub_envato_account->is_item_active( $item_id ) ? ' checked' : ''; ?>>
-											(<?php echo htmlspecialchars( $item_data['site'] ); ?>)
-											<?php echo htmlspecialchars( $item_data['item'] ); ?>
-											<?php
-											if ( $shub_envato_account->is_item_active( $item_id ) ) {
-												echo ' (';
-												echo $envato_items[ $item_id ]->get( 'last_checked' ) ? shub_print_date( $envato_items[ $item_id ]->get( 'last_checked' ), true ) .' ' : '';
-												echo '<a href="' . $envato_items[ $item_id ]->link_refresh() . '" target="_blank">re-load messages</a>)';
-											} ?>
-										</div>
-									<?php
-									}
 								} else {
 									_e( 'No Envato Items Found to Manage, click re-connect button below', 'support_hub' );
 								}

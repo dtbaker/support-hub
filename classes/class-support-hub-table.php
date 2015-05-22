@@ -13,6 +13,10 @@ class SupportHub_Account_Data_List_Table extends WP_List_Table {
 	public $columns = array();
 	public $found_data = array();
 
+	public $items_per_page = 20;
+
+	public $pagination_has_more = false;
+
 	function __construct($args = array()) {
 		global $status, $page;
 
@@ -93,21 +97,21 @@ class SupportHub_Account_Data_List_Table extends WP_List_Table {
 		$this->_column_headers = array( $columns, $hidden, $sortable );
 		//usort( $this->example_data, array( $this, 'usort_reorder' ) );
 
-		$per_page     = 20;
 		$current_page = $this->get_pagenum();
 
 		$total_items  = count( $this->items );
 
 		// only ncessary because we have sample data
-		$this->found_data = array_slice( $this->items, ( ( $current_page - 1 ) * $per_page ), $per_page );
+		$this->found_data = array_slice( $this->items, ( ( $current_page - 1 ) * $this->items_per_page ), $this->items_per_page );
 
 		$this->set_pagination_args( array(
 			'total_items' => $total_items, //WE have to calculate the total number of items
-			'per_page'    => $per_page //WE have to determine how many items to show on a page
+			'per_page'    => $this->items_per_page //WE have to determine how many items to show on a page
 		) );
 		$this->items = $this->found_data;
 
 	}
+
 
 } //class
 
@@ -254,6 +258,93 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 		}
 	    return false;
     }
+
+
+	protected function pagination( $which ) {
+		if ( empty( $this->_pagination_args ) ) {
+			return;
+		}
+
+		$total_items = $this->_pagination_args['total_items'];
+		$total_pages = $this->_pagination_args['total_pages'];
+		$infinite_scroll = false;
+		if ( isset( $this->_pagination_args['infinite_scroll'] ) ) {
+			$infinite_scroll = $this->_pagination_args['infinite_scroll'];
+		}
+
+		$output = '<span class="displaying-num">' . sprintf( _n( '1 item', '%s%s items', $total_items ), number_format_i18n( $total_items ), $this->pagination_has_more ? '+' : '' ) . '</span>';
+
+		$current = $this->get_pagenum();
+
+		$current_url = set_url_scheme( 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
+
+		$current_url = remove_query_arg( array( 'hotkeys_highlight_last', 'hotkeys_highlight_first' ), $current_url );
+
+		$page_links = array();
+
+		$disable_first = $disable_last = '';
+		if ( $current == 1 ) {
+			$disable_first = ' disabled';
+		}
+		if ( $current == $total_pages ) {
+			$disable_last = ' disabled';
+		}
+		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s'>%s</a>",
+			'first-page' . $disable_first,
+			esc_attr__( 'Go to the first page' ),
+			esc_url( remove_query_arg( 'paged', $current_url ) ),
+			'&laquo;'
+		);
+
+		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s'>%s</a>",
+			'prev-page' . $disable_first,
+			esc_attr__( 'Go to the previous page' ),
+			esc_url( add_query_arg( 'paged', max( 1, $current-1 ), $current_url ) ),
+			'&lsaquo;'
+		);
+
+		if ( 'bottom' == $which ) {
+			$html_current_page = $current;
+		} else {
+			$html_current_page = sprintf( "%s<input class='current-page' id='current-page-selector' title='%s' type='text' name='paged' value='%s' size='%d' />",
+				'<label for="current-page-selector" class="screen-reader-text">' . __( 'Select Page' ) . '</label>',
+				esc_attr__( 'Current page' ),
+				$current,
+				strlen( $total_pages )
+			);
+		}
+		$html_total_pages = sprintf( "<span class='total-pages'>%s</span>", number_format_i18n( $total_pages ) );
+		$page_links[] = '<span class="paging-input">' . sprintf( _x( '%1$s of %2$s', 'paging' ), $html_current_page, $this->pagination_has_more ? 'many' : $html_total_pages ) . '</span>';
+
+		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s'>%s</a>",
+			'next-page' . $disable_last,
+			esc_attr__( 'Go to the next page' ),
+			esc_url( add_query_arg( 'paged', min( $total_pages, $current+1 ), $current_url ) ),
+			'&rsaquo;'
+		);
+
+		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s'>%s</a>",
+			'last-page' . $disable_last,
+			esc_attr__( 'Go to the last page' ),
+			esc_url( add_query_arg( 'paged', $total_pages, $current_url ) ),
+			'&raquo;'
+		);
+
+		$pagination_links_class = 'pagination-links';
+		if ( ! empty( $infinite_scroll ) ) {
+			$pagination_links_class = ' hide-if-js';
+		}
+		$output .= "\n<span class='$pagination_links_class'>" . join( "\n", $page_links ) . '</span>';
+
+		if ( $total_pages ) {
+			$page_class = $total_pages < 2 ? ' one-page' : '';
+		} else {
+			$page_class = ' no-pages';
+		}
+		$this->_pagination = "<div class='tablenav-pages{$page_class}'>$output</div>";
+
+		echo $this->_pagination;
+	}
 }
 
 

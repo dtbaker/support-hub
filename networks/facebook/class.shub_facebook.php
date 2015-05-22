@@ -237,8 +237,11 @@ class shub_facebook extends SupportHub_network {
 		return $return;
 	}
 
-	private $all_messages = false;
-	public function load_all_messages($search=array(),$order=array()){
+	public function load_all_messages($search=array(),$order=array(),$limit_batch=0){
+		$this->search_params = $search;
+		$this->search_order = $order;
+		$this->search_limit = $limit_batch;
+
 		$sql = "SELECT m.*, m.last_active AS `message_time`, mr.read_time FROM `"._support_hub_DB_PREFIX."shub_facebook_message` m ";
 		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_facebook_message_read` mr ON m.shub_facebook_message_id = mr.shub_facebook_message_id";
 		$sql .= " WHERE 1 ";
@@ -258,17 +261,16 @@ class shub_facebook extends SupportHub_network {
 			$sql .= " AND `summary` LIKE '%".mysql_real_escape_string($search['generic'])."%'";
 		}
 		$sql .= " ORDER BY `last_active` DESC ";
+		if($limit_batch){
+			$sql .= " LIMIT ".$this->limit_start.', '.$limit_batch;
+			$this->limit_start += $limit_batch;
+		}
 		//$this->all_messages = query($sql);
 		global $wpdb;
 		$this->all_messages = $wpdb->get_results($sql, ARRAY_A);
+//		echo $sql;
+//		echo "got : ".count($this->all_messages) ." messages. ";
 		return $this->all_messages;
-	}
-	public function get_next_message(){
-		return !empty($this->all_messages) ? array_shift($this->all_messages) : false;
-		/*if(mysql_num_rows($this->all_messages)){
-			return mysql_fetch_assoc($this->all_messages);
-		}
-		return false;*/
 	}
 
 
