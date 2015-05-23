@@ -372,7 +372,7 @@ class SupportHub {
 	}
 
 	public function get_products(){
-		$products = shub_get_multiple('shub_product',array(),'shub_product_id');
+		$products = shub_get_multiple('shub_product',array(),'shub_product_id', 'product_name ASC');
 		foreach($products as $key=>$val){
 			if(isset($val['product_data'])){
 				$products[$key]['product_data'] = @json_decode($val['product_data'],true);
@@ -426,10 +426,12 @@ CREATE TABLE {$wpdb->prefix}shub_user (
   shub_linked_user_id int(11) NOT NULL DEFAULT '0',
   user_fname varchar(255) NOT NULL,
   user_lname varchar(255) NOT NULL,
+  user_username varchar(255) NOT NULL,
   user_email varchar(255) NOT NULL,
   user_data mediumtext NOT NULL,
   PRIMARY KEY  shub_user_id (shub_user_id),
   KEY user_email (user_email),
+  KEY user_username (user_username),
   KEY shub_linked_user_id (shub_linked_user_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
@@ -498,6 +500,27 @@ EOT;
 
 	    load_textdomain( $domain , WP_LANG_DIR . '/' . $domain . '/' . $domain . '-' . $locale . '.mo' );
 	    load_plugin_textdomain( $domain , FALSE , dirname( plugin_basename( $this->file ) ) . '/lang/' );
+	}
+
+
+	public function message_user_summary($user_hints, $current_extension, $message_object){
+		// here we hunt down other messages from this user and bring them back to the UI
+		$user_details = array();
+		$other_messages = array();
+		foreach($this->message_managers as $name => $message_manager){
+			$details = $message_manager->find_other_user_details($user_hints, $current_extension, $message_object);
+			if($details && isset($details['messages']) && is_array($details['messages'])){
+				$other_messages = array_merge($other_messages,$details['messages']);
+			}
+			if($details && isset($details['user']) && is_array($details['user'])){
+				$user_details = array_merge($user_details,$details['user']);
+			}
+		}
+
+		?>
+		<strong><?php _e('User:');?></strong>
+		<?php echo implode(', ',$user_details);
+
 	}
 
 }

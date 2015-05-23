@@ -169,7 +169,7 @@ class shub_linkedin extends SupportHub_network {
 		$this->search_limit = $limit_batch;
 
 		$sql = "SELECT m.*, m.last_active AS `message_time`, mr.read_time FROM `"._support_hub_DB_PREFIX."shub_linkedin_message` m ";
-		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_linkedin_message_read` mr ON m.shub_linkedin_message_id = mr.shub_linkedin_message_id";
+		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_linkedin_message_read` mr ON ( m.shub_linkedin_message_id = mr.shub_linkedin_message_id AND mr.user_id = ".get_current_user_id()." )";
 		$sql .= " WHERE 1 ";
 		if(isset($search['status']) && $search['status'] !== false){
 			$sql .= " AND `status` = ".(int)$search['status'];

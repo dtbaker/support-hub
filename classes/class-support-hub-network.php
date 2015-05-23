@@ -50,5 +50,6 @@ class SupportHub_network{
 		return false;*/
 	}
 
+	public function find_other_user_details($user_hints, $current_extension, $message_object){return array();}
 
 }

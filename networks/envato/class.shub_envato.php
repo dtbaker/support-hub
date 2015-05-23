@@ -151,13 +151,13 @@ class shub_envato extends SupportHub_network {
 
 	public static function format_person($data,$envato_account){
 		$return = '';
-		if($data && isset($data['id'])){
-			$return .= '<a href="http://www.envato.com/x/profile/' . $envato_account->get('envato_app_id').'/'.$data['id'].'" target="_blank">';
+		if($data && isset($data['username'])){
+			$return .= '<a href="http://themeforest.net/user/' . $data['username'].'" target="_blank">';
 		}
-		if($data && isset($data['firstName'])){
-			$return .= htmlspecialchars($data['firstName']);
+		if($data && isset($data['username'])){
+			$return .= htmlspecialchars($data['username']);
 		}
-		if($data && isset($data['id'])){
+		if($data && isset($data['username'])){
 			$return .= '</a>';
 		}
 		return $return;
@@ -169,13 +169,17 @@ class shub_envato extends SupportHub_network {
 		$this->search_limit = $limit_batch;
 
 		$sql = "SELECT m.*, m.last_active AS `message_time`, mr.read_time FROM `"._support_hub_DB_PREFIX."shub_envato_message` m ";
-		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_envato_message_read` mr ON m.shub_envato_message_id = mr.shub_envato_message_id";
+		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_envato_message_read` mr ON ( m.shub_envato_message_id = mr.shub_envato_message_id AND mr.user_id = ".get_current_user_id()." )";
+		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_envato_item` ei ON ( m.shub_envato_item_id = ei.shub_envato_item_id )";
 		$sql .= " WHERE 1 ";
 		if(isset($search['status']) && $search['status'] !== false){
 			$sql .= " AND `status` = ".(int)$search['status'];
 		}
 		if(isset($search['shub_envato_item_id']) && $search['shub_envato_item_id'] !== false){
 			$sql .= " AND `shub_envato_item_id` = ".(int)$search['shub_envato_item_id'];
+		}
+		if(isset($search['shub_product_id']) && $search['shub_product_id'] !== false){
+			$sql .= " AND `shub_product_id` = ".(int)$search['shub_product_id'];
 		}
 		if(isset($search['shub_message_id']) && $search['shub_message_id'] !== false){
 			$sql .= " AND `shub_message_id` = ".(int)$search['shub_message_id'];
@@ -184,7 +188,9 @@ class shub_envato extends SupportHub_network {
 			$sql .= " AND `shub_envato_id` = ".(int)$search['shub_envato_id'];
 		}
 		if(isset($search['generic']) && !empty($search['generic'])){
-			$sql .= " AND `summary` LIKE '%".mysql_real_escape_string($search['generic'])."%'";
+			// todo: search item comments too.. not just title (first comment) and summary (last comment)
+			$sql .= " AND (`title` LIKE '%".mysql_real_escape_string($search['generic'])."%'";
+			$sql .= " OR `summary` LIKE '%".mysql_real_escape_string($search['generic'])."%' )";
 		}
 		$sql .= " ORDER BY `last_active` DESC ";
 		if($limit_batch){
@@ -335,8 +341,10 @@ class shub_envato extends SupportHub_network {
 		    <?php echo count( $messages ) > 0 ? '('.count( $messages ).')' : ''; ?>
 	    </span>
 	    <div class="envato_message_summary<?php echo !isset($message['read_time']) || !$message['read_time'] ? ' unread' : '';?>"> <?php
-		    $title = $envato_message->get( 'title' );
-			$summary = $envato_message->get( 'summary' );
+		    // todo - pull in comments here, not just title/summary
+		    // todo - style customer and admin replies differently (eg <em> so we can easily see)
+		    $title = strip_tags($envato_message->get( 'title' ));
+			$summary = strip_tags($envato_message->get( 'summary' ));
 		    echo htmlspecialchars( strlen( $title ) > 80 ? substr( $title, 0, 80 ) . '...' : $title ) . ($summary!=$title ? '<br/>' .htmlspecialchars( strlen( $summary ) > 80 ? substr( $summary, 0, 80 ) . '...' : $summary ) : '');
 		    ?>
 	    </div>
@@ -592,6 +600,22 @@ class shub_envato extends SupportHub_network {
 		if($debug)echo "Finished envato Cron Job \n";
 	}
 
+	public function find_other_user_details($user_hints, $current_extension, $message_object){
+		$details = array(
+			'messages' => array(),
+			'user' => array(),
+		);
+		if(isset($user_hints['envato_username'])){
+			$details['user']['username'] = $user_hints['envato_username'];
+			$details['user']['url'] = 'http://themeforest.net/user/'.$user_hints['envato_username'];
+		}
+		// todo: find any purchases here. display those in the details
+		$details['user']['purchases'] = '1 purchases';
+
+
+		return $details;
+	}
+
 	public function get_install_sql() {
 
 		global $wpdb;
@@ -657,8 +681,10 @@ CREATE TABLE {$wpdb->prefix}shub_envato_message_comment (
   message_text text NOT NULL,
   data text NOT NULL,
   user_id int(11) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_envato_message_comment_id (shub_envato_message_comment_id),
   KEY shub_envato_message_id (shub_envato_message_id),
+  KEY shub_user_id (shub_user_id),
   KEY envato_id (envato_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 

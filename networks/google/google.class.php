@@ -121,7 +121,7 @@ class shub_google extends SupportHub_network {
 		$this->search_limit = $limit_batch;
 
 		$sql = "SELECT m.*, mr.read_time FROM `"._support_hub_DB_PREFIX."shub_google_message` m ";
-		$sql .= " LEFT OUTER JOIN `"._support_hub_DB_PREFIX."shub_google_message_read` mr ON m.shub_google_message_id = mr.shub_google_message_id";
+		$sql .= " LEFT OUTER JOIN `"._support_hub_DB_PREFIX."shub_google_message_read` mr ON ( m.shub_google_message_id = mr.shub_google_message_id AND mr.user_id = ".get_current_user_id()." )";
 		$sql .= " WHERE 1 ";
 		if(isset($search['status']) && $search['status'] !== false){
 			$sql .= " AND `status` = ".(int)$search['status'];

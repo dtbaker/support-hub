@@ -98,7 +98,7 @@
 	    <input type="hidden" name="page" value="<?php echo htmlspecialchars($_REQUEST['page']); ?>" />
 	    <?php //$myListTable->search_box(__('Search','support_hub'), 'search_id'); ?>
 		<p class="search-box">
-		<label for="simple_inbox-search-type"><?php _e('Type:','support_hub');?></label>
+		<label for="simple_inbox-search-type"><?php _e('Network:','support_hub');?></label>
 		<select id="simple_inbox-search-type" name="search[type]">
 			<option value=""><?php _e('All','support_hub');?></option>
 			<?php foreach($this->message_managers as $message_manager_id => $message_manager){ ?>
@@ -106,10 +106,10 @@
 			<?php } ?>
 		</select>
 		<label for="simple_inbox-search-product"><?php _e('Product:','support_hub');?></label>
-		<select id="simple_inbox-search-product" name="search[product_id]">
+		<select id="simple_inbox-search-product" name="search[shub_product_id]">
 			<option value=""><?php _e('All','support_hub');?></option>
 			<?php foreach(SupportHub::getInstance()->get_products() as $product){ ?>
-			<option value="<?php echo $product['shub_product_id'];?>"<?php echo isset($search['product_id']) && $search['product_id'] == $product['shub_product_id'] ? ' selected' : '';?>><?php echo esc_attr( $product['product_name'] );?></option>
+			<option value="<?php echo $product['shub_product_id'];?>"<?php echo isset($search['shub_product_id']) && $search['shub_product_id'] == $product['shub_product_id'] ? ' selected' : '';?>><?php echo esc_attr( $product['product_name'] );?></option>
 			<?php } ?>
 		</select>
 		<label for="simple_inbox-search-input"><?php _e('Message Content:','support_hub');?></label>

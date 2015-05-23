@@ -11,15 +11,25 @@ if($shub_envato_id && $shub_envato_message_id){
 	    $envato_message = new shub_envato_message( $envato, false, $shub_envato_message_id );
 	    if($shub_envato_message_id && $envato_message->get('shub_envato_message_id') == $shub_envato_message_id && $envato_message->get('shub_envato_id') == $shub_envato_id){
 
-		    $messages         = $envato_message->get_comments();
+		    $comments         = $envato_message->get_comments();
 		    $envato_message->mark_as_read();
 
+		    $shub_product_id = $envato_message->get('envato_item')->get('shub_product_id');
+		    $product_data = array();
+			if($shub_product_id) {
+				$shub_product = new SupportHubProduct();
+				$shub_product->load( $shub_product_id );
+				$product_data = $shub_product->get( 'product_data' );
+			}
 		    ?>
 
 			<form action="" method="post" id="envato_edit_form">
 				<div id="envato_message_header">
 					<div style="float:right; text-align: right; margin-top:-4px;">
 						<small><?php echo shub_print_date( $envato_message->get('last_active'), true ); ?> </small><br/>
+						<?php if($product_data && isset($product_data['envato_item_data']['url']) && $product_data['envato_item_data']['url']){ ?>
+						<a href="<?php echo $product_data['envato_item_data']['url'];?>/comments/<?php echo $envato_message->get('envato_id');?>" class="socialenvato_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
+						<?php } ?>
 					    <?php if($envato_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 						    <a href="#" class="socialenvato_message_action  btn btn-default btn-xs button"
 						       data-action="set-unanswered" data-id="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Inbox' ); ?></a>
@@ -29,26 +39,32 @@ if($shub_envato_id && $shub_envato_message_id){
 					    <?php } ?>
 					</div>
 					<img src="<?php echo plugins_url('networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="envato_icon">
-						    <strong><?php _e('Account:');?></strong> <a href="<?php echo $envato_message->get_link(); ?>"
-					           target="_blank"><?php echo htmlspecialchars( $envato_message->get('envato_account') ? $envato_message->get('envato_account')->get( 'envato_name' ) : 'N/A' ); ?></a> <br/>
-						    <strong><?php _e('Product:');?></strong> <?php
-					$shub_product_id = $envato_message->get('envato_item')->get('shub_product_id');
-		if($shub_product_id) {
-			$shub_product = new SupportHubProduct();
-			$shub_product->load($shub_product_id);
-			$product_data = $shub_product->get('product_data');
-			if(isset($product_data['envato_item_data'])){
-				?>
-				<img
-					src="<?php echo isset( $product_data['envato_item_data']['thumbnail'] ) ? $product_data['envato_item_data']['thumbnail'] : plugins_url( 'networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"
-					class="envato_icon">
-				<a href="<?php echo isset( $product_data['envato_item_data']['url'] ) ? $product_data['envato_item_data']['url'] : $envato_message->get_link(); ?>"
-				   target="_blank"><?php
-					echo htmlspecialchars( $shub_product->get('product_name') ); ?></a>
-				<br/>
-			<?php
-			}
-		}
+				    <strong><?php _e('Account:');?></strong> <a href="<?php echo $envato_message->get_link(); ?>"
+			           target="_blank"><?php echo htmlspecialchars( $envato_message->get('envato_account') ? $envato_message->get('envato_account')->get( 'envato_name' ) : 'N/A' ); ?></a> <br/>
+				    <?php
+					if(isset($product_data['envato_item_data'])){
+						// todo: generalise this so it doesn't rely on products that are only from envato.
+						?>
+						<strong><?php _e('Product:');?></strong>
+						<a href="<?php echo isset( $product_data['envato_item_data']['url'] ) ? $product_data['envato_item_data']['url'] : $envato_message->get_link(); ?>"
+						   target="_blank"><?php
+							echo htmlspecialchars( $shub_product->get('product_name') ); ?></a>
+						<br/>
+					<?php
+					}
+					// find out the user details, purchases and if they have any other open messages.
+				    $user_hints = array();
+				    $first_comment = current($comments);
+				    if(isset($first_comment['shub_user_id']) && $first_comment['shub_user_id']){
+					    $user_hints['shub_user_id'] = $first_comment['shub_user_id'];
+				    }
+				    $message_from = @json_decode($first_comment['message_from'],true);
+				    if($message_from && isset($message_from['username']) && $message_from['username'] != $envato_message->get('envato_account')->get( 'envato_name' )){
+					    // this wont work if user changes their username, oh well.
+					    $user_hints['envato_username'] = $message_from['username'];
+				    }
+					SupportHub::getInstance()->message_user_summary($user_hints, 'envato', $envato_message);
+					do_action('supporthub_message_header', 'envato', $envato_message);
 					?>
 				</div>
 				<div id="envato_message_holder">

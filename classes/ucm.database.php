@@ -36,11 +36,14 @@ function shub_update_insert($primary_key_name, $primary_key_value, $table_name, 
 		exit;
 	}
 }
-function shub_get_multiple($table, $search, $index){
+function shub_get_multiple($table, $search, $index, $order_by = ''){
 	global $wpdb;
 	$sql = "SELECT * FROM `"._support_hub_DB_PREFIX.esc_sql($table)."` WHERE 1 ";
 	foreach($search as $key=>$val){
 		$sql .= " AND `".esc_sql($key)."` = '".esc_sql($val)."'";
+	}
+	if($order_by){
+		$sql .= ' ORDER BY '.$order_by; // please don't punch me
 	}
 	$res = $wpdb->get_results($sql, ARRAY_A);
 	$return = array();

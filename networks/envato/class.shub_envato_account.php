@@ -186,6 +186,15 @@ class shub_envato_account{
 		// serialise this result into envato_data.
 
 		$api = $this->get_api();
+
+		// get user details and confirm username works.
+		$api_result = $api->api('market/user:'.$this->get('envato_name').'.json');
+		if($api_result && isset($api_result['user']) && is_array($api_result['user']) && isset($api_result['user']['username']) && $api_result['user']['username'] == $this->get('envato_name')){
+			$this->save_account_data($api_result);
+		}else{
+			echo 'Failed to verify username '.htmlspecialchars($this->get('envato_name')).'. Please ensure this is correct and try again.';
+			return false;
+		}
 		$api_result = $api->api('market/user-items-by-site:' . $this->get('envato_name') . '.json');
 		if($api_result && isset($api_result['user-items-by-site']) && is_array($api_result['user-items-by-site'])){
 			$items = array();
@@ -231,7 +240,6 @@ class shub_envato_account{
 
 	public function run_cron( $debug = false ){
 
-		// todo: loop over all enabled items and grab latest comments.
 
 	}
 
