@@ -612,6 +612,25 @@ class shub_envato extends SupportHub_network {
 		// todo: find any purchases here. display those in the details
 		$details['user']['purchases'] = '1 purchases';
 
+		// find other envato messages by this user.
+		if(isset($user_hints['shub_user_id']) && (int)$user_hints['shub_user_id']>0){
+			$comments = shub_get_multiple('shub_envato_message_comment',array(
+				'shub_user_id' => (int)$user_hints['shub_user_id']
+			),'shub_envato_message_comment_id', '`time` DESC');
+			if(is_array($comments)){
+				foreach($comments as $comment){
+					if(!isset($details['messages']['envato'.$comment['shub_envato_message_id']])){
+//						$other_message = new shub_envato_message();
+//						$other_message->load($comment['shub_envato_message_id']);
+						$details['messages']['envato'.$comment['shub_envato_message_id']] = array(
+							'summary' => $comment['message_text'],
+							'time' => $comment['time'],
+//							'message_status' => $other_message->get('status'),
+						);
+					}
+				}
+			}
+		}
 
 		return $details;
 	}

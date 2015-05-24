@@ -296,6 +296,72 @@ if($current_account !== false){
 							<td class="">
 								<input type="hidden" name="save_facebook_pages" value="yep">
 								<strong><?php _e( 'Choose which Facebook Pages you would like to manage:', 'support_hub' ); ?></strong><br>
+
+								<?php
+								$data = @json_decode( $shub_facebook_account->get( 'facebook_data' ), true );
+								if ( $data && isset( $data['pages'] ) && is_array( $data['pages'] ) && count( $data['pages'] ) > 0 ) {
+									$facebook_pages = $shub_facebook_account->get('pages');
+									?>
+									<div>
+										<input type="checkbox" name="all" value="1" class="facebook_check_all"> - check all -
+									</div>
+									<br/><br/>
+
+									<table class="wp-list-table widefat fixed striped">
+										<thead>
+										<tr>
+											<th>Enabled</th>
+											<th>Facebook Page</th>
+											<th>Support Hub Product</th>
+											<th>Last Checked</th>
+											<th>Action</th>
+										</tr>
+										</thead>
+										<tbody>
+										<?php
+										$products = SupportHub::getInstance()->get_products();
+										foreach ( $data['pages'] as $page_id => $page_data ) { ?>
+											?>
+											<tr>
+												<td>
+													<input type="checkbox" name="facebook_page[<?php echo $page_id; ?>]" class="check_facebook_page"
+													       value="1" <?php echo $shub_facebook_account->is_page_active( $page_id ) ? ' checked' : ''; ?>>
+												</td>
+												<td>
+													<?php echo htmlspecialchars( $page_data['name'] ); ?>
+												</td>
+												<td>
+													<?php shub_module_form::generate_form_element(array(
+														'name' => 'facebook_page_product['.$page_id.']',
+														'type' => 'select',
+														'blank' => __('- None -','support_hub'),
+														'value' => $shub_facebook_account->is_page_active( $page_id ) ? $facebook_pages[ $page_id ]->get( 'shub_product_id' ) : $page_data['shub_product_id'],
+														'options' => $products,
+														'options_array_id' => 'product_name',
+														'class' => 'shub_product_dropdown',
+													)); ?>
+												</td>
+												<td>
+													<?php echo $shub_facebook_account->is_page_active( $page_id ) && $facebook_pages[ $page_id ]->get( 'last_checked' ) ? shub_print_date( $facebook_pages[ $page_id ]->get( 'last_checked' ), true ): 'N/A';?>
+												</td>
+												<td>
+													<?php
+													if ( $shub_facebook_account->is_page_active( $page_id ) ) {
+														echo '<a href="' . $facebook_pages[ $page_id ]->link_refresh() . '" target="_blank">re-load page comments</a>';
+													} ?>
+												</td>
+											</tr>
+										<?php
+										}
+										?>
+										</tbody>
+									</table>
+									<?php
+								} else {
+									_e( 'No Envato Items Found to Manage, click re-connect button below', 'support_hub' );
+								}
+								?>
+
 								<?php
 								$data = @json_decode( $shub_facebook_account->get( 'facebook_data' ), true );
 								if ( $data && isset( $data['pages'] ) && is_array( $data['pages'] ) && count( $data['pages'] ) > 0 ) {

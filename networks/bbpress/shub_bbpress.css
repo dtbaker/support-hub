@@ -1,0 +1,120 @@
+#bbpress_edit_form a{
+    text-decoration: none;
+}
+.bbpress_message_full{
+    display: none;
+    background: #edeff4;
+    border-radius: 5px;
+    padding: 0 5px;
+}
+.bbpress_message_picture{
+    float: left;
+    width: 35px;
+    margin: 0 5px 0 0;
+}
+.bbpress_message_picture img{
+    max-width: 100%;
+    height: auto;
+}
+.bbpress_message_reply{
+    margin-left: 40px;
+}
+.bbpress_message_reply button{
+    float: left;
+    height:2em;
+    border:1px solid #bdc7d8;
+    margin:0 0 0 5px;
+}
+.bbpress_message_compose textarea{
+    background: #FFF;
+    border:1px solid #bdc7d8;
+    width:88%;
+    min-height:2em;
+    resize: none;
+}
+.bbpress_message_reply textarea{
+    float: left;
+    background: #FFF;
+    border:1px solid #bdc7d8;
+    width:88%;
+    min-height:2em;
+    resize: none;
+}
+.bbpress_message_body{
+    margin-left: 40px;
+}
+.bbpress_message_actions{
+    clear: both;
+    font-size: 0.9em;
+    margin-left: 40px;
+    padding: 0 0 5px 0;
+}
+.bbpress_message_header{
+    /*display: inline;
+    float: left;*/
+    padding: 0 5px 0 0;
+    font-weight: bold;
+}
+.bbpress_message_header span{
+    font-weight: normal;
+    color:#CCC;
+}
+.bbpress_message{
+    border-bottom: 1px solid #d0d4e4;
+    padding: 5px 0 0 5px;
+}
+#bbpress_edit_form > .bbpress_message_replies{
+    margin-left: 0;
+    border-left: none;
+}
+.bbpress_message_reply_box{
+    display: none;
+}
+.bbpress_message_reply_box_level1{
+    display: block;
+}
+.bbpress_message_replies{
+    margin-left: 40px;
+    border-left: 1px solid #d0d4e4;
+}
+.bbpress_picture{
+    background: #FFF;
+    padding: 4px;
+    display: inline-block;
+}
+.bbpress_picture img{
+    max-width: 100%;
+    height:auto;
+}
+.bbpress_icon{
+    height:27px;
+    width: auto;
+    margin: 5px 5px 0 0;
+    float: left;
+}
+.bbpress_icon.small{
+    height:15px;
+    float: none;
+    vertical-align: middle;
+    margin:0 5px 0 0;
+}
+
+#bbpress_message_header{
+    border:1px solid #d0d4e4;
+    background: #FFF;
+    margin:5px;
+    padding: 8px 5px 14px 10px;
+}
+#bbpress_message_holder{
+}
+
+.bbpress_message_summary.unread,
+.message_row_unread .bbpress_message_summary{
+    font-weight: bold;
+}
+.bbpress_compose_account_select img{
+    width:20px;
+    height:auto;
+    vertical-align: middle;
+    margin:0 5px;
+}

@@ -519,7 +519,13 @@ EOT;
 
 		?>
 		<strong><?php _e('User:');?></strong>
-		<?php echo implode(', ',$user_details);
+		<?php
+		if(isset($user_details['url']) && isset($user_details['username'])){
+			echo '<a href="'.$user_details['url'].'" target="_blank">' . $user_details['username'] . '</a>';
+		}else if(isset($user_details['username'])){
+			echo $user_details['username'];
+		}
+		echo " found ".count($other_messages). " other messages";
 
 	}
 

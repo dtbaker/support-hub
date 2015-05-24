@@ -59,7 +59,7 @@ if($shub_envato_id && $shub_envato_message_id){
 					    $user_hints['shub_user_id'] = $first_comment['shub_user_id'];
 				    }
 				    $message_from = @json_decode($first_comment['message_from'],true);
-				    if($message_from && isset($message_from['username']) && $message_from['username'] != $envato_message->get('envato_account')->get( 'envato_name' )){
+				    if($message_from && isset($message_from['username'])){ //} && $message_from['username'] != $envato_message->get('envato_account')->get( 'envato_name' )){
 					    // this wont work if user changes their username, oh well.
 					    $user_hints['envato_username'] = $message_from['username'];
 				    }
