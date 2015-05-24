@@ -6,5 +6,7 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Happyr\\LinkedIn\\' => array($vendorDir . '/happyr/linkedin-api-client/src'),
+    'Psr\\Log\\' => array($vendorDir . '/psr/log'),
+    'Illuminate\\Support' => array($vendorDir . '/illuminate/support'),
+    'Illuminate\\Log' => array($vendorDir . '/illuminate/log'),
 );

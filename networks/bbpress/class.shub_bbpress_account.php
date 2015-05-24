@@ -22,11 +22,9 @@ class shub_bbpress_account{
 			'bbpress_name' => false,
 			'last_checked' => false,
 			'bbpress_data' => array(),
-			'bbpress_app_id' => false,
-			'bbpress_app_secret' => false,
-			'bbpress_token' => false,
-			'machine_id' => false,
-			'import_stream' => false,
+			'bbpress_wordpress_xmlrpc' => false,
+			'bbpress_username' => false,
+			'bbpress_password' => false,
 		);
 	    $this->forums = array();
 		foreach($this->details as $field_id => $field_data){
@@ -187,8 +185,9 @@ class shub_bbpress_account{
 
 		$api = $this->get_api();
 
-		// get user details and confirm username works.
-		$api_result = $api->api('market/user:'.$this->get('bbpress_name').'.json');
+		// get available post types, check for bbpress forum posts
+		$api_result = $api->getPostTypes();
+		print_r($api_result);exit;
 		if($api_result && isset($api_result['user']) && is_array($api_result['user']) && isset($api_result['user']['username']) && $api_result['user']['username'] == $this->get('bbpress_name')){
 			$this->save_account_data($api_result);
 		}else{
@@ -247,10 +246,13 @@ class shub_bbpress_account{
 	public function get_api($use_db_code = true){
 		if(!self::$api){
 
-			require_once trailingslashit(dirname(_DTBAKER_SUPPORT_HUB_CORE_FILE_)) . 'networks/bbpress/class.bbpress-api.php';
+			//$wpLog = new Monolog\Logger('wp-xmlrpc');
+			self::$api = new \HieuLe\WordpressXmlrpcClient\WordpressClient($this->get( 'bbpress_wordpress_xmlrpc' ), $this->get( 'bbpress_username' ), $this->get( 'bbpress_password' ));
+			self::$api->onError(function($error, $event) {
+			    echo "$error $event";
+			});
 
-			self::$api = bbpress_api_basic::getInstance();
-			self::$api->set_personal_token($this->get( 'bbpress_token' ));
+			//$wpClient->setCredentials($this->get( 'bbpress_wordpress_xmlrpc' ), 'username', 'password');
 
 		}
 		return self::$api;

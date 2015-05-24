@@ -14,8 +14,8 @@ function shub_managers_bbpress( $shub ){
 		$shub['bbpress'] = new SupportHub_network();
 	}
 	$shub['bbpress']->id = 'bbpress';
-	$shub['bbpress']->friendly_name = 'bbpress';
-	$shub['bbpress']->desc = 'Import and Reply to bbpress forum messages.';
+	$shub['bbpress']->friendly_name = 'bbPress';
+	$shub['bbpress']->desc = 'Import and Reply to WordPress bbPress forum posts.';
 	return $shub;
 }
 

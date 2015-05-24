@@ -17,11 +17,11 @@
 				   class="nav-tab <?php echo $tab == $message_manager_id ? ' nav-tab-active' : '';?>"><?php echo $message_manager->friendly_name;?></a>
 			<?php }
 		}?>
-		<a href="?page=support_hub_settings&amp;tab=pending" class="nav-tab">Ticksy</a>
+		<!-- <a href="?page=support_hub_settings&amp;tab=pending" class="nav-tab">Ticksy</a>
 		<a href="?page=support_hub_settings&amp;tab=pending" class="nav-tab">Help Scout</a>
 		<a href="?page=support_hub_settings&amp;tab=pending" class="nav-tab">Zendesk</a>
 		<a href="?page=support_hub_settings&amp;tab=pending" class="nav-tab">bbPress Forum</a>
-		<a href="?page=support_hub_settings&amp;tab=pending" class="nav-tab">POP3/IMAP</a>
+		<a href="?page=support_hub_settings&amp;tab=pending" class="nav-tab">POP3/IMAP</a> -->
 	</h2>
 	<br class="clear"/>
 

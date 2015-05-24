@@ -1,4 +1,19 @@
 {
+    "name": "dtbaker/support-hub",
+    "description": "Import all support messages into an easy to use inbox.",
+    "type": "wordpress-plugin",
+    "keywords": ["support"],
+    "homepage": "http://supporthub.co",
+    "time": "2015-05-24",
+    "license": "GPL-2.0+",
+    "authors": [
+        {
+            "name": "David Baker",
+            "email": "dtbaker@gmail.com",
+            "homepage": "http://www.dtbaker.net",
+            "role": "Developer"
+        }
+      ],
     "require": {
         "happyr/linkedin-api-client": "dev-master",
         "hieu-le/wordpress-xmlrpc-client":"~2.0"

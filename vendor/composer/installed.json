@@ -98,58 +98,6 @@
         ]
     },
     {
-        "name": "happyr/linkedin-api-client",
-        "version": "dev-master",
-        "version_normalized": "9999999-dev",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/Happyr/LinkedIn-API-client.git",
-            "reference": "825cfe9d281ba775a34b841b7faeb026b9d93db8"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/Happyr/LinkedIn-API-client/zipball/825cfe9d281ba775a34b841b7faeb026b9d93db8",
-            "reference": "825cfe9d281ba775a34b841b7faeb026b9d93db8",
-            "shasum": ""
-        },
-        "require": {
-            "guzzlehttp/guzzle": "~5.0",
-            "php": ">=5.4"
-        },
-        "require-dev": {
-            "illuminate/support": "*",
-            "mockery/mockery": "*"
-        },
-        "time": "2015-03-16 16:11:24",
-        "type": "library",
-        "installation-source": "source",
-        "autoload": {
-            "psr-0": {
-                "Happyr\\LinkedIn\\": "src/"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "MIT"
-        ],
-        "authors": [
-            {
-                "name": "Tobias Nyholm",
-                "email": "tobias@happyr.com"
-            }
-        ],
-        "description": "LinkedIn API client. Handles OAuth, CSRF protection. Easy to implement and extend. This is a standalone library for any composer project.",
-        "homepage": "http://developer.happyr.com/libraries/linkedin-php-client",
-        "keywords": [
-            "HappyR",
-            "api",
-            "client",
-            "linkedin",
-            "oauth",
-            "sdk"
-        ]
-    },
-    {
         "name": "guzzlehttp/ringphp",
         "version": "1.1.0",
         "version_normalized": "1.1.0.0",
@@ -260,6 +208,58 @@
             "http client",
             "rest",
             "web service"
+        ]
+    },
+    {
+        "name": "happyr/linkedin-api-client",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/Happyr/LinkedIn-API-client.git",
+            "reference": "08ff6a4b910ce363713b5b1bd542c13be198ea21"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/Happyr/LinkedIn-API-client/zipball/08ff6a4b910ce363713b5b1bd542c13be198ea21",
+            "reference": "08ff6a4b910ce363713b5b1bd542c13be198ea21",
+            "shasum": ""
+        },
+        "require": {
+            "guzzlehttp/guzzle": "~5.0",
+            "php": ">=5.4"
+        },
+        "require-dev": {
+            "illuminate/support": "*",
+            "mockery/mockery": "*"
+        },
+        "time": "2015-05-23 11:46:25",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "psr-4": {
+                "Happyr\\LinkedIn\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Tobias Nyholm",
+                "email": "tobias@happyr.com"
+            }
+        ],
+        "description": "LinkedIn API client. Handles OAuth, CSRF protection. Easy to implement and extend. This is a standalone library for any composer project.",
+        "homepage": "http://developer.happyr.com/libraries/linkedin-php-client",
+        "keywords": [
+            "HappyR",
+            "api",
+            "client",
+            "linkedin",
+            "oauth",
+            "sdk"
         ]
     },
     {

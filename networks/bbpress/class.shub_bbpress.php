@@ -650,10 +650,9 @@ CREATE TABLE {$wpdb->prefix}shub_bbpress (
   import_stream int(11) NOT NULL DEFAULT '0',
   post_stream int(11) NOT NULL DEFAULT '0',
   bbpress_data text NOT NULL,
-  bbpress_token varchar(255) NOT NULL,
-  bbpress_app_id varchar(255) NOT NULL,
-  bbpress_app_secret varchar(255) NOT NULL,
-  machine_id varchar(255) NOT NULL,
+  bbpress_wordpress_xmlrpc varchar(255) NOT NULL,
+  bbpress_username varchar(255) NOT NULL,
+  bbpress_password varchar(255) NOT NULL,
   PRIMARY KEY  shub_bbpress_id (shub_bbpress_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 

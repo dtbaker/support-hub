@@ -22,27 +22,25 @@ if($current_account !== false){
 		?>
 		<div class="wrap">
 			<h2>
-				<?php _e( 'bbpress Account', 'support_hub' ); ?>
+				<?php _e( 'bbPress Account', 'support_hub' ); ?>
 			</h2>
 		<?php
-		if($shub_bbpress_account->get('shub_bbpress_id') && $shub_bbpress_account->get('shub_bbpress_id') == $current_account && $shub_bbpress_account->get( 'bbpress_app_id' ) && $shub_bbpress_account->get( 'bbpress_app_secret' ) && $shub_bbpress_account->get( 'bbpress_token' )) {
+		if($shub_bbpress_account->get('shub_bbpress_id') && $shub_bbpress_account->get('shub_bbpress_id') == $current_account && $shub_bbpress_account->get( 'bbpress_wordpress_xmlrpc' ) && $shub_bbpress_account->get( 'bbpress_username' ) && $shub_bbpress_account->get( 'bbpress_password' )) {
 
             // now we load in a list of bbpress forums to manage and redirect the user back to the 'edit' screen where they can continue managing the account.
             $shub_bbpress_account->load_available_forums();
             $url = $shub_bbpress_account->link_edit();
             ?>
-            <p>You have successfully connected bbpress with the Support Hub plugin. Please click the button below:</p>
+            <p>You have successfully connected bbPress with the Support Hub plugin. Please click the button below:</p>
             <p><a href="<?php echo $shub_bbpress_account->link_edit(); ?>" class="button">Click here to continue.</a></p>
 			<p>&nbsp;</p>
 			<p>&nbsp;</p>
 			<p>&nbsp;</p>
 			<p>&nbsp;</p>
             <?php
-
 		} else {
-            // no app / secret defined, use the default Support Hub API ones.
 			?>
-			Please go back and set an API Secret, Client ID and Personal Token.
+			Please go back and make sure all fields are entered.
 			<?php
 		}
 		?> </div> <?php
@@ -50,7 +48,7 @@ if($current_account !== false){
 		?>
 		<div class="wrap">
 			<h2>
-				<?php _e( 'bbpress Account', 'support_hub' ); ?>
+				<?php _e( 'bbPress Account', 'support_hub' ); ?>
 			</h2>
 
 			<form action="" method="post">
@@ -61,57 +59,46 @@ if($current_account !== false){
 
                 <p>Setup Instructions:</p>
                 <ul>
-                    <li>Go to <a href="http://build.bbpress.com/" target="_blank">http://build.bbpress.com/</a> </li>
-                    <li>Login using your existing bbpress Account</li>
-                    <li>Click My Apps at the top</li>
-                    <li>Click Register a new App</li>
-                    <li>In the app name put "SupportHub" (or anything really)</li>
-                    <li>Tick "View username", "View email", "View sales history" and "Verify purchase" options</li>
-                    <li>In the "Confirmation URL" put <strong><?php echo get_home_url();?></strong></li>
-                    <li>Click Register App</li>
-                    <li>Copy your secret key and paste it into the box below</li>
-                    <li>Click OK</li>
-                    <li>Then look for the "Client ID" for your App and copy that into the box below as well</li>
-	                <li>Click the "Create a new Token" button</li>
-	                <li>Enter a name again like "SupportHub"</li>
-	                <li>Tick the "Verify purchase" option</li>
-	                <li>Click "Create Token"</li>
-	                <li>Copy this token and paste it into the box below</li>
-                    <li>Click the Save and Connect to bbpress button below</li>
+                    <li>Login to your WordPress website</li>
+                    <li>Create a new WordPress user as a Forum Moderator (this user should only have access to replying to forum posts).</li>
+                    <li>Type in your WordPress XML-PRC url below (usually http://yourwebsite.com/xmlrpc.php)</li>
+                    <li>Type in your new WordPress username and password below (the one you just created)</li>
+                    <li>Click "Save and Connect to bbPress"</li>
                 </ul>
 				<table class="form-table">
 					<tbody>
 					<tr>
 						<th class="width1">
-							<?php _e( 'bbpress Username', 'support_hub' ); ?>
+							<?php _e( 'Website Name', 'support_hub' ); ?>
 						</th>
 						<td class="">
 							<input type="text" name="bbpress_name" value="<?php echo esc_attr( $shub_bbpress_account->get( 'bbpress_name' ) ); ?>">
-
+							(e.g. My Support Forum)
 						</td>
 					</tr>
                     <tr>
                         <th class="width1">
-                            <?php _e( 'App Secret Key', 'support_hub' ); ?>
+                            <?php _e( 'WordPress XML-RPC URL', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="password" name="bbpress_app_secret" value="<?php echo $shub_bbpress_account->get( 'bbpress_app_secret' ) ? 'password' : ''; ?>">
+                            <input type="text" name="bbpress_wordpress_xmlrpc" value="<?php echo esc_attr($shub_bbpress_account->get( 'bbpress_wordpress_xmlrpc' )); ?>">
+	                        (e.g. http://mysite.com/xmlrpc.php)
                         </td>
                     </tr>
                     <tr>
                         <th class="width1">
-                            <?php _e( 'App Client ID', 'support_hub' ); ?>
+                            <?php _e( 'WordPress Username', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="text" name="bbpress_app_id" value="<?php echo esc_attr( $shub_bbpress_account->get( 'bbpress_app_id' ) ); ?>">
+                            <input type="text" name="bbpress_username" value="<?php echo esc_attr( $shub_bbpress_account->get( 'bbpress_username' ) ); ?>">
                         </td>
                     </tr>
                     <tr>
                         <th class="width1">
-                            <?php _e( 'Personal Token', 'support_hub' ); ?>
+                            <?php _e( 'WordPress Password', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="password" name="bbpress_token" value="<?php echo $shub_bbpress_account->get( 'bbpress_token' ) ? 'password' : ''; ?>">
+                            <input type="password" name="bbpress_password" value="<?php echo $shub_bbpress_account->get( 'bbpress_password' ) ? 'password' : ''; ?>">
                         </td>
                     </tr>
 					<?php if ( $shub_bbpress_account->get( 'shub_bbpress_id' ) ) { ?>
@@ -125,12 +112,11 @@ if($current_account !== false){
 						</tr>
 						<tr>
 							<th class="width1">
-								<?php _e( 'Available forums', 'support_hub' ); ?>
+								<?php _e( 'Available bbPress Forums', 'support_hub' ); ?>
 							</th>
 							<td class="">
 								<input type="hidden" name="save_bbpress_forums" value="yep">
-								<strong><?php _e( 'Choose which bbpress forums you would like to manage:', 'support_hub' ); ?></strong><br>
-								(note: We haven't yet tested this with more than 50 forums, but it should work ok) <br/><br/>
+								<strong><?php _e( 'Choose which bbPress forums you would like to manage:', 'support_hub' ); ?></strong><br>
 								<?php
 								$data = $shub_bbpress_account->get( 'bbpress_data' );
 								if ( $data && isset( $data['forums'] ) && is_array( $data['forums'] ) && count( $data['forums'] ) > 0 ) {
@@ -145,8 +131,7 @@ if($current_account !== false){
 										<thead>
 										<tr>
 											<th>Enabled</th>
-											<th>Market</th>
-											<th>bbpress forum</th>
+											<th>bbPress Forum</th>
 											<th>Support Hub Product</th>
 											<th>Last Checked</th>
 											<th>Action</th>
@@ -161,9 +146,6 @@ if($current_account !== false){
 												<td>
 													<input type="checkbox" name="bbpress_forum[<?php echo $forum_id; ?>]" class="check_bbpress_forum"
 													       value="1" <?php echo $shub_bbpress_account->is_forum_active( $forum_id ) ? ' checked' : ''; ?>>
-												</td>
-												<td>
-													<?php echo htmlspecialchars( $forum_data['site'] ); ?>
 												</td>
 												<td>
 													<?php echo htmlspecialchars( $forum_data['forum'] ); ?>
@@ -196,7 +178,7 @@ if($current_account !== false){
 									</table>
 									<?php
 								} else {
-									_e( 'No bbpress forums Found to Manage, click re-connect button below', 'support_hub' );
+									_e( 'No bbPress forums Found to Manage, click re-connect button below', 'support_hub' );
 								}
 								?>
 							</td>
@@ -210,13 +192,13 @@ if($current_account !== false){
 						<input name="butt_save" type="submit" class="button-primary"
 						       value="<?php echo esc_attr( __( 'Save', 'support_hub' ) ); ?>"/>
 						<input name="butt_save_reconnect" type="submit" class="button"
-						       value="<?php echo esc_attr( __( 'Re-Connect to bbpress', 'support_hub' ) ); ?>"/>
+						       value="<?php echo esc_attr( __( 'Re-Connect to bbPress', 'support_hub' ) ); ?>"/>
 						<input name="butt_delete" type="submit" class="button"
 						       value="<?php echo esc_attr( __( 'Delete', 'support_hub' ) ); ?>"
-						       onclick="return confirm('<?php _e( 'Really delete this bbpress account and all associated data?', 'support_hub' ); ?>');"/>
+						       onclick="return confirm('<?php _e( 'Really delete this bbPress account and all associated data?', 'support_hub' ); ?>');"/>
 					<?php } else { ?>
 						<input name="butt_save_reconnect" type="submit" class="button-primary"
-						       value="<?php echo esc_attr( __( 'Save and Connect to bbpress', 'support_hub' ) ); ?>"/>
+						       value="<?php echo esc_attr( __( 'Save and Connect to bbPress', 'support_hub' ) ); ?>"/>
 					<?php } ?>
 				</p>
 
@@ -240,7 +222,7 @@ if($current_account !== false){
 	?>
 	<div class="wrap">
 		<h2>
-			<?php _e('bbpress Accounts','support_hub');?>
+			<?php _e('bbPress Accounts','support_hub');?>
 			<a href="?page=<?php echo esc_attr($_GET['page']);?>&tab=<?php echo esc_attr($_GET['tab']);?>&shub_bbpress_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
 		</h2>
 	    <?php
