@@ -79,7 +79,7 @@ class shub_bbpress_account{
 		if(is_array($post_data)){
 			foreach($this->details as $details_key => $details_val){
 				if(isset($post_data[$details_key])){
-					if(($details_key == 'bbpress_app_secret' || $details_key == 'bbpress_token') && $post_data[$details_key] == 'password')continue;
+					if(($details_key == 'bbpress_password') && $post_data[$details_key] == 'password')continue;
 					$this->update($details_key,$post_data[$details_key]);
 				}
 			}
@@ -248,9 +248,7 @@ class shub_bbpress_account{
 
 			//$wpLog = new Monolog\Logger('wp-xmlrpc');
 			self::$api = new \HieuLe\WordpressXmlrpcClient\WordpressClient($this->get( 'bbpress_wordpress_xmlrpc' ), $this->get( 'bbpress_username' ), $this->get( 'bbpress_password' ));
-			self::$api->onError(function($error, $event) {
-			    echo "$error $event";
-			});
+
 
 			//$wpClient->setCredentials($this->get( 'bbpress_wordpress_xmlrpc' ), 'username', 'password');
 
