@@ -24,12 +24,9 @@ if($shub_bbpress_id && $shub_bbpress_message_id){
 		    ?>
 
 			<form action="" method="post" id="bbpress_edit_form">
-				<div id="bbpress_message_header">
-					<div style="float:right; text-align: right; margin-top:-4px;">
-						<small><?php echo shub_print_date( $bbpress_message->get('last_active'), true ); ?> </small><br/>
-						<?php if($product_data && isset($product_data['bbpress_forum_data']['url']) && $product_data['bbpress_forum_data']['url']){ ?>
-						<a href="<?php echo $product_data['bbpress_forum_data']['url'];?>/comments/<?php echo $bbpress_message->get('bbpress_id');?>" class="socialbbpress_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
-						<?php } ?>
+				<section class="message_sidebar">
+					<header>
+						<a href="<?php echo $bbpress_message->get('link');?>" class="socialbbpress_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Thread' ); ?></a>
 					    <?php if($bbpress_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 						    <a href="#" class="socialbbpress_message_action  btn btn-default btn-xs button"
 						       data-action="set-unanswered" data-id="<?php echo (int)$bbpress_message->get('shub_bbpress_message_id');?>"><?php _e( 'Inbox' ); ?></a>
@@ -37,41 +34,28 @@ if($shub_bbpress_id && $shub_bbpress_message_id){
 						    <a href="#" class="socialbbpress_message_action  btn btn-default btn-xs button"
 						       data-action="set-answered" data-id="<?php echo (int)$bbpress_message->get('shub_bbpress_message_id');?>"><?php _e( 'Archive' ); ?></a>
 					    <?php } ?>
-					</div>
-					<img src="<?php echo plugins_url('networks/bbpress/bbpress-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="bbpress_icon">
-				    <strong><?php _e('Account:');?></strong> <a href="<?php echo $bbpress_message->get_link(); ?>"
-			           target="_blank"><?php echo htmlspecialchars( $bbpress_message->get('bbpress_account') ? $bbpress_message->get('bbpress_account')->get( 'bbpress_name' ) : 'N/A' ); ?></a> <br/>
+					</header>
+
+					<img src="<?php echo plugins_url('networks/bbpress/bbpress-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon"> <br/>
+
+				    <strong><?php _e('Account:');?></strong> <a href="<?php echo $bbpress_message->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $bbpress_message->get('bbpress_account') ? $bbpress_message->get('bbpress_account')->get( 'bbpress_name' ) : 'N/A' ); ?></a> <br/>
+
+					<strong><?php _e('Date:');?></strong> <?php echo shub_print_date( $bbpress_message->get('last_active'), false ); ?>  <br/>
+
 				    <?php
-					if(isset($product_data['bbpress_forum_data'])){
-						// todo: generalise this so it doesn't rely on products that are only from bbpress.
-						?>
-						<strong><?php _e('Product:');?></strong>
-						<a href="<?php echo isset( $product_data['bbpress_forum_data']['url'] ) ? $product_data['bbpress_forum_data']['url'] : $bbpress_message->get_link(); ?>"
-						   target="_blank"><?php
-							echo htmlspecialchars( $shub_product->get('product_name') ); ?></a>
-						<br/>
-					<?php
-					}
+
 					// find out the user details, purchases and if they have any other open messages.
 				    $user_hints = array();
-				    $first_comment = current($comments);
-				    if(isset($first_comment['shub_user_id']) && $first_comment['shub_user_id']){
-					    $user_hints['shub_user_id'] = $first_comment['shub_user_id'];
-				    }
-				    $message_from = @json_decode($first_comment['message_from'],true);
-				    if($message_from && isset($message_from['username'])){ //} && $message_from['username'] != $bbpress_message->get('bbpress_account')->get( 'bbpress_name' )){
-					    // this wont work if user changes their username, oh well.
-					    $user_hints['bbpress_username'] = $message_from['username'];
-				    }
+				    $user_hints['shub_user_id'] = $bbpress_message->get('shub_user_id');
 					SupportHub::getInstance()->message_user_summary($user_hints, 'bbpress', $bbpress_message);
 					do_action('supporthub_message_header', 'bbpress', $bbpress_message);
 					?>
-				</div>
-				<div id="bbpress_message_holder">
-		    <?php
-		    $bbpress_message->full_message_output(true);
-		    ?>
-					</div>
+				</section>
+				<section class="message_content">
+				    <?php
+				    $bbpress_message->full_message_output(true);
+				    ?>
+				</section>
 		    </form>
 
 	    <?php }

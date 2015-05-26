@@ -2,7 +2,10 @@
 
 class SupportHubUser{
 
-	public function __construct(){
+	public function __construct($shub_user_id = false){
+		if($shub_user_id){
+			$this->load($shub_user_id);
+		}
 	}
 
 	private $shub_user_id = false; // the current user id in our system.
@@ -110,6 +113,20 @@ class SupportHubUser{
 		if($this->shub_user_id) {
 			shub_delete_from_db( 'shub_user', 'shub_user_id', $this->shub_user_id );
 		}
+	}
+
+	public function get_link(){
+		return '#';
+	}
+	public function get_image(){
+		if($this->get('user_email')){
+			$hash = md5(trim($this->get('user_email')));
+			return '//www.gravatar.com/avatar/'.$hash.'?d=wavatar';
+		}
+		return '';
+	}
+	public function get_name(){
+		return $this->get('user_username');
 	}
 
 }

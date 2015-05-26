@@ -107,7 +107,7 @@ class shub_bbpress_account{
 							$forum->create_new();
 							$forum->update('shub_bbpress_id', $this->shub_bbpress_id);
 							$forum->update('bbpress_token', 'same'); // $available_forums[$bbpress_forum_id]['access_token']
-							$forum->update('forum_name', $available_forums[$bbpress_forum_id]['forum']);
+							$forum->update('forum_name', $available_forums[$bbpress_forum_id]['post_title']);
 							$forum->update('forum_id', $bbpress_forum_id);
 							$forum->update('bbpress_data', $available_forums[$bbpress_forum_id]);
 							$forum->update('shub_product_id', isset($post_data['bbpress_forum_product'][$bbpress_forum_id]) ? $post_data['bbpress_forum_product'][$bbpress_forum_id] : 0);
@@ -185,55 +185,52 @@ class shub_bbpress_account{
 
 		$api = $this->get_api();
 
+
+		$api_result = $api->getProfile();
+		SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
+		if($api_result && $api_result['user_id']){
+			if(!isset($api_result['support_hub'])){
+				echo "Error, the required PHP code has not been added to your bbPress installation. Please check the Support Hub documentation.";
+				return;
+			}
+			$api_result['shub_user_id'] = $this->get_api_user_to_id($api_result['user_id']);
+			$this->save_account_data(array(
+				'user' => $api_result
+			));
+		}else{
+			echo 'Failed to get profile from WP Api';
+			return;
+		}
+
 		// get available post types, check for bbpress forum posts
 		$api_result = $api->getPostTypes();
-		print_r($api_result);exit;
-		if($api_result && isset($api_result['user']) && is_array($api_result['user']) && isset($api_result['user']['username']) && $api_result['user']['username'] == $this->get('bbpress_name')){
-			$this->save_account_data($api_result);
-		}else{
-			echo 'Failed to verify username '.htmlspecialchars($this->get('bbpress_name')).'. Please ensure this is correct and try again.';
-			return false;
-		}
-		$api_result = $api->api('market/user-forums-by-site:' . $this->get('bbpress_name') . '.json');
-		if($api_result && isset($api_result['user-forums-by-site']) && is_array($api_result['user-forums-by-site'])){
-			$forums = array();
-			foreach($api_result['user-forums-by-site'] as $forums_by_site){
-				$site_api_result = $api->api('market/new-files-from-user:' . $this->get('bbpress_name') . ',' . strtolower($forums_by_site['site']) .  '.json');
-				if($site_api_result && isset($site_api_result['new-files-from-user']) && is_array($site_api_result['new-files-from-user'])){
-					foreach($site_api_result['new-files-from-user'] as $forum){
-						$forum['site'] = $forums_by_site['site'];
-						$forums[$forum['id']] = $forum;
-					}
+		//echo '<pre>';print_r($api_result);exit;
+		SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
+		if($api_result && isset($api_result['forum']) && isset($api_result['topic']) && isset($api_result['reply'])){
+			// we have forum, topic and reply post types, so I guess bbpress is working.
+			$api_result = $api->getPosts(array(
+				'post_type' => 'forum',
+			));
+			//echo '<pre>';print_r($api_result);exit;
+			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
+			if(count($api_result)){
+				$forums = array();
+				foreach($api_result as $forum){
+					$forums[$forum['post_id']] = $forum;
 				}
-			}
-			// yes, this member has some forums, save these forums to the account ready for selection in the settings area.
-			$save_data = $this->get('bbpress_data');
-			if(!is_array($save_data))$save_data=array();
-			// create a product for each of these forums (if a matching one doesn't already exist)
-			$existing_products = SupportHub::getInstance()->get_products();
-			foreach($forums as $key => $bbpress_forum){
-				// check if this forum exists already
-				$exists = false;
-				foreach($existing_products as $existing_product){
-					if(isset($existing_product['product_data']['bbpress_forum_id']) && $existing_product['product_data']['bbpress_forum_id'] == $bbpress_forum['id']){
-						$exists = $existing_product['shub_product_id'];
-					}
-				}
-				$newproduct = new SupportHubProduct();
-				if(!$exists) {
-					$newproduct->create_new();
-				}else {
-					$newproduct->load( $exists );
-				}
-				$newproduct->update('product_name',$bbpress_forum['forum']);
-				$newproduct->update('product_data',array(
-					'bbpress_forum_id' => $bbpress_forum['id'],
-					'bbpress_forum_data' => $bbpress_forum,
+				$this->save_account_data(array(
+					'forums' => $forums,
 				));
-				$forums[$key]['shub_product_id'] = $newproduct->get('shub_product_id');
+				return true;
+			}else{
+				echo 'Failed to find any forums, please create some.';
+				return false;
 			}
-			$save_data['forums'] = $forums;
-			$this->update('bbpress_data',$save_data);
+
+		}else{
+			echo 'Failed to find forums';
+			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'bbpress', 'Unable to find TOPIC and REPLY post types through the WP API, maybe bbPress is not installed?');
+			return false;
 		}
 	}
 
@@ -248,12 +245,93 @@ class shub_bbpress_account{
 
 			//$wpLog = new Monolog\Logger('wp-xmlrpc');
 			self::$api = new \HieuLe\WordpressXmlrpcClient\WordpressClient($this->get( 'bbpress_wordpress_xmlrpc' ), $this->get( 'bbpress_username' ), $this->get( 'bbpress_password' ));
+			self::$api->onSending(function($event){
+			    SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Call: '.$event['endpoint'], array(
+				    'method' => $event['method'],
+				    'params' => $event['params'],
+				    'request' => $event['request'],
+			    ));
+			});
+
+			self::$api->onError(function($error, $event){
+			    SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'bbpress', 'API Error: '.$event['endpoint']. ' ('.$error.')', $event);
+			});
 
 
 			//$wpClient->setCredentials($this->get( 'bbpress_wordpress_xmlrpc' ), 'username', 'password');
 
 		}
 		return self::$api;
+	}
+	public function get_api_user_to_id($wp_user_id){
+		if((int)$wp_user_id > 0) {
+		    $wordpress_user = $this->get_api_user($wp_user_id);
+		    /* Array ( [user_id] => 1442 [username] => palumboe1 [registered] => stdClass Object ( [scalar] => 20150303T19:24:05 [xmlrpc_type] => datetime [timestamp] => 1425410645 ) [email] => palumboe1@gmail.com [nicename] => palumboe1 [display_name] => palumboe1 [support_hub] => done ) */
+		    if($wordpress_user && !empty($wordpress_user['user_id']) && $wordpress_user['user_id'] == $wp_user_id){
+			    $comment_user = new SupportHubUser();
+			    $res = false;
+			    $wordpress_user['email'] = trim(strtolower($wordpress_user['email']));
+			    if(!empty($wordpress_user['email'])){
+				    $res = $comment_user->load_by( 'user_email', $wordpress_user['email']);
+			    }
+			    if(!$res){
+				    $comment_user -> create_new();
+				    $comment_user -> update('user_email', $wordpress_user['email']);
+				    if(!$comment_user->get('user_username'))$comment_user -> update('user_username', $wordpress_user['username']);
+				    $user_data = $comment_user->get('user_data');
+					if(!is_array($user_data))$user_data=array();
+				    /*$user_data['source'] = array_merge(isset($user_data['source']) ? $user_data['source'] : array(), array(
+					    'bbpress'
+				    ));*/
+				    if(!empty($wordpress_user['envato_codes'])){
+					    if(!isset($user_data['envato_codes']))$user_data['envato_codes']=array();
+					    $user_data['envato_codes'] = array_merge($user_data['envato_codes'], $wordpress_user['envato_codes']);
+				    }
+				    $comment_user->update_user_data($user_data);
+			    }
+			    return $comment_user->get('shub_user_id');
+		    }
+	    }
+		return false;
+	}
+	public function get_api_user($wp_user_id){
+		if(!(int)$wp_user_id)return false;
+		// seed the cache with the latest existing user details.
+		// generally the posts will come from recent users so it's quicker to get this bulk list of recent users and loop through that, compared to hitting the API for each user details on each forum post.
+		$filter_user = array(
+			'number' => 100,
+		);
+		$api = $this->get_api();
+		//$api_user = $api->getUser($wp_user_id,array('username','basic','envato_codes')); print_r($api_user); exit;
+		$api_result_latest_users = $this->get_api_cache($filter_user);
+		if(!$api_result_latest_users){
+			$api_users = $api->getUsers($filter_user,array('basic','envato_codes'));
+			$api_result_latest_users = array();
+			foreach($api_users as $api_user){
+				$api_result_latest_users[$api_user['user_id']] = $api_user;
+			}
+			unset($api_users);
+		}
+		// if this user doesn't exist in the latest listing we grab it
+		if(!isset($api_result_latest_users[$wp_user_id])){
+			$api_user = $api->getUser($wp_user_id,array('basic','envato_codes'));
+			if($api_user && $api_user['user_id'] == $wp_user_id){
+				$api_result_latest_users[$api_user['user_id']] = $api_user;
+			}
+		}
+		$this->set_api_cache($filter_user, $api_result_latest_users);
+		return isset($api_result_latest_users[$wp_user_id]) ? $api_result_latest_users[$wp_user_id] : false;
+
+	}
+	private static $api_cache = array();
+	public function get_api_cache($filter){
+		$key = md5(serialize($filter));
+		if(isset(self::$api_cache[$key]))return self::$api_cache[$key];
+		return false;
+	}
+	public function set_api_cache($filter,$data){
+		$key = md5(serialize($filter));
+		self::$api_cache[$key] = $data;
 	}
 
 	public function get_picture(){

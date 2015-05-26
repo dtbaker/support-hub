@@ -114,6 +114,14 @@ if($current_account !== false){
                             <input type="password" name="envato_token" value="<?php echo $shub_envato_account->get( 'envato_token' ) ? 'password' : ''; ?>">
                         </td>
                     </tr>
+                    <tr>
+                        <th class="width1">
+                            <?php _e( 'Session Cookie', 'support_hub' ); ?>
+                        </th>
+                        <td class="">
+                            <input type="password" name="envato_cookie" value="<?php echo $shub_envato_account->get( 'envato_cookie' ) ? 'password' : ''; ?>">
+                        </td>
+                    </tr>
 					<?php if ( $shub_envato_account->get( 'shub_envato_id' ) ) { ?>
 						<tr>
 							<th class="width1">

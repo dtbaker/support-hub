@@ -54,6 +54,7 @@ ucm.social = {
                 url += '&' + i + '=' + data[i];
             }
         }
+        url += '&width=' + Math.min(800,(jQuery(window).width()-400));
         url += '&height=' + (jQuery(window).height()-200);
         tb_show(title, url );
         return;

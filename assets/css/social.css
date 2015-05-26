@@ -106,3 +106,84 @@
 .shub_product_dropdown{
     max-width: 180px;
 }
+
+.message_sidebar{
+    float:left;
+    width:190px;
+    padding: 10px 10px 0 0;
+    position: absolute;
+}
+.message_sidebar header{
+    padding: 0 0 10px 0;
+}
+.message_content{
+    margin-left: 200px;
+}
+.shub_message{
+    border-bottom: 1px solid #d0d4e4;
+    border-left: 1px solid #d0d4e4;
+    border-right: 1px solid #d0d4e4;
+    padding: 5px 0 0 5px;
+}
+.shub_message_replies{
+    margin-left: 40px;
+}
+.shub_message_account_icon{
+    height:27px;
+    width: auto;
+    margin: 5px 5px 0 0;
+}
+
+.shub_message_reply_box{
+    display: none;
+}
+.shub_message_reply_box_level1{
+    display: block;
+}
+
+.shub_message_body{
+    margin-left: 40px;
+}
+.shub_message_picture{
+    float: left;
+    width: 35px;
+    margin: 0 5px 0 0;
+}
+.shub_message_picture img{
+    max-width: 100%;
+    height: auto;
+}
+.shub_message_header{
+    /*display: inline;
+    float: left;*/
+    padding: 0 5px 0 0;
+    font-weight: bold;
+}
+.shub_message_header span{
+    font-weight: normal;
+    color:#CCC;
+}
+.shub_message_actions{
+    clear: both;
+    font-size: 0.9em;
+    margin-left: 40px;
+    padding: 0 0 5px 0;
+}
+.shub_message_reply{
+    margin-left: 40px;
+}
+.shub_message_reply button{
+    float: left;
+    height:2em;
+    border:1px solid #bdc7d8;
+    margin:0 0 0 5px;
+}
+
+.shub_message_reply textarea{
+    float: left;
+    background: #FFF;
+    border:1px solid #bdc7d8;
+    width:88%;
+    min-height:2em;
+    resize: none;
+}

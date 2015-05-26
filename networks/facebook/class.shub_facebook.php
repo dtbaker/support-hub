@@ -219,9 +219,6 @@ class shub_facebook extends SupportHub_network {
 		return $feed;
 
 	}
-	public function get_paged_data($data,$pagination){
-
-	}
 
 	public static function format_person($data){
 		$return = '';

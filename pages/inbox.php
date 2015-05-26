@@ -47,6 +47,7 @@
 		// fill them up
 		$has_messages = false;
 		foreach($this->message_managers as $type => $message_manager){
+			if(isset($search['type']) && !empty($search['type']) && $search['type'] != $type)continue;
 			if(!isset($loop_messages[$type])){
 				$loop_messages[$type] = $message_manager->get_next_message();
 				if($loop_messages[$type]){

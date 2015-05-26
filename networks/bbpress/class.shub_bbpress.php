@@ -145,19 +145,14 @@ class shub_bbpress extends SupportHub_network {
 		return $feed;
 
 	}
-	public function get_paged_data($data,$pagination){
-
-	}
 
 	public static function format_person($data,$bbpress_account){
 		$return = '';
-		if($data && isset($data['username'])){
-			$return .= '<a href="http://themeforest.net/user/' . $data['username'].'" target="_blank">';
+		if($data->get_link()){
+			$return .= '<a href="' . $data->get_link() . '" target="_blank">';
 		}
-		if($data && isset($data['username'])){
-			$return .= htmlspecialchars($data['username']);
-		}
-		if($data && isset($data['username'])){
+		$return .= htmlspecialchars($data->get_name());
+		if($data->get_link()){
 			$return .= '</a>';
 		}
 		return $return;
@@ -178,7 +173,7 @@ class shub_bbpress extends SupportHub_network {
 		if(isset($search['shub_bbpress_forum_id']) && $search['shub_bbpress_forum_id'] !== false){
 			$sql .= " AND `shub_bbpress_forum_id` = ".(int)$search['shub_bbpress_forum_id'];
 		}
-		if(isset($search['shub_product_id']) && $search['shub_product_id'] !== false){
+		if(isset($search['shub_product_id']) && (int)$search['shub_product_id']){
 			$sql .= " AND `shub_product_id` = ".(int)$search['shub_product_id'];
 		}
 		if(isset($search['shub_message_id']) && $search['shub_message_id'] !== false){
@@ -284,21 +279,20 @@ class shub_bbpress extends SupportHub_network {
 		$return['shub_column_account'] = ob_get_clean();
 
 		ob_start();
-		$shub_product_id = $bbpress_message->get('bbpress_forum')->get('shub_product_id');
+		$shub_product_id = $bbpress_message->get_product_id();
 		if($shub_product_id) {
 			$shub_product = new SupportHubProduct();
 			$shub_product->load($shub_product_id);
 			$product_data = $shub_product->get('product_data');
-			if(isset($product_data['bbpress_forum_data'])){
+			if(!empty($product_data['image'])){
 				?>
-				<img
-					src="<?php echo isset( $product_data['bbpress_forum_data']['thumbnail'] ) ? $product_data['bbpress_forum_data']['thumbnail'] : plugins_url( 'networks/bbpress/bbpress-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"
-					class="bbpress_icon">
-				<a href="<?php echo isset( $product_data['bbpress_forum_data']['url'] ) ? $product_data['bbpress_forum_data']['url'] : $bbpress_message->get_link(); ?>"
-				   target="_blank"><?php
-					echo htmlspecialchars( $shub_product->get('product_name') ); ?></a>
-				<br/>
+				<img src="<?php echo $product_data['image'];?>" class="bbpress_icon">
+			<?php } ?>
+			<?php if(!empty($product_data['url'])){ ?>
+				<a href="<?php echo $product_data['url']; ?>" target="_blank"><?php echo htmlspecialchars( $shub_product->get('product_name') ); ?></a>
 			<?php
+			}else{
+				?> <?php echo htmlspecialchars( $shub_product->get('product_name') ); ?> <?php
 			}
 		}
 		$return['shub_column_product'] = ob_get_clean();
@@ -312,18 +306,22 @@ class shub_bbpress extends SupportHub_network {
 	    <div class="shub_from_holder shub_bbpress">
 	    <div class="shub_from_full">
 		    <?php
-			foreach($from as $id => $from_data){
+			foreach($from as $id => $from_shub_user){
 				?>
 				<div>
-					<a href="<?php echo $from_data['link'];?>" target="_blank"><img src="<?php echo $from_data['image'];?>" class="shub_from_picture"></a> <?php echo htmlspecialchars($from_data['name']); ?>
+					<?php if($from_shub_user->get_image()){ ?>
+					<a href="<?php echo $from_shub_user->get_link();?>" target="_blank"><img src="<?php echo $from_shub_user->get_image();?>" class="shub_from_picture"></a>
+					<?php } ?> <?php echo htmlspecialchars($from_shub_user->get_name()); ?>
 				</div>
 				<?php
 			} ?>
 	    </div>
         <?php
         reset($from);
-        if(isset($from_data)) {
-	        echo '<a href="' . $from_data['link'] . '" target="_blank">' . '<img src="' . $from_data['image'] . '" class="shub_from_picture"></a> ';
+        if(isset($from_shub_user)) {
+	        if($from_shub_user->get_image()){ ?>
+				<a href="<?php echo $from_shub_user->get_link();?>" target="_blank"><img src="<?php echo $from_shub_user->get_image();?>" class="shub_from_picture"></a>
+			<?php } ?> <?php echo htmlspecialchars($from_shub_user->get_name());
 	        echo '<span class="shub_from_count">';
 	        if ( count( $from ) > 1 ) {
 		        echo '+' . ( count( $from ) - 1 );
@@ -661,19 +659,23 @@ CREATE TABLE {$wpdb->prefix}shub_bbpress_message (
   shub_bbpress_id int(11) NOT NULL,
   shub_message_id int(11) NOT NULL DEFAULT '0',
   shub_bbpress_forum_id int(11) NOT NULL,
+  shub_product_id int(11) NOT NULL DEFAULT '-1',
   bbpress_id varchar(255) NOT NULL,
   summary text NOT NULL,
   title text NOT NULL,
   last_active int(11) NOT NULL DEFAULT '0',
-  messages text NOT NULL,
+  comments text NOT NULL,
   type varchar(20) NOT NULL,
   link varchar(255) NOT NULL,
   data text NOT NULL,
   status tinyint(1) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_bbpress_message_id (shub_bbpress_message_id),
   KEY shub_bbpress_id (shub_bbpress_id),
   KEY shub_message_id (shub_message_id),
+  KEY shub_product_id (shub_product_id),
+  KEY shub_user_id (shub_user_id),
   KEY last_active (last_active),
   KEY shub_bbpress_forum_id (shub_bbpress_forum_id),
   KEY bbpress_id (bbpress_id),

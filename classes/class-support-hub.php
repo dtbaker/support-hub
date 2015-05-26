@@ -2,6 +2,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+
 class SupportHub {
 	public $dir;
 	private $file;
@@ -253,11 +254,11 @@ class SupportHub {
 		//$page = add_submenu_page('support_hub_main', __( 'Interactions', 'support_hub' ), __('Interactions' ,'support_hub'), 'edit_pages',  'support_hub_interactions' , array($this, 'show_interactions'));
 		//add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
-		$page = add_submenu_page('support_hub_main', __( 'Compose', 'support_hub' ), __('Compose' ,'support_hub'), 'edit_pages',  'support_hub_compose' , array($this, 'show_compose'));
-		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
+		//$page = add_submenu_page('support_hub_main', __( 'Compose', 'support_hub' ), __('Compose' ,'support_hub'), 'edit_pages',  'support_hub_compose' , array($this, 'show_compose'));
+		//add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
-		$page = add_submenu_page('support_hub_main', __( 'Sent', 'support_hub' ), __('Sent' ,'support_hub'), 'edit_pages',  'support_hub_sent' , array($this, 'show_sent'));
-		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
+		//$page = add_submenu_page('support_hub_main', __( 'Sent', 'support_hub' ), __('Sent' ,'support_hub'), 'edit_pages',  'support_hub_sent' , array($this, 'show_sent'));
+		//add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
 		$page = add_submenu_page('support_hub_main', __( 'Settings', 'support_hub' ), __('Settings' ,'support_hub'), 'edit_pages',  'support_hub_settings' , array($this, 'show_settings'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
@@ -429,9 +430,11 @@ CREATE TABLE {$wpdb->prefix}shub_user (
   user_username varchar(255) NOT NULL,
   user_email varchar(255) NOT NULL,
   user_data mediumtext NOT NULL,
+  user_id_key1 int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_user_id (shub_user_id),
   KEY user_email (user_email),
   KEY user_username (user_username),
+  KEY user_id_key1 (user_id_key1),
   KEY shub_linked_user_id (shub_linked_user_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
@@ -524,6 +527,9 @@ EOT;
 			echo '<a href="'.$user_details['url'].'" target="_blank">' . $user_details['username'] . '</a>';
 		}else if(isset($user_details['username'])){
 			echo $user_details['username'];
+		}
+		foreach(array('codes','products') as $key){
+			if(isset($user_details[$key]))echo $user_details[$key] .' ';
 		}
 		echo " found ".count($other_messages). " other messages";
 

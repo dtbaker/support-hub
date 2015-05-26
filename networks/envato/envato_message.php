@@ -24,9 +24,8 @@ if($shub_envato_id && $shub_envato_message_id){
 		    ?>
 
 			<form action="" method="post" id="envato_edit_form">
-				<div id="envato_message_header">
-					<div style="float:right; text-align: right; margin-top:-4px;">
-						<small><?php echo shub_print_date( $envato_message->get('last_active'), true ); ?> </small><br/>
+				<section class="message_sidebar">
+					<header>
 						<?php if($product_data && isset($product_data['envato_item_data']['url']) && $product_data['envato_item_data']['url']){ ?>
 						<a href="<?php echo $product_data['envato_item_data']['url'];?>/comments/<?php echo $envato_message->get('envato_id');?>" class="socialenvato_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
 						<?php } ?>
@@ -37,10 +36,14 @@ if($shub_envato_id && $shub_envato_message_id){
 						    <a href="#" class="socialenvato_message_action  btn btn-default btn-xs button"
 						       data-action="set-answered" data-id="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Archive' ); ?></a>
 					    <?php } ?>
-					</div>
-					<img src="<?php echo plugins_url('networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="envato_icon">
-				    <strong><?php _e('Account:');?></strong> <a href="<?php echo $envato_message->get_link(); ?>"
-			           target="_blank"><?php echo htmlspecialchars( $envato_message->get('envato_account') ? $envato_message->get('envato_account')->get( 'envato_name' ) : 'N/A' ); ?></a> <br/>
+					</header>
+
+					<img src="<?php echo plugins_url('networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon"> <br/>
+
+				    <strong><?php _e('Account:');?></strong> <a href="<?php echo $envato_message->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $envato_message->get('envato_account') ? $envato_message->get('envato_account')->get( 'envato_name' ) : 'N/A' ); ?></a> <br/>
+
+					<strong><?php _e('Date:');?></strong> <?php echo shub_print_date( $envato_message->get('last_active'), false ); ?>  <br/>
+
 				    <?php
 					if(isset($product_data['envato_item_data'])){
 						// todo: generalise this so it doesn't rely on products that are only from envato.
@@ -66,12 +69,12 @@ if($shub_envato_id && $shub_envato_message_id){
 					SupportHub::getInstance()->message_user_summary($user_hints, 'envato', $envato_message);
 					do_action('supporthub_message_header', 'envato', $envato_message);
 					?>
-				</div>
-				<div id="envato_message_holder">
-		    <?php
-		    $envato_message->full_message_output(true);
-		    ?>
-					</div>
+				</section>
+				<section class="message_content">
+				    <?php
+				    $envato_message->full_message_output(true);
+				    ?>
+				</section>
 		    </form>
 
 	    <?php }

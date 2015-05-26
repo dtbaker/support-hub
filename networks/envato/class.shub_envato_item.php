@@ -165,7 +165,7 @@ class shub_envato_item{
 				}
 			}
 		}
-		SupportHub::getInstance()->log_data(0, 'envato', 'Imported  '.$count.' new messages into database');
+		SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'envato', 'Imported  '.$count.' new messages into database');
 		if($debug)echo " imported $count new item comments <br>";
 
 		$this->update('last_message',$newest_message_received);

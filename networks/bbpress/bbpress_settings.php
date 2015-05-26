@@ -60,7 +60,7 @@ if($current_account !== false){
                 <p>Setup Instructions:</p>
                 <ul>
                     <li>Login to your WordPress website</li>
-                    <li>Create a new WordPress user as a Forum Moderator (this user should only have access to replying to forum posts).</li>
+                    <li>Create a new WordPress user, set the "Role" as "Administrator", and the "Forum Role" as "Keymaster". (if running a WP Network install, you may need to grant this user Super Admin privileges, as edit_user capability is needed)</li>
                     <li>Type in your WordPress XML-PRC url below (usually http://yourwebsite.com/xmlrpc.php)</li>
                     <li>Type in your new WordPress username and password below (the one you just created)</li>
                     <li>Click "Save and Connect to bbPress"</li>
@@ -148,14 +148,14 @@ if($current_account !== false){
 													       value="1" <?php echo $shub_bbpress_account->is_forum_active( $forum_id ) ? ' checked' : ''; ?>>
 												</td>
 												<td>
-													<?php echo htmlspecialchars( $forum_data['forum'] ); ?>
+													<?php echo htmlspecialchars( $forum_data['post_title'] ); ?>
 												</td>
 												<td>
 													<?php shub_module_form::generate_form_element(array(
 														'name' => 'bbpress_forum_product['.$forum_id.']',
 														'type' => 'select',
 														'blank' => __('- None -','support_hub'),
-														'value' => $shub_bbpress_account->is_forum_active( $forum_id ) ? $bbpress_forums[ $forum_id ]->get( 'shub_product_id' ) : $forum_data['shub_product_id'],
+														'value' => $shub_bbpress_account->is_forum_active( $forum_id ) ? $bbpress_forums[ $forum_id ]->get( 'shub_product_id' ) : (isset($forum_data['shub_product_id']) ? $forum_data['shub_product_id'] : 0),
 														'options' => $products,
 														'options_array_id' => 'product_name',
 														'class' => 'shub_product_dropdown',
@@ -167,7 +167,7 @@ if($current_account !== false){
 												<td>
 													<?php
 													if ( $shub_bbpress_account->is_forum_active( $forum_id ) ) {
-														echo '<a href="' . $bbpress_forums[ $forum_id ]->link_refresh() . '" target="_blank">re-load forum comments</a>';
+														echo '<a href="' . $bbpress_forums[ $forum_id ]->link_refresh() . '" target="_blank">re-load forum topics</a>';
 													} ?>
 												</td>
 											</tr>
@@ -218,7 +218,7 @@ if($current_account !== false){
 		$accounts[$account_id]['last_checked'] = $a->get('last_checked') ? shub_print_date( $a->get('last_checked') ) : 'N/A';
 	}
 	$myListTable->set_data($accounts);
-	$myListTable->prepare_forums();
+	$myListTable->prepare_items();
 	?>
 	<div class="wrap">
 		<h2>

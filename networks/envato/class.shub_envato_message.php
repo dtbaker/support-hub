@@ -31,6 +31,7 @@ class shub_envato_message{
 			'data' => '',
 			'status' => '',
 			'user_id' => '',
+			'shub_user_id' => 0,
 		);
 		foreach($this->details as $key=>$val){
 			$this->{$key} = '';
@@ -200,7 +201,7 @@ class shub_envato_message{
 					    $res = $comment_user->load_by( 'user_username', $message['username']);
 					    if(!$res){
 						    $comment_user -> create_new();
-						    $comment_user -> update('user_username', $message['username']);
+						    if(!$comment_user->get('user_username'))$comment_user -> update('user_username', $message['username']);
 						    $comment_user -> update_user_data(array(
 							    'image' => $message['profile_image_url'],
 							    'envato' => $message,
@@ -266,11 +267,11 @@ class shub_envato_message{
 //		echo '<pre>';print_r($envato_data);echo '</pre>';
 		$from = @json_decode($comment['message_from'],true);
 		?>
-		<div class="envato_message">
-			<div class="envato_message_picture">
+		<div class="shub_message">
+			<div class="shub_message_picture">
 				<img src="<?php echo isset($from['profile_image_url']) && $from['profile_image_url'] ? $from['profile_image_url'] : plugins_url('networks/envato/default-user.jpg',_DTBAKER_SUPPORT_HUB_CORE_FILE_);?>">
 			</div>
-			<div class="envato_message_header">
+			<div class="shub_message_header">
 				<?php echo shub_envato::format_person($from, $this->envato_account); ?>
 				<span><?php $time = isset($envato_data['time']) ? $envato_data['time'] : false;
 				echo $time ? ' @ ' . shub_print_date($time,true) : '';
@@ -283,16 +284,16 @@ class shub_envato_message{
 				?>
 				</span>
 			</div>
-			<div class="envato_message_body">
+			<div class="shub_message_body">
 				<div>
 					<?php
 					echo shub_forum_text($comment['message_text']);?>
 				</div>
 			</div>
-			<div class="envato_message_actions">
+			<div class="shub_message_actions">
 			</div>
 		</div>
-		<div class="envato_message_replies">
+		<div class="shub_message_replies">
 		<?php
 		//if(strpos($envato_data['message'],'picture')){
 			//echo '<pre>'; print_r($envato_data); echo '</pre>';
@@ -335,25 +336,25 @@ class shub_envato_message{
 			$user_data = $this->envato_account->get('envato_data');
 
 			?>
-			<div class="envato_message envato_message_reply_box envato_message_reply_box_level<?php echo $level;?>">
-				<div class="envato_message_picture">
+			<div class="shub_message shub_message_reply_box shub_message_reply_box_level<?php echo $level;?>">
+				<div class="shub_message_picture">
 					<img src="<?php echo isset($user_data['user'],$user_data['user']['image']) ? $user_data['user']['image'] : '#';?>">
 				</div>
-				<div class="envato_message_header">
+				<div class="shub_message_header">
 					<?php echo isset($user_data['user']) ? shub_envato::format_person( $user_data['user'], $this->envato_account ) : 'Error'; ?>
 				</div>
-				<div class="envato_message_reply">
+				<div class="shub_message_reply">
 					<textarea placeholder="Write a reply..."></textarea>
 					<button data-envato-id="<?php echo htmlspecialchars($envato_id);?>" data-id="<?php echo (int)$this->shub_envato_message_id;?>"><?php _e('Send');?></button>
-					<br/>
-					(debug) <input type="checkbox" name="debug" class="reply-debug" value="1">
 				</div>
-				<div class="envato_message_actions"></div>
+				<div class="shub_message_actions">
+					(enable debug) <input type="checkbox" name="debug" class="reply-debug" value="1">
+				</div>
 			</div>
 		<?php
 		}else{
 			?>
-			<div class="envato_message envato_message_reply_box">
+			<div class="shub_message shub_message_reply_box">
 				(incorrect settings, please report this bug)
 			</div>
 			<?php

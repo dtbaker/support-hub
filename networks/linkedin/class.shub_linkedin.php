@@ -145,9 +145,6 @@ class shub_linkedin extends SupportHub_network {
 		return $feed;
 
 	}
-	public function get_paged_data($data,$pagination){
-
-	}
 
 	public static function format_person($data,$linkedin_account){
 		$return = '';

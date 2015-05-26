@@ -280,6 +280,15 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 
 		$current_url = remove_query_arg( array( 'hotkeys_highlight_last', 'hotkeys_highlight_first' ), $current_url );
 
+		// add any search params to the url.
+		if(isset($_REQUEST['search']) && is_array($_REQUEST['search'])){
+			foreach($_REQUEST['search'] as $key=>$val){
+				if($val){
+					$current_url = remove_query_arg('search['.$key.']', $current_url);
+					$current_url = add_query_arg('search['.$key.']', $val, $current_url);
+				}
+			}
+		}
 		$page_links = array();
 
 		$disable_first = $disable_last = '';

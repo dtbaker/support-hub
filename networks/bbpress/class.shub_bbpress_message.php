@@ -21,6 +21,7 @@ class shub_bbpress_message{
 			'shub_bbpress_message_id' => '',
 			'shub_bbpress_forum_id' => '',
 			'shub_bbpress_id' => '',
+			'shub_product_id' => -1,
 			'bbpress_id' => '',
 			'title' => '',
 			'summary' => '',
@@ -31,6 +32,7 @@ class shub_bbpress_message{
 			'data' => '',
 			'status' => '',
 			'user_id' => '',
+			'shub_user_id' => 0,
 		);
 		foreach($this->details as $key=>$val){
 			$this->{$key} = '';
@@ -43,37 +45,43 @@ class shub_bbpress_message{
 		$this->load($this->shub_bbpress_message_id);
 	}
 
-	public function load_by_bbpress_id($bbpress_id, $message_data, $type, $debug = false){
+	public function load_by_bbpress_id($bbpress_id, $topic_data, $type, $debug = false){
 
 		switch($type){
-			case 'forum_comment':
+			case 'forum_topic':
+				/*{"post_id":"3381","post_title":"Child THEME IMPOSSIBLE","post_date":{"scalar":"20150304T00:19:51","xmlrpc_type":"datetime","timestamp":1425428391},"post_date_gmt":{"scalar":"20150304T00:19:51","xmlrpc_type":"datetime","timestamp":1425428391},"post_modified":{"scalar":"20150304T00:19:51","xmlrpc_type":"datetime","timestamp":1425428391},"post_modified_gmt":{"scalar":"20150304T00:19:51","xmlrpc_type":"datetime","timestamp":1425428391},"post_status":"publish","post_type":"topic","post_name":"child-theme-impossible","post_author":"1442","post_password":"","post_excerpt":"","post_content":"Has anyone been able to create a child theme that keeps the animations please help","post_parent":"2613","post_mime_type":"","link":"http:\/\/dtbaker.net\/forums\/topic\/child-theme-impossible\/","guid":"http:\/\/dtbaker.net\/forums\/topic\/child-theme-impossible\/","menu_order":0,"comment_status":"closed","ping_status":"closed","sticky":false,"post_thumbnail":[],"post_format":"standard","terms":[],"custom_fields":[{"id":"9897","key":"author","value":""},{"id":"9898","key":"stars","value":""}],"replies":[{"post_id":"3409","post_title":"","post_date":{"scalar":"20150413T18:16:41","xmlrpc_type":"datetime","timestamp":1428949001},"post_date_gmt":{"scalar":"20150413T18:16:41","xmlrpc_type":"datetime","timestamp":1428949001},"post_modified":{"scalar":"20150413T18:16:41","xmlrpc_type":"datetime","timestamp":1428949001},"post_modified_gmt":{"scalar":"20150413T18:16:41","xmlrpc_type":"datetime","timestamp":1428949001},"post_status":"publish","post_type":"reply","post_name":"3409","post_author":"1692","post_password":"","post_excerpt":"","post_content":"I just purchased this last week and am having problems too. Support for this template seems to be nonexistent. This design has been approved by my client but I'm unable to get the theme to function correctly and I can't get any support from the developer. The deadline for this site is approaching and I'm dead in the water. Hopefully I can get a refund on this one.","post_parent":"3381","post_mime_type":"","link":"http:\/\/dtbaker.net\/forums\/reply\/3409\/","guid":"http:\/\/dtbaker.net\/forums\/reply\/3409\/","menu_order":2,"comment_status":"closed","ping_status":"closed","sticky":false,"post_thumbnail":[],"post_format":"standard","terms":[],"custom_fields":[]},{"post_id":"3394","post_title":"","post_date":{"scalar":"20150318T22:42:54","xmlrpc_type":"datetime","timestamp":1426718574},"post_date_gmt":{"scalar":"20150318T22:42:54","xmlrpc_type":"datetime","timestamp":1426718574},"post_modified":{"scalar":"20150318T22:42:54","xmlrpc_type":"datetime","timestamp":1426718574},"post_modified_gmt":{"scalar":"20150318T22:42:54","xmlrpc_type":"datetime","timestamp":1426718574},"post_status":"publish","post_type":"reply","post_name":"3394","post_author":"1458","post_password":"","post_excerpt":"","post_content":"I have not been able to and just posted that same question before I found your question..","post_parent":"3381","post_mime_type":"","link":"http:\/\/dtbaker.net\/forums\/reply\/3394\/","guid":"http:\/\/dtbaker.net\/forums\/reply\/3394\/","menu_order":1,"comment_status":"closed","ping_status":"closed","sticky":false,"post_thumbnail":[],"post_format":"standard","terms":[],"custom_fields":[]}],"timestamp":1428949001}*/
 				$existing = shub_get_single('shub_bbpress_message', 'bbpress_id', $bbpress_id);
 				if($existing){
 					// load it up.
 					$this->load($existing['shub_bbpress_message_id']);
 				}
-				if($message_data && isset($message_data['id']) && $message_data['id'] == $bbpress_id){
+				if($topic_data && isset($topic_data['post_id']) && $topic_data['post_id'] == $bbpress_id){
 					if(!$existing){
 						$this->create_new();
 					}
 					$this->update('shub_bbpress_id',$this->bbpress_account->get('shub_bbpress_id'));
 					$this->update('shub_bbpress_forum_id',$this->bbpress_forum->get('shub_bbpress_forum_id'));
-					$comments = $message_data['conversation'];
-					$this->update('title',$comments[0]['content']);
-					$this->update('summary',$comments[count($comments)-1]['content']);
-					$this->update('last_active',strtotime($message_data['last_comment_at']));
+					$comments = $topic_data['replies'];
+					$this->update('title',$topic_data['post_content']);
+					// latest comment goes in summary
+					$this->update('summary',isset($comments[0]) ? $comments[0]['post_content'] : $topic_data['post_content']);
+					$this->update('last_active',!empty($topic_data['timestamp']) ? $topic_data['timestamp'] : (is_array($topic_data['post_date']) ? $topic_data['post_date']['timestamp'] : (isset($topic_data['post_date']->timestamp) ? $topic_data['post_date']->timestamp : 0)));
 					$this->update('type',$type);
-					$this->update('data',json_encode($message_data));
-					$this->update('link',$message_data['url'] . '/' . $message_data['id']);
+					$this->update('data',json_encode($topic_data));
+					$this->update('link',$topic_data['link'].'#post-'.(isset($comments[0]) ? $comments[0]['post_id'] : $topic_data['post_id']));
 					$this->update('bbpress_id', $bbpress_id);
 					$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
 					$this->update('comments',json_encode($comments));
+					// create/update a user entry for this comments.
+				    $shub_user_id = $this->bbpress_account->get_api_user_to_id($topic_data['post_author']);
+					$this->update('shub_user_id',$shub_user_id);
 
-					return $existing;
+					return $this->get('shub_bbpress_message_id');
 				}
 				break;
 
 		}
+		return false;
 
 	}
 
@@ -189,34 +197,22 @@ class shub_bbpress_message{
 	private function _update_comments($data, $existing_messages){
 	    if(is_array($data)){
 		    foreach($data as $message){
-			    if($message['id']){
+			    if($message['post_id']){
 				    // does this id exist in the db already?
-				    $exists = shub_get_single('shub_bbpress_message_comment',array('bbpress_id','shub_bbpress_message_id'),array($message['id'],$this->shub_bbpress_message_id));
+				    $exists = shub_get_single('shub_bbpress_message_comment',array('bbpress_id','shub_bbpress_message_id'),array($message['post_id'],$this->shub_bbpress_message_id));
 
 				    // create/update a user entry for this comments.
-				    $shub_user_id = 0;
-				    if(!empty($message['username'])) {
-					    $comment_user = new SupportHubUser();
-					    $res = $comment_user->load_by( 'user_username', $message['username']);
-					    if(!$res){
-						    $comment_user -> create_new();
-						    $comment_user -> update('user_username', $message['username']);
-						    $comment_user -> update_user_data(array(
-							    'image' => $message['profile_image_url'],
-							    'bbpress' => $message,
-						    ));
-					    }
-					    $shub_user_id = $comment_user->get('shub_user_id');
-				    }
+				    // create/update a user entry for this comments.
+				    $shub_user_id = $this->bbpress_account->get_api_user_to_id($message['post_author']);
 
 				    $shub_bbpress_message_comment_id = shub_update_insert('shub_bbpress_message_comment_id',$exists ? $exists['shub_bbpress_message_comment_id'] : false,'shub_bbpress_message_comment',array(
 					    'shub_bbpress_message_id' => $this->shub_bbpress_message_id,
-					    'bbpress_id' => $message['id'],
-					    'time' => isset($message['created_at']) ? strtotime($message['created_at']) : 0,
+					    'bbpress_id' => $message['post_id'],
+					    'time' => isset($message['post_date']) ? (is_array($message['post_date']) ? $message['post_date']['timestamp'] : $message['post_date']->timestamp) : 0,
 					    'data' => json_encode($message),
-					    'message_from' => isset($message['username']) ? json_encode(array("username"=>$message['username'],"profile_image_url"=>$message['profile_image_url'])) : '',
+					    'message_from' => '',
 					    'message_to' => '',
-					    'message_text' => isset($message['content']) ? $message['content'] : '',
+					    'message_text' => isset($message['post_content']) ? $message['post_content'] : '',
 					    'shub_user_id' => $shub_user_id,
 				    ));
 				    if(isset($existing_messages[$shub_bbpress_message_comment_id])){
@@ -256,43 +252,52 @@ class shub_bbpress_message{
 	private $can_reply = false;
 	private function _output_block($bbpress_data,$level){
 		if($level == 1){
+			// display the info from the main 'message' table
 			$comments = $this->get_comments();
-			$comment = array_shift($comments);
+			$comment = array(
+				'shub_user_id' => $this->get('shub_user_id'),
+				'time' => $this->get('last_active'),
+				'message_text' => $this->get('title'),
+				'user_id' => $this->get('user_id'),
+			);
 		}else{
-			$comments = array();
+			// display the info from the 'comments' table.
 			$comment = $bbpress_data;
+			$comments = array();
 		}
 //		echo '<pre>';echo $level;print_r($comments);echo '</pre>';
-//		echo '<pre>';print_r($bbpress_data);echo '</pre>';
-		$from = @json_decode($comment['message_from'],true);
+		//echo '<pre>';print_r($bbpress_data);echo '</pre>';
+		$from = new SupportHubUser($comment['shub_user_id']);
 		?>
-		<div class="bbpress_message">
-			<div class="bbpress_message_picture">
-				<img src="<?php echo isset($from['profile_image_url']) && $from['profile_image_url'] ? $from['profile_image_url'] : plugins_url('networks/bbpress/default-user.jpg',_DTBAKER_SUPPORT_HUB_CORE_FILE_);?>">
+		<div class="shub_message">
+			<div class="shub_message_picture">
+				<?php if($from->get_image()){ ?>
+				<img src="<?php echo $from->get_image() ? $from->get_image() : plugins_url('networks/bbpress/default-user.jpg',_DTBAKER_SUPPORT_HUB_CORE_FILE_);?>">
+				<?php } ?>
 			</div>
-			<div class="bbpress_message_header">
+			<div class="shub_message_header">
 				<?php echo shub_bbpress::format_person($from, $this->bbpress_account); ?>
-				<span><?php $time = isset($bbpress_data['time']) ? $bbpress_data['time'] : false;
+				<span><?php $time = isset($comment['time']) ? $comment['time'] : false;
 				echo $time ? ' @ ' . shub_print_date($time,true) : '';
 
 				// todo - better this! don't call on every message, load list in main loop and pass through all results.
-				if ( isset( $bbpress_data['user_id'] ) && $bbpress_data['user_id'] ) {
-					$user_info = get_userdata($bbpress_data['user_id']);
+				if ( isset( $comment['user_id'] ) && $comment['user_id'] ) {
+					$user_info = get_userdata($comment['user_id']);
 					echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
 				}
 				?>
 				</span>
 			</div>
-			<div class="bbpress_message_body">
+			<div class="shub_message_body">
 				<div>
 					<?php
 					echo shub_forum_text($comment['message_text']);?>
 				</div>
 			</div>
-			<div class="bbpress_message_actions">
+			<div class="shub_message_actions">
 			</div>
 		</div>
-		<div class="bbpress_message_replies">
+		<div class="shub_message_replies">
 		<?php
 		//if(strpos($bbpress_data['message'],'picture')){
 			//echo '<pre>'; print_r($bbpress_data); echo '</pre>';
@@ -305,8 +310,8 @@ class shub_bbpress_message{
 			}
 		}
 		if($level <= 1) {
-			if ( $this->can_reply && isset( $bbpress_data['id'] ) && $bbpress_data['id'] ) {
-				$this->reply_box( $bbpress_data['id'], $level );
+			if ( $this->can_reply && isset( $bbpress_data['post_id'] ) && $bbpress_data['post_id'] ) {
+				$this->reply_box( $bbpress_data['post_id'], $level );
 			}
 		}
 		?>
@@ -333,27 +338,27 @@ class shub_bbpress_message{
 	public function reply_box($bbpress_id,$level=1){
 		if($this->bbpress_account && $this->shub_bbpress_message_id) {
 			$user_data = $this->bbpress_account->get('bbpress_data');
-
+			$from = new SupportHubUser($user_data['user']['shub_user_id']);
 			?>
-			<div class="bbpress_message bbpress_message_reply_box bbpress_message_reply_box_level<?php echo $level;?>">
-				<div class="bbpress_message_picture">
-					<img src="<?php echo isset($user_data['user'],$user_data['user']['image']) ? $user_data['user']['image'] : '#';?>">
+			<div class="shub_message shub_message_reply_box shub_message_reply_box_level<?php echo $level;?>">
+				<div class="shub_message_picture">
+					<img src="<?php echo $from->get_image();?>">
 				</div>
-				<div class="bbpress_message_header">
-					<?php echo isset($user_data['user']) ? shub_bbpress::format_person( $user_data['user'], $this->bbpress_account ) : 'Error'; ?>
+				<div class="shub_message_header">
+					<?php echo shub_bbpress::format_person( $from, $this->bbpress_account ); ?>
 				</div>
-				<div class="bbpress_message_reply">
+				<div class="shub_message_reply">
 					<textarea placeholder="Write a reply..."></textarea>
 					<button data-bbpress-id="<?php echo htmlspecialchars($bbpress_id);?>" data-id="<?php echo (int)$this->shub_bbpress_message_id;?>"><?php _e('Send');?></button>
 					<br/>
 					(debug) <input type="checkbox" name="debug" class="reply-debug" value="1">
 				</div>
-				<div class="bbpress_message_actions"></div>
+				<div class="shub_message_actions"></div>
 			</div>
 		<?php
 		}else{
 			?>
-			<div class="bbpress_message bbpress_message_reply_box">
+			<div class="shub_message shub_message_reply_box">
 				(incorrect settings, please report this bug)
 			</div>
 			<?php
@@ -417,65 +422,6 @@ class shub_bbpress_message{
 					return true;
 
 					break;
-				case 'share':
-
-					$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
-					$api = $this->bbpress_account->get_api();
-					if($debug)echo "Sending a new share update to bbpress account: " . $this->bbpress_account->get('bbpress_name') ."<br>\n";
-					$result = false;
-					/*
-					 *
-					 *  {
-						  "message": "Check out developer.bbpress.com!",
-						  "content": {
-						    "title": "bbpress Developers Resources",
-						    "description": "Leverage bbpress's APIs to maximize engagement",
-						    "submitted-url": "https://developer.bbpress.com",
-						    "submitted-image-url": "https://example.com/logo.png"
-						  },
-						  "visibility": {
-						    "code": "anyone"
-						  }
-						}
-					 */
-					$user_post_data = @json_decode($this->get('data'),true);
-					if(isset($user_post_data['link_picture']) && !empty($user_post_data['link_picture'])){
-						$post_data['picture'] = $user_post_data['link_picture'];
-					}
-					$post_data = array();
-					$post_data['message'] = $this->get('summary');
-
-					if($this->get('link')){
-						$post_data['content'] = array(
-							'title' => $this->get('title'),
-							//'description' => $this->get('summary'),
-							'submitted-url' => $this->get('link'),
-							'submitted-image-url' => isset($user_post_data['bbpress_picture_url']) && !empty($user_post_data['bbpress_picture_url']) ? $user_post_data['bbpress_picture_url'] : '',
-						);
-					}
-					$post_data['visibility'] = array(
-						'code' => 'anyone',
-					);
-					$now = time();
-					$send_time = $this->get('last_active');
-					$result = $api->api('v1/people/~/shares',array(),'POST',$post_data);
-					if($debug)echo "API Post Result: <br>\n".var_export($result,true)." <br>\n";
-					if(is_array($result) && isset($result['updateKey']) && !empty($result['updateKey'])){
-						$this->update('bbpress_id',$result['updateKey']);
-						// reload this message and messages from the graph api.
-						$this->load_by_bbpress_id($this->get('bbpress_id'),false,$this->get('type'),$debug, true);
-					}else{
-						echo 'Failed to send message. Error was: '.var_export($result,true);
-						// remove from database.
-						$this->delete();
-						return false;
-					}
-
-					// successfully sent, mark is as answered.
-					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
-					return true;
-
-					break;
 				default:
 					if($debug)echo "Unknown post type: ".$this->get('type');
 			}
@@ -490,65 +436,65 @@ class shub_bbpress_message{
 			$api = $this->bbpress_account->get_api();
 			if($debug)echo "Type: ".$this->get('type')." <br>\n";
 			switch($this->get('type')) {
-				case 'share':
-					if(!$bbpress_id)$bbpress_id = $this->get('bbpress_id');
+				case 'forum_topic':
 
-					if($debug)echo "Sending a reply to bbpress share ID: $bbpress_id <br>\n";
-
-					$result = false;
-					// send via api
-					$api_result = $api->api('v1/people/~/network/updates/key='.$this->get('bbpress_id').'/update-messages',array(),'POST',array(
-						'message' => $message,
-					));
-					if($debug){
-						echo "API Result:";
-						print_r($api_result);
-					}
-					// reload this message and messages from the bbpress api
-					$this->load_by_bbpress_id($this->get('bbpress_id'),false,$this->get('type'),$debug,true);
-
-					// hack to add the 'user_id' of who created this reply to the db for logging.
-					// the message is added to our db in the "load_bu_bbpress_id" api call.
-					$existing_messages = $this->get_comments(); //shub_get_multiple('shub_bbpress_message_comment',array('shub_bbpress_message_id'=>$this->get('shub_bbpress_message_id')),'shub_bbpress_message_comment_id');
-					foreach($existing_messages as $existing_message){
-						if(!$existing_message['user_id'] && $existing_message['message_text'] == $message){
-							shub_update_insert('shub_bbpress_message_comment_id',$existing_message['shub_bbpress_message_comment_id'],'shub_bbpress_message_comment',array(
-								'user_id' => get_current_user_id(),
-							));
-						}
-					}
-
-					break;
-				case 'forum_post':
-
-					if($this->bbpress_forum){
+					if(!$this->bbpress_forum){
 						echo 'Error no forum, report this';
 						return false;
 					}
 					if(!$bbpress_id)$bbpress_id = $this->get('bbpress_id');
 
-					if($debug)echo "Sending a reply to bbpress ID: $bbpress_id <br>\n";
-					$result = false;
-					// send via api
-					$api_result = $api->api('v1/posts/'.$bbpress_id.'/messages',array(),'POST',array(
-						'text' => $message,
-					));
-					if($debug){
-						echo "API Result:";
-						print_r($api_result);
-					}
-					// reload this message and messages from the bbpress api
-					$this->load_by_bbpress_id($this->get('bbpress_id'),false,$this->get('type'),$debug,true);
+					$bbpress_post_data = @json_decode($this->get('data'),true);
 
-					// hack to add the 'user_id' of who created this reply to the db for logging.
-					// the message is added to our db in the "load_bu_bbpress_id" api call.
-					$existing_messages = $this->get_comments(); //shub_get_multiple('shub_bbpress_message_comment',array('shub_bbpress_message_id'=>$this->get('shub_bbpress_message_id')),'shub_bbpress_message_comment_id');
-					foreach($existing_messages as $existing_message){
-						if(!$existing_message['user_id'] && $existing_message['message_text'] == $message){
-							shub_update_insert('shub_bbpress_message_comment_id',$existing_message['shub_bbpress_message_comment_id'],'shub_bbpress_message_comment',array(
-								'user_id' => get_current_user_id(),
-							));
+					if($debug)echo "Sending a reply to bbPress Topic ID: $bbpress_id <br>\n";
+					$api_result = false;
+					try{
+						$api_result = $api->newPost('Reply to: '.((isset($bbpress_post_data['post_title'])) ? $bbpress_post_data['post_title'] : 'Post'),$message,array(
+							'post_type' => 'reply',
+							'post_parent' => $bbpress_id,
+							'custom_fields' => array(
+								array(
+									'key' => 'support_hub',
+									'value' => 'api',
+								)
+							)
+						));
+						SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
+					}catch(Exception $e){
+						SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'bbpress', 'API Error: ', $e);
+						if($debug){
+							echo "API Error: ".$e;
 						}
+					}
+					if((int) $api_result > 0){
+						// we have a post id for our reply!
+						// add this reply to the 'comments' array of our existing 'message' object.
+
+						// grab the updated post details for both the parent topic and the newly created reply:
+						$parent_topic = $api->getPost($this->get('bbpress_id'));
+						SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
+						$reply_post = $api->getPost($api_result);
+						SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
+
+						if($parent_topic && $parent_topic['post_id'] == $this->get('bbpress_id') && $reply_post && $reply_post['post_id'] == $api_result && $reply_post['post_parent'] == $this->get('bbpress_id')){
+							// all looks hunky dory
+							$comments = @json_decode($this->get('comments'),true);
+							if(!is_array($comments))$comments = array();
+							array_unshift($comments, $reply_post);
+							$parent_topic['replies'] = $comments;
+							// save this updated data to the db
+							$this->load_by_bbpress_id($this->get('bbpress_id'),$parent_topic,$this->get('type'),$debug);
+							$existing_messages = $this->get_comments();
+							foreach($existing_messages as $existing_message){
+								if(!$existing_message['user_id'] && $existing_message['message_text'] == $message){
+									shub_update_insert('shub_bbpress_message_comment_id',$existing_message['shub_bbpress_message_comment_id'],'shub_bbpress_message_comment',array(
+										'user_id' => get_current_user_id(),
+									));
+								}
+							}
+							$this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+						}
+
 					}
 					break;
 			}
@@ -576,8 +522,8 @@ class shub_bbpress_message{
 	public function get_type_pretty() {
 		$type = $this->get('type');
 		switch($type){
-			case 'forum_comment':
-				return 'forum Comment';
+			case 'forum_topic':
+				return 'Forum Topic';
 				break;
 			default:
 				return ucwords($type);
@@ -587,22 +533,37 @@ class shub_bbpress_message{
 	public function get_from() {
 		if($this->shub_bbpress_message_id){
 			$from = array();
-			$messages = $this->get_comments(); //shub_get_multiple('shub_bbpress_message_comment',array('shub_bbpress_message_id'=>$this->shub_bbpress_message_id),'shub_bbpress_message_comment_id');
+			if($this->get('shub_user_id')){
+				$from[$this->get('shub_user_id')] = new SupportHubUser($this->get('shub_user_id'));
+			}
+			$messages = $this->get_comments();
 			foreach($messages as $message){
-				if($message['message_from']){
-					$data = @json_decode($message['message_from'],true);
-					if(isset($data['username'])){
-						$from[$data['username']] = array(
-							'name' => $data['username'],
-							'image' => isset($data['profile_image_url']) ? $data['profile_image_url'] : plugins_url('networks/bbpress/default-user.jpg',_DTBAKER_SUPPORT_HUB_CORE_FILE_),
-							'link' => 'http://themeforest.net/user/' . $data['username'],
-						);
-					}
+				if($message['shub_user_id'] && !isset($from[$message['shub_user_id']])){
+					$from[$message['shub_user_id']] = new SupportHubUser($message['shub_user_id']);
 				}
 			}
 			return $from;
 		}
 		return array();
+	}
+
+	public function get_product_id(){
+		// if local product is id -1 (default) then we use the parent forum product id
+		// this allows individual products to be overrideen with new one
+		if($this->get('shub_product_id') >= 0){
+			return $this->get('shub_product_id');
+		}else{
+			return $this->bbpress_forum->get('shub_product_id');
+		}
+	}
+
+	public function save_product_id($new_product_id){
+		if($new_product_id == $this->bbpress_forum->get('shub_product_id')){
+			// setting it back to default.
+			$this->update('shub_product_id', -1);
+		}else{
+			$this->update('shub_product_id', $new_product_id);
+		}
 	}
 
 

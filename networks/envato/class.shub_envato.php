@@ -145,9 +145,6 @@ class shub_envato extends SupportHub_network {
 		return $feed;
 
 	}
-	public function get_paged_data($data,$pagination){
-
-	}
 
 	public static function format_person($data,$envato_account){
 		$return = '';
@@ -178,7 +175,7 @@ class shub_envato extends SupportHub_network {
 		if(isset($search['shub_envato_item_id']) && $search['shub_envato_item_id'] !== false){
 			$sql .= " AND `shub_envato_item_id` = ".(int)$search['shub_envato_item_id'];
 		}
-		if(isset($search['shub_product_id']) && $search['shub_product_id'] !== false){
+		if(isset($search['shub_product_id']) && (int)$search['shub_product_id']){
 			$sql .= " AND `shub_product_id` = ".(int)$search['shub_product_id'];
 		}
 		if(isset($search['shub_message_id']) && $search['shub_message_id'] !== false){
@@ -289,16 +286,15 @@ class shub_envato extends SupportHub_network {
 			$shub_product = new SupportHubProduct();
 			$shub_product->load($shub_product_id);
 			$product_data = $shub_product->get('product_data');
-			if(isset($product_data['envato_item_data'])){
+			if(!empty($product_data['image'])){
 				?>
-				<img
-					src="<?php echo isset( $product_data['envato_item_data']['thumbnail'] ) ? $product_data['envato_item_data']['thumbnail'] : plugins_url( 'networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"
-					class="envato_icon">
-				<a href="<?php echo isset( $product_data['envato_item_data']['url'] ) ? $product_data['envato_item_data']['url'] : $envato_message->get_link(); ?>"
-				   target="_blank"><?php
-					echo htmlspecialchars( $shub_product->get('product_name') ); ?></a>
-				<br/>
+				<img src="<?php echo $product_data['image'];?>" class="envato_icon">
+			<?php } ?>
+			<?php if(!empty($product_data['url'])){ ?>
+				<a href="<?php echo $product_data['url']; ?>" target="_blank"><?php echo htmlspecialchars( $shub_product->get('product_name') ); ?></a>
 			<?php
+			}else{
+				?> <?php echo htmlspecialchars( $shub_product->get('product_name') ); ?> <?php
 			}
 		}
 		$return['shub_column_product'] = ob_get_clean();
@@ -610,7 +606,21 @@ class shub_envato extends SupportHub_network {
 			$details['user']['url'] = 'http://themeforest.net/user/'.$user_hints['envato_username'];
 		}
 		// todo: find any purchases here. display those in the details
-		$details['user']['purchases'] = '1 purchases';
+		if($user_hints['shub_user_id']){
+			$shub_user = new SupportHubUser($user_hints['shub_user_id']);
+			$user_data = $shub_user->get('user_data');
+			if(isset($user_data['envato_codes'])){
+				// these come in from bbPress (and hopefully other places)
+				// array of purchase code info
+				$details['user']['codes'] = implode(', ',array_keys($user_data['envato_codes']));
+				$details['user']['products'] = array();
+				foreach($user_data['envato_codes'] as $code=>$purchase_data){
+					$details['user']['products'][] = $purchase_data['item_name'];
+				}
+				$details['user']['products'] = implode(', ',$details['user']['products']);
+			}
+		}
+
 
 		// find other envato messages by this user.
 		if(isset($user_hints['shub_user_id']) && (int)$user_hints['shub_user_id']>0){
@@ -651,6 +661,7 @@ CREATE TABLE {$wpdb->prefix}shub_envato (
   post_stream int(11) NOT NULL DEFAULT '0',
   envato_data text NOT NULL,
   envato_token varchar(255) NOT NULL,
+  envato_cookie varchar(255) NOT NULL,
   envato_app_id varchar(255) NOT NULL,
   envato_app_secret varchar(255) NOT NULL,
   machine_id varchar(255) NOT NULL,
@@ -666,18 +677,20 @@ CREATE TABLE {$wpdb->prefix}shub_envato_message (
   summary text NOT NULL,
   title text NOT NULL,
   last_active int(11) NOT NULL DEFAULT '0',
-  messages text NOT NULL,
+  comments text NOT NULL,
   type varchar(20) NOT NULL,
   link varchar(255) NOT NULL,
   data text NOT NULL,
   status tinyint(1) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_envato_message_id (shub_envato_message_id),
   KEY shub_envato_id (shub_envato_id),
   KEY shub_message_id (shub_message_id),
   KEY last_active (last_active),
   KEY shub_envato_item_id (shub_envato_item_id),
   KEY envato_id (envato_id),
+  KEY shub_user_id (shub_user_id),
   KEY status (status)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 

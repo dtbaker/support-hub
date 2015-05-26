@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "9e33f6ecbd422365f4f25495571fcfa3",
+    "hash": "7ea4b31ade93419f836ddf1d8fb16641",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -217,27 +217,27 @@
         },
         {
             "name": "hieu-le/wordpress-xmlrpc-client",
-            "version": "2.3",
+            "version": "2.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/letrunghieu/wordpress-xmlrpc-client.git",
-                "reference": "01b802451e498601f07435d07cbe7fec37ecdba1"
+                "reference": "8964d394cba49e63aab31fa75f670fcbddf23fff"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/letrunghieu/wordpress-xmlrpc-client/zipball/01b802451e498601f07435d07cbe7fec37ecdba1",
-                "reference": "01b802451e498601f07435d07cbe7fec37ecdba1",
+                "url": "https://api.github.com/repos/letrunghieu/wordpress-xmlrpc-client/zipball/8964d394cba49e63aab31fa75f670fcbddf23fff",
+                "reference": "8964d394cba49e63aab31fa75f670fcbddf23fff",
                 "shasum": ""
             },
             "require": {
-                "illuminate/log": "~4.0",
-                "illuminate/support": "~4.0",
+                "ext-xmlrpc": "*",
                 "php": ">=5.3.0"
             },
             "require-dev": {
+                "illuminate/support": "~4.0",
                 "php-vcr/php-vcr": "dev-master",
                 "php-vcr/phpunit-testlistener-vcr": "*",
-                "phpunit/phpunit": "3.7.*",
+                "phpunit/phpunit": "*",
                 "symfony/yaml": "2.*"
             },
             "type": "library",
@@ -265,212 +265,7 @@
                 "wordpress",
                 "xmlrpc"
             ],
-            "time": "2014-06-20 10:41:27"
-        },
-        {
-            "name": "illuminate/log",
-            "version": "v4.2.17",
-            "target-dir": "Illuminate/Log",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/illuminate/log.git",
-                "reference": "1931016cf034b32772d93d50121618f14d9288e1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/log/zipball/1931016cf034b32772d93d50121618f14d9288e1",
-                "reference": "1931016cf034b32772d93d50121618f14d9288e1",
-                "shasum": ""
-            },
-            "require": {
-                "illuminate/support": "4.2.*",
-                "monolog/monolog": "~1.6",
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "illuminate/events": "4.2.*"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "4.2-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Illuminate\\Log": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Taylor Otwell",
-                    "email": "taylorotwell@gmail.com"
-                }
-            ],
-            "time": "2015-01-27 20:51:43"
-        },
-        {
-            "name": "illuminate/support",
-            "version": "v4.2.17",
-            "target-dir": "Illuminate/Support",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/illuminate/support.git",
-                "reference": "db61f3f6d507ce417ca993e1f93585db7efd8b12"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/support/zipball/db61f3f6d507ce417ca993e1f93585db7efd8b12",
-                "reference": "db61f3f6d507ce417ca993e1f93585db7efd8b12",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "jeremeamia/superclosure": "~1.0.1",
-                "patchwork/utf8": "~1.1"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "4.2-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Illuminate\\Support": ""
-                },
-                "files": [
-                    "Illuminate/Support/helpers.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Taylor Otwell",
-                    "email": "taylorotwell@gmail.com"
-                }
-            ],
-            "time": "2015-01-27 20:51:43"
-        },
-        {
-            "name": "monolog/monolog",
-            "version": "1.13.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Seldaek/monolog.git",
-                "reference": "c31a2c4e8db5da8b46c74cf275d7f109c0f249ac"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/c31a2c4e8db5da8b46c74cf275d7f109c0f249ac",
-                "reference": "c31a2c4e8db5da8b46c74cf275d7f109c0f249ac",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.0",
-                "psr/log": "~1.0"
-            },
-            "provide": {
-                "psr/log-implementation": "1.0.0"
-            },
-            "require-dev": {
-                "aws/aws-sdk-php": "~2.4, >2.4.8",
-                "doctrine/couchdb": "~1.0@dev",
-                "graylog2/gelf-php": "~1.0",
-                "phpunit/phpunit": "~4.0",
-                "raven/raven": "~0.5",
-                "ruflin/elastica": "0.90.*",
-                "swiftmailer/swiftmailer": "~5.3",
-                "videlalvaro/php-amqplib": "~2.4"
-            },
-            "suggest": {
-                "aws/aws-sdk-php": "Allow sending log messages to AWS services like DynamoDB",
-                "doctrine/couchdb": "Allow sending log messages to a CouchDB server",
-                "ext-amqp": "Allow sending log messages to an AMQP server (1.0+ required)",
-                "ext-mongo": "Allow sending log messages to a MongoDB server",
-                "graylog2/gelf-php": "Allow sending log messages to a GrayLog2 server",
-                "raven/raven": "Allow sending log messages to a Sentry server",
-                "rollbar/rollbar": "Allow sending log messages to Rollbar",
-                "ruflin/elastica": "Allow sending log messages to an Elastic Search server",
-                "videlalvaro/php-amqplib": "Allow sending log messages to an AMQP server using php-amqplib"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.13.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Monolog\\": "src/Monolog"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Jordi Boggiano",
-                    "email": "j.boggiano@seld.be",
-                    "homepage": "http://seld.be"
-                }
-            ],
-            "description": "Sends your logs to files, sockets, inboxes, databases and various web services",
-            "homepage": "http://github.com/Seldaek/monolog",
-            "keywords": [
-                "log",
-                "logging",
-                "psr-3"
-            ],
-            "time": "2015-03-09 09:58:04"
-        },
-        {
-            "name": "psr/log",
-            "version": "1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/php-fig/log.git",
-                "reference": "fe0936ee26643249e916849d48e3a51d5f5e278b"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/log/zipball/fe0936ee26643249e916849d48e3a51d5f5e278b",
-                "reference": "fe0936ee26643249e916849d48e3a51d5f5e278b",
-                "shasum": ""
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Psr\\Log\\": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "PHP-FIG",
-                    "homepage": "http://www.php-fig.org/"
-                }
-            ],
-            "description": "Common interface for logging libraries",
-            "keywords": [
-                "log",
-                "psr",
-                "psr-3"
-            ],
-            "time": "2012-12-21 11:40:51"
+            "time": "2015-03-19 08:57:37"
         },
         {
             "name": "react/promise",

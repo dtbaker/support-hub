@@ -25,7 +25,7 @@ class shub_envato_account{
 			'envato_app_id' => false,
 			'envato_app_secret' => false,
 			'envato_token' => false,
-			'machine_id' => false,
+			'envato_cookie' => false,
 			'import_stream' => false,
 		);
 	    $this->items = array();
@@ -81,7 +81,7 @@ class shub_envato_account{
 		if(is_array($post_data)){
 			foreach($this->details as $details_key => $details_val){
 				if(isset($post_data[$details_key])){
-					if(($details_key == 'envato_app_secret' || $details_key == 'envato_token') && $post_data[$details_key] == 'password')continue;
+					if(($details_key == 'envato_app_secret' || $details_key == 'envato_token' || $details_key == 'envato_cookie') && $post_data[$details_key] == 'password')continue;
 					$this->update($details_key,$post_data[$details_key]);
 				}
 			}
@@ -230,6 +230,8 @@ class shub_envato_account{
 				$newproduct->update('product_data',array(
 					'envato_item_id' => $envato_item['id'],
 					'envato_item_data' => $envato_item,
+					'image' => isset($envato_item['thumbnail']) ? $envato_item['thumbnail'] : false,
+					'url' => isset($envato_item['url']) ? $envato_item['url'] : false,
 				));
 				$items[$key]['shub_product_id'] = $newproduct->get('shub_product_id');
 			}
@@ -251,6 +253,7 @@ class shub_envato_account{
 
 			self::$api = envato_api_basic::getInstance();
 			self::$api->set_personal_token($this->get( 'envato_token' ));
+			self::$api->set_cookie($this->get( 'envato_cookie' ));
 
 		}
 		return self::$api;
