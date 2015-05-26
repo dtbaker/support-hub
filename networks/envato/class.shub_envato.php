@@ -661,7 +661,7 @@ CREATE TABLE {$wpdb->prefix}shub_envato (
   post_stream int(11) NOT NULL DEFAULT '0',
   envato_data text NOT NULL,
   envato_token varchar(255) NOT NULL,
-  envato_cookie varchar(255) NOT NULL,
+  envato_cookie mediumtext NOT NULL,
   envato_app_id varchar(255) NOT NULL,
   envato_app_secret varchar(255) NOT NULL,
   machine_id varchar(255) NOT NULL,

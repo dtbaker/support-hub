@@ -6,6 +6,11 @@ if($current_account !== false){
 	$shub_envato_account = new shub_envato_account($current_account);
 	if(isset($_GET['manualrefresh'])){
 
+//		$api = $shub_envato_account->get_api();
+//		$comment_id = $api->post_comment('http://codecanyon.net/item/ultimate-client-manager-crm-pro-edition/2621629/comments','10076896','Great, glad this one is solved. :)');
+//		echo 'done with id: '.$comment_id;
+//		exit;
+
 		$envato_item_id = isset( $_REQUEST['envato_item_id'] ) ? (int) $_REQUEST['envato_item_id'] : 0;
 		/* @var $items shub_envato_item[] */
 		$items = $shub_envato_account->get( 'items' );
