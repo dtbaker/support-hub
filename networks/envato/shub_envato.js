@@ -2,11 +2,11 @@ ucm.social.envato = {
     api_url: '',
     init: function(){
 
-        jQuery('body').delegate('.envato_reply_button','click',function(){
+        jQuery('body').delegate('#envato_edit_form .envato_reply_button','click',function(){
             var f = jQuery(this).parents('.envato_message').first().next('.envato_message_replies').find('.envato_message_reply_box');
             f.show();
             f.find('textarea')[0].focus();
-        }).delegate('.envato_message_reply textarea','keyup',function(){
+        }).delegate('#envato_edit_form .shub_message_reply textarea','keyup',function(){
             var a = this;
             if (!jQuery(a).prop('scrollTop')) {
                 do {
@@ -17,10 +17,11 @@ ucm.social.envato = {
                 while (b && (b != jQuery(a).prop('scrollHeight')));
             }
             jQuery(a).height(jQuery(a).prop('scrollHeight') + 10);
-        }).delegate('.envato_message_reply button','click',function(){
+        }).delegate('#envato_edit_form .shub_message_reply button','click',function(){
             // send a message!
-            var p = jQuery(this).parent();
-            var txt = jQuery(p).find('textarea');
+            var pt = jQuery(this).parent();
+            var p = pt.parent();
+            var txt = pt.find('textarea');
             var message = txt.val();
             if(message.length > 0){
                 //txt[0].disabled = true;
@@ -42,13 +43,14 @@ ucm.social.envato = {
                         if(r && typeof r.redirect != 'undefined'){
                             window.location = r.redirect;
                         }else if(r && typeof r.message != 'undefined'){
-                            p.html("Info: "+ r.message);
+                            pt.html("Info: "+ r.message);
                         }else{
-                            p.html("Unknown error, please try reconnecting to envato in settings. "+r);
+                            pt.html("Unknown error, please try reconnecting to envato in settings. "+r);
                         }
                     }
                 });
-                p.html('Sending...');
+                pt.html('Sending...');
+                p.find('.shub_message_actions').hide();
             }
             return false;
         }).delegate('.socialenvato_message_action','click',ucm.social.envato.message_action)

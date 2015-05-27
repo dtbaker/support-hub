@@ -34,6 +34,7 @@ require_once( 'classes/class-support-hub-table.php' );
 require_once( 'classes/class-support-hub-network.php' );
 require_once( 'classes/class-support-hub-product.php' );
 require_once( 'classes/class-support-hub-user.php' );
+require_once( 'classes/class-support-hub-extra.php' );
 require_once( 'classes/ucm.database.php' );
 require_once( 'classes/ucm.form.php' );
 require_once( 'vendor/autoload.php' );

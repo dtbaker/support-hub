@@ -21,13 +21,15 @@ if($shub_envato_id && $shub_envato_message_id){
 				$shub_product->load( $shub_product_id );
 				$product_data = $shub_product->get( 'product_data' );
 			}
+		    $envato_item_data = $envato_message->get('envato_item')->get('envato_data');
+		    if(!is_array($envato_item_data))$envato_item_data = array();
 		    ?>
 
 			<form action="" method="post" id="envato_edit_form">
 				<section class="message_sidebar">
 					<header>
-						<?php if($product_data && isset($product_data['envato_item_data']['url']) && $product_data['envato_item_data']['url']){ ?>
-						<a href="<?php echo $product_data['envato_item_data']['url'];?>/comments/<?php echo $envato_message->get('envato_id');?>" class="socialenvato_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
+						<?php if($envato_item_data && isset($envato_item_data['url']) && $envato_item_data['url']){ ?>
+						<a href="<?php echo $envato_item_data['url'];?>/comments/<?php echo $envato_message->get('envato_id');?>" class="socialenvato_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
 						<?php } ?>
 					    <?php if($envato_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 						    <a href="#" class="socialenvato_message_action  btn btn-default btn-xs button"
@@ -45,13 +47,12 @@ if($shub_envato_id && $shub_envato_message_id){
 					<strong><?php _e('Date:');?></strong> <?php echo shub_print_date( $envato_message->get('last_active'), false ); ?>  <br/>
 
 				    <?php
-					if(isset($product_data['envato_item_data'])){
-						// todo: generalise this so it doesn't rely on products that are only from envato.
+					if($envato_item_data){
 						?>
-						<strong><?php _e('Product:');?></strong>
-						<a href="<?php echo isset( $product_data['envato_item_data']['url'] ) ? $product_data['envato_item_data']['url'] : $envato_message->get_link(); ?>"
+						<strong><?php _e('Envato Item:');?></strong>
+						<a href="<?php echo isset( $envato_item_data['url'] ) ? $envato_item_data['url'] : $envato_message->get_link(); ?>"
 						   target="_blank"><?php
-							echo htmlspecialchars( $shub_product->get('product_name') ); ?></a>
+							echo htmlspecialchars( $envato_item_data['item'] ); ?></a>
 						<br/>
 					<?php
 					}

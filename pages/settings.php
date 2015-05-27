@@ -9,12 +9,14 @@
 	$tab = isset($_REQUEST['tab']) ? $_REQUEST['tab'] : false;
 	?>
 	<h2 class="nav-tab-wrapper woo-nav-tab-wrapper">
-		<a href="?page=support_hub_settings" class="nav-tab <?php echo !$tab ? ' nav-tab-active' : '';?>"><?php _e('General Settings','support_hub');?></a>
+		<a href="?page=support_hub_settings" class="nav-tab <?php echo !$tab ? ' nav-tab-active' : '';?>"><?php _e('General','support_hub');?></a>
+		<a href="?page=support_hub_settings&amp;tab=products" class="nav-tab <?php echo $tab == 'products' ? ' nav-tab-active' : '';?>"><?php _e('Products','support_hub');?></a>
+		<a href="?page=support_hub_settings&amp;tab=extra" class="nav-tab <?php echo $tab == 'extra' ? ' nav-tab-active' : '';?>"><?php _e('Extra Details','support_hub');?></a>
 		<?php foreach($SupportHub->message_managers as $message_manager_id => $message_manager) {
 			if ( $message_manager->is_enabled() ) {
 				?>
 				<a href="?page=support_hub_settings&amp;tab=<?php echo $message_manager_id;?>"
-				   class="nav-tab <?php echo $tab == $message_manager_id ? ' nav-tab-active' : '';?>"><?php echo $message_manager->friendly_name;?></a>
+				   class="nav-tab <?php echo $tab == $message_manager_id ? ' nav-tab-active' : '';?>"><?php echo $message_manager->get_friendly_icon();?><?php echo $message_manager->friendly_name;?></a>
 			<?php }
 		}?>
 		<!-- <a href="?page=support_hub_settings&amp;tab=pending" class="nav-tab">Ticksy</a>
@@ -25,8 +27,14 @@
 	</h2>
 	<br class="clear"/>
 
-	<?php if($tab && isset($SupportHub->message_managers[$tab])){
-		$SupportHub->message_managers[$tab]->settings_page();
+	<?php if($tab){
+		if(isset($SupportHub->message_managers[$tab])){
+			$SupportHub->message_managers[$tab]->settings_page();
+		}else{
+			if(is_file(dirname(_DTBAKER_SUPPORT_HUB_CORE_FILE_).'/pages/settings-'.basename($tab).'.php')){
+				include dirname(_DTBAKER_SUPPORT_HUB_CORE_FILE_).'/pages/settings-'.basename($tab).'.php';
+			}
+		}
 	}else{
 		?>
 		<form action="" method="post">

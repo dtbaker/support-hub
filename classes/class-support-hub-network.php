@@ -51,5 +51,6 @@ class SupportHub_network{
 	}
 
 	public function find_other_user_details($user_hints, $current_extension, $message_object){return array();}
+	public function get_friendly_icon(){}
 
 }

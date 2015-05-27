@@ -37,6 +37,10 @@ class shub_bbpress extends SupportHub_network {
 
 	}
 
+	public function get_friendly_icon(){
+		return '<img src="'.plugins_url('networks/bbpress/bbpress-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="shub_friendly_icon">';
+	}
+
 	public function page_assets($from_master=false){
 		if(!$from_master)SupportHub::getInstance()->inbox_assets();
 

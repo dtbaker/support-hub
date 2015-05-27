@@ -255,6 +255,7 @@ class shub_bbpress_message{
 			// display the info from the main 'message' table
 			$comments = $this->get_comments();
 			$comment = array(
+				'title' => $bbpress_data['post_title'],
 				'shub_user_id' => $this->get('shub_user_id'),
 				'time' => $this->get('last_active'),
 				'message_text' => $this->get('title'),
@@ -289,9 +290,13 @@ class shub_bbpress_message{
 				</span>
 			</div>
 			<div class="shub_message_body">
+				<?php if(!empty($comment['title'])){ ?>
+				<div class="shub_message_title">
+					<?php echo htmlspecialchars($comment['title']);?>
+				</div>
+				<?php } ?>
 				<div>
-					<?php
-					echo shub_forum_text($comment['message_text']);?>
+					<?php echo shub_forum_text($comment['message_text']);?>
 				</div>
 			</div>
 			<div class="shub_message_actions">
@@ -347,7 +352,7 @@ class shub_bbpress_message{
 				<div class="shub_message_header">
 					<?php echo shub_bbpress::format_person( $from, $this->bbpress_account ); ?>
 				</div>
-				<div class="shub_message_reply">
+				<div class="shub_message_reply bbpress_message_reply">
 					<textarea placeholder="Write a reply..."></textarea>
 					<button data-bbpress-id="<?php echo htmlspecialchars($bbpress_id);?>" data-id="<?php echo (int)$this->shub_bbpress_message_id;?>"><?php _e('Send');?></button>
 					<br/>

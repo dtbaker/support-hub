@@ -33,6 +33,11 @@ class shub_envato extends SupportHub_network {
 		}
 	}
 
+
+	public function get_friendly_icon(){
+		return '<img src="'.plugins_url('networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="shub_friendly_icon">';
+	}
+
 	public function init_menu(){
 
 	}
@@ -752,6 +757,17 @@ CREATE TABLE {$wpdb->prefix}shub_envato_item (
   PRIMARY KEY  shub_envato_item_id (shub_envato_item_id),
   KEY shub_envato_id (shub_envato_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_envato_extra_rel (
+  shub_extra_data_id int(11) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
+  shub_envato_message_id int(11) NOT NULL DEFAULT '0',
+  KEY shub_extra_data_id (shub_extra_data_id),
+  KEY shub_user_id (shub_user_id),
+  KEY shub_envato_message_id (shub_envato_message_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
 
 EOT;
 		return $sql;

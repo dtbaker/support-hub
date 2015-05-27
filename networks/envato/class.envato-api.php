@@ -40,18 +40,10 @@ class envato_api_basic{
 	}
 
 	public function post_comment($comment_url, $parent_comment_id, $comment_text){
-		/**
-		 * POST: http://codecanyon.net/item/ultimate-client-manager-crm-pro-edition/2621629/comments
-utf8:✓
-authenticity_token:84GHCY+pDGkuuqMKHtY2WWwkg2Q1dnK41vY27pIlxeM=
-parent_id:10086214
-content:Could you setup the 2€ stamp under Settings > Products, and then you can quickly add the "stamp" product to every invoice that is sent out?
-		 *
-		 * Response: {"status":"ok","partial":"\u003Cdiv class=\"comment-reply \" id=\"comment_10105971\"\u003E\n  \u003Ca href=\"/user/dtbaker\" class='comment-reply__avatar'\u003E\n    \u003Cimg alt=\"dtbaker\" height=\"30\" src=\"https://0.s3.envato.com/files/111547951/dtbaker-php-scripts-wordpress-themes-and-plugins.png\" width=\"30\" /\u003E\n\u003C/a\u003E\n\n\n  \u003Cdiv class=\"comment-reply__body js-comment\"\u003E\n      \u003Cdiv class=\"comment__header\"\u003E\n        \u003Ca href=\"/user/dtbaker\" class=\"comment__username\"\u003Edtbaker\u003C/a\u003E\n          \u003Cspan class=\"text-label-beta -color-grey -size-small -position-top -link\"\u003EAuthor\u003C/span\u003E\n\n\n        \u003Cdiv class=\"js-comment-tools comment__meta\"\u003E\n          \u003Ca href=\"#comment_10105971\" class=\"comment__date\"\u003E1 minute ago\u003C/a\u003E\n          \n    \u003Ca href=\"/complaints/new?complainable_id=10105971\u0026amp;complainable_type=Comment\u0026amp;ret=http%3A%2F%2Fcodecanyon.net%2Fitem%2Fultimate-client-manager-crm-pro-edition%2F2621629%2Fcomments\" class=\"comment__action js-post-flag\"\u003E\n      \u003Ci class=\"e-icon -icon-flag\"\u003E\u003Cspan class=\"e-icon__alt\"\u003EFlag\u003C/span\u003E\u003C/i\u003E\n\u003C/a\u003E\n    \u003Ca href=\"/comments/10105971/edit\" class=\"comment__action js-comment-edit\"\u003E\n      \u003Ci class=\"e-icon -icon-pencil\"\u003E\u003Cspan class=\"e-icon__alt\"\u003EEdit\u003C/span\u003E\u003C/i\u003E\n\u003C/a\u003E\n\n        \u003C/div\u003E\n      \u003C/div\u003E\n\n      \u003Cdiv class=\"js-comment-content\"\u003E\n        \u003Cdiv class=\"user-html\"\u003E\u003Cp\u003ECould you setup the 2\u20ac stamp under Settings \u0026gt; Products, and then you can quickly add the \u0026#8220;stamp\u0026#8221; product to every invoice that is sent out?\u003C/p\u003E\u003C/div\u003E\n      \u003C/div\u003E\n\n      \u003Cdiv class=\"js-inject-target comment-inline-form\"\u003E\u003C/div\u003E\n  \u003C/div\u003E\n\u003C/div\u003E"}
-		 */
 
 		// login to the market using our account cookie.
-		$marketplace = 'themeforest';
+		$bits = parse_url($comment_url);
+		$marketplace = str_replace('.net','',$bits['host']);
 		SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'envato','API Comment Auth on '.$marketplace);
 //		$url = 'https://account.envato.com/';
 //		$response = $this->get_url($url);
@@ -80,7 +72,9 @@ content:Could you setup the 2€ stamp under Settings > Products, and then you c
 		                "utf8" => '&#x2713;',
 		                "parent_id" => $parent_comment_id,
 		                "content" => $comment_text,
-		            ));
+		            ),array(
+						'X-Requested-With: XMLHttpRequest',
+					));
 
 					$json = json_decode($comment_result,true);
 					if(!empty($json['status']) && $json['status'] == 'ok' && !empty($json['partial'])){
@@ -131,7 +125,7 @@ content:Could you setup the 2€ stamp under Settings > Products, and then you c
 	public function curl_done(){
 		@unlink($this->cookie_file);
 	}
-	public function get_url($url, $post = false) {
+	public function get_url($url, $post = false, $extra_headers = array()) {
 
 		if($this->ch){
 			curl_close($this->ch);
@@ -147,6 +141,9 @@ content:Could you setup the 2€ stamp under Settings > Products, and then you c
 		curl_setopt($this->ch, CURLOPT_COOKIE, $cookies);
 
 		curl_setopt( $this->ch, CURLOPT_URL, $url );
+		if($extra_headers){
+			curl_setopt( $this->ch, CURLOPT_HTTPHEADER, $extra_headers);
+		}
 
 		if ( is_array( $post ) && count( $post ) ) {
 			curl_setopt( $this->ch, CURLOPT_POST, true );

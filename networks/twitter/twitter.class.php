@@ -45,6 +45,11 @@ class shub_twitter extends SupportHub_network {
 		}
 	}
 
+
+	public function get_friendly_icon(){
+		return '<img src="'.plugins_url('networks/twitter/twitter-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="shub_friendly_icon">';
+	}
+
 	public function init_menu(){
 
 	}

@@ -33,6 +33,11 @@ class shub_linkedin extends SupportHub_network {
 		}
 	}
 
+
+	public function get_friendly_icon(){
+		return '<img src="'.plugins_url('networks/linkedin/linkedin-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="shub_friendly_icon">';
+	}
+
 	public function init_menu(){
 
 	}

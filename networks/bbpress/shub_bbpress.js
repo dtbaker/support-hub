@@ -19,7 +19,7 @@ ucm.social.bbpress = {
             jQuery(a).height(jQuery(a).prop('scrollHeight') + 10);
         }).delegate('.bbpress_message_reply button','click',function(){
             // send a message!
-            var p = jQuery(this).parent();
+            var p = jQuery(this).parent().parent();
             var txt = jQuery(p).find('textarea');
             var message = txt.val();
             if(message.length > 0){
@@ -49,6 +49,7 @@ ucm.social.bbpress = {
                     }
                 });
                 p.html('Sending...');
+                p.find('.shub_message_actions').hide();
             }
             return false;
         }).delegate('.socialbbpress_message_action','click',ucm.social.bbpress.message_action)

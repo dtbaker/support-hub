@@ -27,7 +27,12 @@
     width:120px;
 }
 
-
+.shub_friendly_icon{
+    max-height: 20px;
+    width: auto;
+    vertical-align: middle;
+    padding: 0 7px 0 0;
+}
 .shub_from_holder{
     overflow: hidden;
 }
@@ -143,6 +148,10 @@
 
 .shub_message_body{
     margin-left: 40px;
+}
+.shub_message_title{
+    font-weight: bold;
+    padding: 10px 0 0 0;
 }
 .shub_message_picture{
     float: left;

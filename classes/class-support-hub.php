@@ -80,13 +80,19 @@ class SupportHub {
 	}
 
 	public function admin_ajax(){
-		check_ajax_referer( 'support-hub-nonce', 'wp_nonce' );
+		if(check_ajax_referer( 'support-hub-nonce', 'wp_nonce' )) {
 
-		$action = isset($_REQUEST['action']) ? str_replace('support_hub_','',$_REQUEST['action']) : false;
-		// pass off the ajax handling to our media managers:
-		foreach($this->message_managers as $name => $message_manager){
-			if($message_manager->handle_ajax($action, $this)){
-				// success!
+			// todo: don't overwrite default superglobals, run stripslashes every time before we use the content, because another plugin might be stripslashing already
+			$_POST    = stripslashes_deep( $_POST );
+			$_GET     = stripslashes_deep( $_GET );
+			$_REQUEST = stripslashes_deep( $_REQUEST );
+
+			$action = isset( $_REQUEST['action'] ) ? str_replace( 'support_hub_', '', $_REQUEST['action'] ) : false;
+			// pass off the ajax handling to our media managers:
+			foreach ( $this->message_managers as $name => $message_manager ) {
+				if ( $message_manager->handle_ajax( $action, $this ) ) {
+					// success!
+				}
 			}
 		}
 
@@ -150,11 +156,12 @@ class SupportHub {
 	public function init() {
 		if(isset($_REQUEST['_process'])){
 
-			foreach($_POST as $key=>$val){
-				if(!is_array($val)){
-					$_POST[$key] = stripslashes($val);
-				}
-			}
+			// fix up WordPress bork:
+			// todo: don't overwrite default superglobals, run stripslashes every time before we use the content, because another plugin might be stripslashing already
+			$_POST = stripslashes_deep($_POST);
+			$_GET = stripslashes_deep($_GET);
+			$_REQUEST = stripslashes_deep($_REQUEST);
+
 			$process_action = $_REQUEST['_process'];
 			$process_options = array();
 			$shub_message_id = false;
@@ -211,16 +218,43 @@ class SupportHub {
 				}
 				header( "Location: admin.php?page=support_hub_sent" );
 				exit;
-			}else if($process_action == 'save_general_settings' && isset($_POST['possible_shub_manager_enabled'])){
+			}else if($process_action == 'save_general_settings'){
 				if(check_admin_referer( 'save-general-settings' )){
-					foreach($_POST['possible_shub_manager_enabled'] as $id=> $tf){
-						if(isset($_POST['shub_manager_enabled'][$id]) && $_POST['shub_manager_enabled'][$id]){
-							update_option('shub_manager_enabled_'.$id,1);
-						}else{
-							update_option('shub_manager_enabled_'.$id,0);
+					if(isset($_POST['possible_shub_manager_enabled'])) {
+						foreach ( $_POST['possible_shub_manager_enabled'] as $id => $tf ) {
+							if ( isset( $_POST['shub_manager_enabled'][ $id ] ) && $_POST['shub_manager_enabled'][ $id ] ) {
+								update_option( 'shub_manager_enabled_' . $id, 1 );
+							} else {
+								update_option( 'shub_manager_enabled_' . $id, 0 );
+							}
 						}
+						header( "Location: admin.php?page=support_hub_settings" );
+						exit;
 					}
-					header( "Location: admin.php?page=support_hub_settings" );
+				}
+
+			}else if($process_action == 'save_extra_details'){
+
+				$shub_extra_id = !empty($_REQUEST['shub_extra_id']) ? (int)$_REQUEST['shub_extra_id'] : 0;
+				if(check_admin_referer( 'save-extra' . $shub_extra_id )){
+
+					$shub_extra = new SupportHubExtra($shub_extra_id);
+
+					if(isset($_REQUEST['butt_delete'])){
+
+						$shub_extra->delete();
+						header( "Location: admin.php?page=support_hub_settings&tab=extra" );
+						exit;
+					}
+
+					if(!$shub_extra->get('shub_extra_id')){
+						$shub_extra->create_new();
+					}
+					$shub_extra->update($_POST);
+
+					$shub_extra_id = $shub_extra->get('shub_extra_id');
+
+					header( "Location: admin.php?page=support_hub_settings&tab=extra" );//&shub_extra_id=" . $shub_extra_id );
 					exit;
 				}
 
@@ -446,6 +480,28 @@ CREATE TABLE {$wpdb->prefix}shub_timer (
   PRIMARY KEY  shub_timer_id (shub_timer_id),
   KEY wp_user_id (wp_user_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_extra (
+  shub_extra_id int(11) NOT NULL AUTO_INCREMENT,
+  extra_name varchar(255) NOT NULL DEFAULT '',
+  extra_description text NOT NULL,
+  extra_order int(11) NOT NULL DEFAULT '0',
+  extra_required int(11) NOT NULL DEFAULT '0',
+  field_type varchar(50) NOT NULL DEFAULT '',
+  field_settings text NOT NULL,
+  PRIMARY KEY  shub_extra_id (shub_extra_id),
+  KEY extra_order (extra_order)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_extra_data (
+  shub_extra_data_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_extra_id int(11) NOT NULL DEFAULT '0',
+  extra_value mediumtext NOT NULL,
+  PRIMARY KEY  shub_extra_data_id (shub_extra_data_id),
+  KEY shub_extra_id (shub_extra_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
 
 
 EOT;
