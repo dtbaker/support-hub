@@ -1,7 +1,7 @@
 <?php
 /*
  * Plugin Name: Support Hub
- * Version: 1.6
+ * Version: 1.1
  * Plugin URI: http://supporthub.co
  * Description: Provide support from within WordPress
  * Author: dtbaker
@@ -27,6 +27,7 @@ define('_shub_MESSAGE_STATUS_SENDING',4);
 define('_SUPPORT_HUB_LOG_INFO',0);
 define('_SUPPORT_HUB_LOG_ERROR',2);
 define('_DTBAKER_SUPPORT_HUB_CORE_FILE_',__FILE__);
+define('_SUPPORT_HUB_LINK_REQUEST_EXTRA','shrequestextra');
 
 // Include core files that do all the magic
 require_once( 'classes/class-support-hub.php' );

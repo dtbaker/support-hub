@@ -49,6 +49,7 @@ class SupportHub {
 		add_action( 'wp_ajax_support_hub_set-unanswered' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_modal' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_fb_url_info' , array( $this, 'admin_ajax' ) );
+		add_action( 'wp_ajax_support_hub_request_extra_details' , array( $this, 'admin_ajax' ) );
 
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_box' ) );
 
@@ -68,6 +69,8 @@ class SupportHub {
 		if ( ! wp_next_scheduled( 'support_hub_cron_job' ) ) {
 			wp_schedule_event( time(), 'minutes_5', 'support_hub_cron_job' );
 		}
+
+		SupportHubExtra::handle_request_extra();
 
 		foreach($this->message_managers as $name => $message_manager){
 			$message_manager->init();
@@ -498,7 +501,25 @@ CREATE TABLE {$wpdb->prefix}shub_extra_data (
   shub_extra_data_id int(11) NOT NULL AUTO_INCREMENT,
   shub_extra_id int(11) NOT NULL DEFAULT '0',
   extra_value mediumtext NOT NULL,
+  extra_data mediumtext NOT NULL,
+  extra_time int(11) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_extra_data_id (shub_extra_data_id),
+  KEY shub_user_id (shub_user_id),
+  KEY shub_extra_id (shub_extra_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_extra_data_rel (
+  shub_extra_data_id int(11) NOT NULL DEFAULT '0',
+  shub_extra_id int(11) NOT NULL DEFAULT '0',
+  shub_network varchar(40) NOT NULL DEFAULT '',
+  shub_network_account_id int(11) NOT NULL DEFAULT '0',
+  shub_network_message_id int(11) NOT NULL DEFAULT '0',
+  KEY shub_extra_data_id (shub_extra_data_id),
+  KEY shub_network (shub_network),
+  KEY shub_network_account_id (shub_network_account_id),
+  KEY shub_network_message_id (shub_network_message_id),
   KEY shub_extra_id (shub_extra_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
@@ -590,5 +611,18 @@ EOT;
 		echo " found ".count($other_messages). " other messages";
 
 	}
+
+
+	public function get_template($template_name){
+	    if( file_exists( get_stylesheet_directory() .'/'.$template_name)){
+	        return get_stylesheet_directory() .'/'.$template_name;
+	    }else if( file_exists( get_template_directory() .'/'.$template_name)){
+	        return get_template_directory() .'/'.$template_name;
+	    }else if (file_exists(dirname( _DTBAKER_SUPPORT_HUB_CORE_FILE_ ) . '/templates/' . $template_name)) {
+	        return dirname( _DTBAKER_SUPPORT_HUB_CORE_FILE_ ) . '/templates/' . $template_name;
+	    }
+	    return false;
+	}
+
 
 }

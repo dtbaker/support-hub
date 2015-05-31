@@ -89,7 +89,6 @@
 
 	// todo - hack in here some sort of cache so pagination works nicer ?
 	//module_debug::log(array( 'title' => 'Finished social messages', 'data' => '', ));
-	//print_r($all_messages);
 
 	$myListTable->set_data($all_messages);
 	$myListTable->prepare_items();

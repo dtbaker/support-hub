@@ -121,14 +121,23 @@
 .message_sidebar header{
     padding: 0 0 10px 0;
 }
+.message_request_extra,
 .message_content{
     margin-left: 200px;
+}
+.message_request_extra{
+    display: none;
+    border-left: 1px solid #d0d4e4;
+    min-height: 500px;
+    padding: 20px;
 }
 .shub_message{
     border-bottom: 1px solid #d0d4e4;
     border-left: 1px solid #d0d4e4;
+    border-top: 1px solid #d0d4e4;
     border-right: 1px solid #d0d4e4;
     padding: 5px 0 0 5px;
+    margin-top: -1px;
 }
 .shub_message_replies{
     margin-left: 40px;
@@ -195,4 +204,7 @@
     width:88%;
     min-height:2em;
     resize: none;
+}
+#TB_ajaxContent{
+    padding-top:0;
 }

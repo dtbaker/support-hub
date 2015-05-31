@@ -25,6 +25,8 @@ class SupportHub_network{
 	public function get_install_sql(){return '';}
 
 
+	public function get_accounts(){ return array(); }
+
 	public $all_messages = false;
 	public $limit_start = 0;
 	public $search_params = array();
@@ -52,5 +54,10 @@ class SupportHub_network{
 
 	public function find_other_user_details($user_hints, $current_extension, $message_object){return array();}
 	public function get_friendly_icon(){}
+	public function handle_process($process, $options = array()){}
+
+	public function extra_process_login($network, $network_account_id, $network_message_id, $extra_ids){ return false; }
+	public function extra_save_data($extra, $value, $network, $network_account_id, $network_message_id){ return false; }
+	public function extra_send_message($message, $network, $network_account_id, $network_message_id){ return false; }
 
 }

@@ -2,7 +2,21 @@
 
 class shub_envato extends SupportHub_network {
 
+
 	public function init(){
+		if(isset($_GET[_SHUB_ENVATO_OAUTH_DOING_FLAG]) && strlen($_GET[_SHUB_ENVATO_OAUTH_DOING_FLAG]) > 0){
+			// we're doing an oauth callback, grab the code and redirect back to the login url.
+			if(!headers_sent() && !session_id()){
+				session_start();
+			}
+			if(!empty($_SESSION['shub_oauth_doing_envato'])){
+				$_SESSION['shub_oauth_doing_envato']['code'] = isset($_GET['code']) ? $_GET['code'] : false;
+				header("Location: ".$_SESSION['shub_oauth_doing_envato']['url']);
+				exit;
+			}
+			echo "Oauth failed, please go back and try again.";
+			exit;
+		}
 		if(isset($_GET[_support_hub_envato_LINK_REWRITE_PREFIX]) && strlen($_GET[_support_hub_envato_LINK_REWRITE_PREFIX]) > 0){
 			// check hash
 			$bits = explode(':',$_GET[_support_hub_envato_LINK_REWRITE_PREFIX]);
@@ -31,6 +45,7 @@ class shub_envato extends SupportHub_network {
 				}
 			}
 		}
+
 	}
 
 
@@ -178,7 +193,7 @@ class shub_envato extends SupportHub_network {
 			$sql .= " AND `status` = ".(int)$search['status'];
 		}
 		if(isset($search['shub_envato_item_id']) && $search['shub_envato_item_id'] !== false){
-			$sql .= " AND `shub_envato_item_id` = ".(int)$search['shub_envato_item_id'];
+			$sql .= " AND m.`shub_envato_item_id` = ".(int)$search['shub_envato_item_id'];
 		}
 		if(isset($search['shub_product_id']) && (int)$search['shub_product_id']){
 			$sql .= " AND `shub_product_id` = ".(int)$search['shub_product_id'];
@@ -520,6 +535,45 @@ class shub_envato extends SupportHub_network {
 
 	public function handle_ajax($action, $support_hub_wp){
 		switch($action){
+			case 'request_extra_details':
+
+				if(isset($_REQUEST['network']) && $_REQUEST['network'] == 'envato'){
+					if (!headers_sent())header('Content-type: text/javascript');
+
+					$debug = isset( $_POST['debug'] ) && $_POST['debug'] ? $_POST['debug'] : false;
+					$response = array();
+					$extra_ids = isset($_REQUEST['extra_ids']) && is_array($_REQUEST['extra_ids']) ? $_REQUEST['extra_ids']  : array();
+					$network_account_id = isset($_REQUEST['networkAccountId']) ? (int)$_REQUEST['networkAccountId'] : (isset($_REQUEST['network-account-id']) ? (int)$_REQUEST['network-account-id'] : false);
+					$network_message_id = isset($_REQUEST['networkMessageId']) ? (int)$_REQUEST['networkMessageId'] : (isset($_REQUEST['network-message-id']) ? (int)$_REQUEST['network-message-id'] : false);
+					if(empty($extra_ids)){
+						$response['message'] = 'Please request at least one Extra Detail';
+					}else{
+
+						$shub_envato_message = new shub_envato_message( false, false, $network_message_id );
+						if($network_message_id && $shub_envato_message->get('shub_envato_message_id') == $network_message_id){
+							// build the message up
+							$message = SupportHubExtra::build_message(array(
+								'network' => 'envato',
+								'network_account_id' => $network_account_id,
+								'network_message_id' => $network_message_id,
+								'extra_ids' => $extra_ids,
+							));
+							$response['message'] = $message;
+//							if($debug)ob_start();
+//							$shub_envato_message->send_reply( $shub_envato_message->get('envato_id'), $message, $debug );
+//							if($debug){
+//								$response['message'] = ob_get_clean();
+//							}else {
+//								$response['redirect'] = 'admin.php?page=support_hub_main';
+//							}
+						}
+
+					}
+
+					echo json_encode($response);
+					exit;
+				}
+				break;
 			case 'send-message-reply':
 				if (!headers_sent())header('Content-type: text/javascript');
 				if(isset($_REQUEST['envato_id']) && !empty($_REQUEST['envato_id']) && isset($_REQUEST['id']) && (int)$_REQUEST['id'] > 0) {
@@ -650,6 +704,126 @@ class shub_envato extends SupportHub_network {
 		return $details;
 	}
 
+	public function extra_process_login($network, $network_account_id, $network_message_id, $extra_ids){
+		if($network != 'envato')dir('Incorrect network in request_extra_login() - this should not happen');
+		$accounts = $this->get_accounts();
+		if(!isset($accounts[$network_account_id])){
+			die('Invalid account, please report this error.');
+		}
+		if(true) {
+			// for testing without doing a full login:
+			$shub_envato_message = new shub_envato_message( false, false, $network_message_id );
+			ob_start();
+			$shub_envato_message->full_message_output( false );
+			return array(
+				'message' => ob_get_clean(),
+			);
+		}
+
+		// check if the user is already logged in via oauth.
+		if(!empty($_SESSION['shub_oauth_envato']) && is_array($_SESSION['shub_oauth_envato']) && $_SESSION['shub_oauth_envato']['expires'] > time() && $_SESSION['shub_oauth_envato']['network_account_id'] == $network_account_id && $_SESSION['shub_oauth_envato']['network_message_id'] == $network_message_id){
+			// user is logged in
+			$shub_envato_message = new shub_envato_message(false, false, $network_message_id);
+			if($shub_envato_message->get('envato_account')->get('shub_envato_id') == $network_account_id && $shub_envato_message->get('shub_envato_message_id') == $network_message_id){
+				//$_SESSION['shub_oauth_envato'] = false;
+				ob_start();
+				$shub_envato_message->full_message_output(false);
+				return array(
+					'message' => ob_get_clean(),
+				);
+
+			}
+		}else{
+			// user isn't logged in or the token has expired. show the login url again.
+			// find the account.
+			if(isset($accounts[$network_account_id])){
+				$shub_envato_account = new shub_envato_account($accounts[$network_account_id]['shub_envato_id']);
+				// found the account, pull in the API and build the url
+				$api = $shub_envato_account->get_api();
+				// check if we have a code from a previous redirect:
+				if(!empty($_SESSION['shub_oauth_doing_envato']['code'])){
+					// grab a token from the api
+					$token = $api->get_authentication($_SESSION['shub_oauth_doing_envato']['code']);
+					unset($_SESSION['shub_oauth_doing_envato']['code']);
+					if(!empty($token) && !empty($token['access_token'])) {
+						// good so far, time to check their username matches from the api
+						$shub_envato_message = new shub_envato_message(false, false, $network_message_id);
+						if($shub_envato_message->get('envato_account')->get('shub_envato_id') == $shub_envato_account->get('shub_envato_id')){
+							// grab the details from the envato message:
+							$envato_comments = $shub_envato_message->get_comments();
+							$first_comment = current($envato_comments);
+							if(!empty($first_comment)){
+								$comment_data = @json_decode($first_comment['data'],true);
+								$api_result = $api->api('market/private/user/username.json', array(), false);
+
+								if($comment_data && $api_result && !empty($api_result['username']) && !empty($comment_data['username']) && $comment_data['username'] == $api_result['username']){
+									SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','OAuth Login Success - request extra','User '.$api_result['username'] .' has logged in to provide extra details');
+									// todo: load this api result into a shub user, pull in their email address as well so we can find any links to other social networks.
+									$api_result_email = $api->api('market/private/user/email.json', array(), false);
+									$_SESSION['shub_oauth_envato']            = $token;
+									$_SESSION['shub_oauth_envato']['network_account_id']            = $network_account_id;
+									$_SESSION['shub_oauth_envato']['network_message_id']            = $network_message_id;
+									$_SESSION['shub_oauth_envato']['expires'] = time() + $token['expires_in'];
+									ob_start();
+									$shub_envato_message->full_message_output(false);
+									return array(
+										'message' => ob_get_clean(),
+									);
+
+								}else{
+									SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','OAuth Login Fail - Username mismatch','User '.var_export($api_result,true).' tried to login and gain access to ticket message ' .$network_message_id.': '.var_export($comment_data,true));
+									echo "Sorry, unable to verify identity. Please submit a new support message if you require assistance. <br><br> ";
+									$envato_item_data = $shub_envato_message->get('envato_item')->get('envato_data');
+									if($envato_item_data && $envato_item_data['url']) {
+										echo '<a href="' . $envato_item_data['url'].'/comments' . (!empty($comment_data['id']) ? '/'.$comment_data['id'] : '') .'">Please click here to return to the Item Comment</a>';
+									}
+									return false;
+								}
+							}
+
+						}
+
+					}else{
+						echo 'Failed to get access token, please try again and report this error.';
+						print_r($token);
+					}
+
+				}else {
+					$login_url                           = $api->get_authorization_url();
+					$_SESSION['shub_oauth_doing_envato'] = array(
+						'url' => $_SERVER['REQUEST_URI'],
+					);
+					?>
+					<a href="<?php echo esc_attr( $login_url );?>">Login to Envato</a>
+				<?php
+				}
+			}
+		}
+		return false;
+	}
+
+	public function extra_validate_data($status, $extra, $value, $network, $network_account_id, $network_message_id){
+		if(!is_string($value))return $status;
+		if(!empty($status['data'])){
+			$value = $status['data'];
+		}
+		$possible_purchase_code = strtolower(preg_replace('#([a-z0-9]{8})-?([a-z0-9]{4})-?([a-z0-9]{4})-?([a-z0-9]{4})-?([a-z0-9]{12})#','$1-$2-$3-$4-$5',$value));
+        if(strlen($possible_purchase_code)==36) { // should be 36
+	        // great! we have a purchase code.
+	        // see if it validates, if it does we return a success along with extra data that will be saved and eventually displayed
+	        $shub_envato_message = new shub_envato_message( false, false, $network_message_id );
+	        $api = $shub_envato_message->get('envato_account')->get_api();
+	        $result = $api->api('market/private/user/verify-purchase:'.$possible_purchase_code.'.json');
+	        print_r($result);exit;
+
+        }
+		return $status;
+
+	}
+	public function extra_save_data($extra, $value, $network, $network_account_id, $network_message_id){
+		$shub_envato_message = new shub_envato_message( false, false, $network_message_id );
+	}
+
 	public function get_install_sql() {
 
 		global $wpdb;
@@ -756,16 +930,6 @@ CREATE TABLE {$wpdb->prefix}shub_envato_item (
   envato_data text NOT NULL,
   PRIMARY KEY  shub_envato_item_id (shub_envato_item_id),
   KEY shub_envato_id (shub_envato_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_envato_extra_rel (
-  shub_extra_data_id int(11) NOT NULL DEFAULT '0',
-  shub_user_id int(11) NOT NULL DEFAULT '0',
-  shub_envato_message_id int(11) NOT NULL DEFAULT '0',
-  KEY shub_extra_data_id (shub_extra_data_id),
-  KEY shub_user_id (shub_user_id),
-  KEY shub_envato_message_id (shub_envato_message_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 

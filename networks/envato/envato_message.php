@@ -70,11 +70,23 @@ if($shub_envato_id && $shub_envato_message_id){
 					SupportHub::getInstance()->message_user_summary($user_hints, 'envato', $envato_message);
 					do_action('supporthub_message_header', 'envato', $envato_message);
 					?>
+
+					<a href="#" class="shub_request_extra btn btn-default btn-xs button" data-modaltitle="<?php _e( 'Request Extra Details' ); ?>" data-action="request_extra_details" data-network="envato" data-envato-message-id="<?php echo $envato_message->get('shub_envato_message_id');?>"><?php _e( 'Request Extra Details' ); ?></a>
+
 				</section>
 				<section class="message_content">
 				    <?php
 				    $envato_message->full_message_output(true);
 				    ?>
+				</section>
+				<section class="message_request_extra">
+					<?php
+					SupportHubExtra::form_request_extra(array(
+						'network' => 'envato',
+						'network-account-id' => $envato->get('shub_envato_id'),
+						'network-message-id' => $envato_message->get('shub_envato_message_id'),
+					));
+					?>
 				</section>
 		    </form>
 

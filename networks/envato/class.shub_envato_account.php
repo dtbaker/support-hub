@@ -108,7 +108,7 @@ class shub_envato_account{
 							$item = new shub_envato_item($this);
 							$item->create_new();
 							$item->update('shub_envato_id', $this->shub_envato_id);
-							$item->update('envato_token', 'same'); // $available_items[$envato_item_id]['access_token']
+							//$item->update('envato_token', 'same'); // $available_items[$envato_item_id]['access_token']
 							$item->update('item_name', $available_items[$envato_item_id]['item']);
 							$item->update('item_id', $envato_item_id);
 							$item->update('envato_data', $available_items[$envato_item_id]);
@@ -246,17 +246,23 @@ class shub_envato_account{
 	}
 
 	private static $api = false;
-	public function get_api($use_db_code = true){
+	public function get_api(){
 		if(!self::$api){
 
 			require_once trailingslashit(dirname(_DTBAKER_SUPPORT_HUB_CORE_FILE_)) . 'networks/envato/class.envato-api.php';
 
 			self::$api = envato_api_basic::getInstance();
 			self::$api->set_personal_token($this->get( 'envato_token' ));
+			self::$api->set_client_id($this->get( 'envato_app_id' ));
+			self::$api->set_client_secret($this->get( 'envato_app_secret' ));
+			self::$api->set_redirect_url($this->generate_oauth_redirect_url());
 			self::$api->set_cookie($this->get( 'envato_cookie' ));
 
 		}
 		return self::$api;
+	}
+	public function generate_oauth_redirect_url(){
+		return add_query_arg(_SHUB_ENVATO_OAUTH_DOING_FLAG,'ok',home_url());
 	}
 
 	public function get_picture(){

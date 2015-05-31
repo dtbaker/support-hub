@@ -72,7 +72,7 @@ if($current_account !== false){
                     <li>Click Register a new App</li>
                     <li>In the app name put "SupportHub" (or anything really)</li>
                     <li>Tick "View username", "View email", "View sales history" and "Verify purchase" options</li>
-                    <li>In the "Confirmation URL" put <strong><?php echo get_home_url();?></strong></li>
+                    <li>In the "Confirmation URL" put <strong><?php echo $shub_envato_account->generate_oauth_redirect_url();?></strong></li>
                     <li>Click Register App</li>
                     <li>Copy your secret key and paste it into the box below</li>
                     <li>Click OK</li>

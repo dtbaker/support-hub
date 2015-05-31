@@ -66,8 +66,7 @@ if($current_extra !== false){
 		) );
 	$extra_details = $shub_extra->get_all_extras();
 	foreach($extra_details as $extra_detail_id => $extra_detail){
-		$a = new SupportHubExtra($extra_detail['shub_extra_id']);
-		$extra_details[$extra_detail_id]['edit_link'] = '<a href="'.$a->link_edit().'">'.__('Edit','support_hub').'</a>';
+		$extra_details[$extra_detail_id]->edit_link = '<a href="'.$extra_detail->link_edit().'">'.__('Edit','support_hub').'</a>';
 	}
 	$myListTable->set_data($extra_details);
 	$myListTable->prepare_items();
