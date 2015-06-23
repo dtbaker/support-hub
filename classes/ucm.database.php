@@ -277,8 +277,24 @@ function shub_process_pagination($rows,$per_page = 20,$page_number = 0,$table_id
 }
 
 
-function shub_forum_text($original_text){
+function shub_forum_text($original_text, $paragraph = true){
 
-	return wpautop(make_clickable($original_text));
+	$original_text = wp_kses($original_text, array(
+	    'a' => array(
+	        'href' => array(),
+	        'target' => array(),
+	    ),
+	    'br' => array(),
+	    'em' => array(),
+	    'strong' => array(),
+	    'p' => array(),
+	    'div' => array(),
+	));
+
+	if($paragraph){
+		return wpautop(make_clickable($original_text));
+	}else{
+		return make_clickable($original_text);
+	}
 
 }

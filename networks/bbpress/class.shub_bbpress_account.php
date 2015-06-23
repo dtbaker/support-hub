@@ -274,21 +274,23 @@ class shub_bbpress_account{
 			    if(!empty($wordpress_user['email'])){
 				    $res = $comment_user->load_by( 'user_email', $wordpress_user['email']);
 			    }
-			    if(!$res){
-				    $comment_user -> create_new();
-				    $comment_user -> update('user_email', $wordpress_user['email']);
-				    if(!$comment_user->get('user_username'))$comment_user -> update('user_username', $wordpress_user['username']);
-				    $user_data = $comment_user->get('user_data');
-					if(!is_array($user_data))$user_data=array();
-				    /*$user_data['source'] = array_merge(isset($user_data['source']) ? $user_data['source'] : array(), array(
-					    'bbpress'
-				    ));*/
-				    if(!empty($wordpress_user['envato_codes'])){
-					    if(!isset($user_data['envato_codes']))$user_data['envato_codes']=array();
-					    $user_data['envato_codes'] = array_merge($user_data['envato_codes'], $wordpress_user['envato_codes']);
+			    if(!$res) {
+				    $comment_user->create_new();
+				    $comment_user->update( 'user_email', $wordpress_user['email'] );
+				    if ( ! $comment_user->get( 'user_username' ) ) {
+					    $comment_user->update( 'user_username', $wordpress_user['username'] );
 				    }
-				    $comment_user->update_user_data($user_data);
 			    }
+			    $user_data = $comment_user->get('user_data');
+				if(!is_array($user_data))$user_data=array();
+			    /*$user_data['source'] = array_merge(isset($user_data['source']) ? $user_data['source'] : array(), array(
+				    'bbpress'
+			    ));*/
+			    if(!empty($wordpress_user['envato_codes'])){
+				    if(!isset($user_data['envato_codes']))$user_data['envato_codes']=array();
+				    $user_data['envato_codes'] = array_merge($user_data['envato_codes'], $wordpress_user['envato_codes']);
+			    }
+			    $comment_user->update_user_data($user_data);
 			    return $comment_user->get('shub_user_id');
 		    }
 	    }

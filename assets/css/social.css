@@ -139,6 +139,9 @@
     padding: 5px 0 0 5px;
     margin-top: -1px;
 }
+.shub_message_private{
+    background: #fffbc6;
+}
 .shub_message_replies{
     margin-left: 40px;
 }

@@ -69,7 +69,15 @@ a,a:link,a:visited{
 </style>
 
 <form action="" method="post">
-	<?php if(isset($login_status) && is_array($login_status) && !empty($login_status['message'])){ ?>
+	<?php if(isset($_GET['done'])){ ?>
+	<fieldset class="shub_extra_done">
+		<legend>Thank You</legend>
+		<div>
+			Your extra information was received successfully.
+		</div>
+	</fieldset>
+	<?php } ?>
+	<?php if(isset($login_status) && is_array($login_status) && !empty($login_status['message']) && empty($extra_previous_data_errors)){ ?>
 	<fieldset class="shub_extra_past_messages">
 		<legend>Past Messages:</legend>
 		<div>
@@ -77,6 +85,7 @@ a,a:link,a:visited{
 		</div>
 	</fieldset>
 	<?php } ?>
+	<?php if(!isset($_GET['done'])){ ?>
 	<fieldset class="shub_extra_details">
 		<legend>Please Provide Additional Details:</legend>
 		<?php
@@ -120,4 +129,5 @@ a,a:link,a:visited{
 		</div>
 	</fieldset>
 	<div><button type="submit" id="submit-go">Submit</button></div>
+	<?php } ?>
 </form>

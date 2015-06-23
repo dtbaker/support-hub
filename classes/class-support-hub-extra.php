@@ -118,25 +118,73 @@ class SupportHubExtra{
 		$return = array();
 
 		// find any data items that are linked to this particular support message:
-		$data = shub_get_multiple('shub_extra_data_rel', array(
+		if($shub_network && $shub_network_account_id && $shub_network_message_id) {
+			$data = shub_get_multiple( 'shub_extra_data_rel', array(
+				'shub_extra_id'           => $this->shub_extra_id,
+				'shub_network'            => $shub_network,
+				'shub_network_account_id' => $shub_network_account_id,
+				'shub_network_message_id' => $shub_network_message_id
+			), 'shub_extra_data_id' );
+			foreach ( $data as $d ) {
+				$return[ $d['shub_extra_data_id'] ] = new SupportHubExtraData( $d['shub_extra_data_id'] );
+			}
+		}
+		// find any data items that are linked to this particular user:
+		if($shub_user_id) {
+			$data = shub_get_multiple( 'shub_extra_data', array(
+				'shub_user_id' => $shub_user_id,
+			), 'shub_extra_data_id' );
+			foreach ( $data as $d ) {
+				if ( ! isset( $return[ $d['shub_extra_data_id'] ] ) ) {
+					$return[ $d['shub_extra_data_id'] ] = new SupportHubExtraData( $d['shub_extra_data_id'] );
+				}
+			}
+		}
+		return $return;
+	}
+
+	public function save_and_link($data, $shub_network, $shub_network_account_id, $shub_network_message_id, $shub_user_id ){
+		// find if this data exists already in the table.
+		$shub_extra_data_ids = shub_get_multiple('shub_extra_data',array(
+			'extra_value' => $data['extra_value'],
+			'shub_user_id' => $shub_user_id,
+		),'shub_extra_data_id');
+		if(!$shub_extra_data_ids){
+			// create a new data entry!
+			$data['shub_user_id'] = $shub_user_id;
+			$shub_extra_data_id = shub_update_insert('shub_extra_data_id',false,'shub_extra_data',array(
+				'shub_extra_id' => $this->shub_extra_id,
+				'shub_user_id' => $shub_user_id,
+				'extra_value' => $data['extra_value'],
+				'extra_data' => !empty($data['extra_data']) ? json_encode($data['extra_data']) : false,
+				'extra_time' => time(),
+			));
+			$shub_extra_data_ids = array();
+			$shub_extra_data_ids[$shub_extra_data_id] = true;
+		}else{
+			// we have one (or more) existing entries
+		}
+		// link these existing (or new) entries with this network/account/message (if they're not already linked)
+		$existing_linked = shub_get_multiple('shub_extra_data_rel', array(
 			'shub_extra_id' => $this->shub_extra_id,
 			'shub_network' => $shub_network,
 			'shub_network_account_id' => $shub_network_account_id,
 			'shub_network_message_id' => $shub_network_message_id
 		), 'shub_extra_data_id');
-		foreach($data as $d){
-			$return[$d['shub_extra_data_id']] = new SupportHubExtraData($d['shub_extra_data_id']);
-		}
-		// find any data items that are linked to this particular user:
-		$data = shub_get_multiple('shub_extra_data', array(
-			'shub_user_id' => $shub_user_id,
-		), 'shub_extra_data_id');
-		foreach($data as $d){
-			if(!isset($return[$d['shub_extra_data_id']])){
-				$return[$d['shub_extra_data_id']] = new SupportHubExtraData($d['shub_extra_data_id']);
+		foreach($shub_extra_data_ids as $shub_extra_data_id => $tf){
+			if(!isset($existing_linked[$shub_extra_data_id])){
+				// not linked yet, add a new link.
+				global $wpdb;
+				$result = $wpdb->insert(_support_hub_DB_PREFIX.'shub_extra_data_rel', array(
+					'shub_extra_data_id' => $shub_extra_data_id,
+					'shub_extra_id' => $this->get('shub_extra_id'),
+					'shub_network' => $shub_network,
+					'shub_network_account_id' => $shub_network_account_id,
+					'shub_network_message_id' => $shub_network_message_id,
+				));
+				// shweet. should all be linked up.
 			}
 		}
-		return $return;
 	}
 
 	public function add_message_segment($value_all){
@@ -148,9 +196,12 @@ class SupportHubExtra{
 		}else{
 			$value = $value_all;
 		}
-		return '<div>
-<strong>' . htmlspecialchars($this->get('extra_name')) .':</strong> ' . htmlspecialchars($value) .'
-</div>';
+		if(!empty($value)) {
+			return '<p>
+<strong>' . htmlspecialchars( $this->get( 'extra_name' ) ) . ':</strong> ' . htmlspecialchars( $value ) . '
+</p>';
+		}
+		return '';
 	}
 
 	/** static stuff **/
@@ -198,6 +249,11 @@ class SupportHubExtra{
 	public static function handle_request_extra(){
 		if(isset($_REQUEST[_SUPPORT_HUB_LINK_REQUEST_EXTRA]) && !empty($_REQUEST[_SUPPORT_HUB_LINK_REQUEST_EXTRA])){
 
+			// todo: don't overwrite default superglobals, run stripslashes every time before we use the content, because another plugin might be stripslashing already
+			$_POST    = stripslashes_deep( $_POST );
+			$_GET     = stripslashes_deep( $_GET );
+			$_REQUEST = stripslashes_deep( $_REQUEST );
+
 			// verify this extra link is valid.
 			$bits = explode(':',$_REQUEST[_SUPPORT_HUB_LINK_REQUEST_EXTRA]);
 			if(count($bits) == 5){
@@ -223,6 +279,8 @@ class SupportHubExtra{
 
 					$login_status = false;
 					$SupportHub = SupportHub::getInstance();
+
+					ob_start();
 
 					include $SupportHub->get_template('shub_external_header.php');
 					if(isset($SupportHub->message_managers[$network])){
@@ -250,7 +308,7 @@ class SupportHubExtra{
 								// todo: hmm nah, dont re-show that information here in the form, the form is only for adding new information.
 								// only show information that was an error and needs to be corrected again before submission/save.
 								//$extra_data = $extra->get_data($network, $network_account_id, $network_message_id);
-								if(isset($extra_previous_data[$extra_id])){
+								if(isset($extra_previous_data[$extra_id]) && is_string($extra_previous_data[$extra_id])){
 									$status = array(
 										'success' => true,
 									);
@@ -259,7 +317,7 @@ class SupportHubExtra{
 
 									if($status && $status['success']){
 										// all good ready to save!
-										$extra_previous_data_validated[$extra_id] = isset($status['data']) ? $status['data'] : $extra_previous_data[$extra_id]; // doing it this way so we can save additional details such as license code verification
+										$extra_previous_data_validated[$extra_id] = !empty($status['data']) ? $status : $extra_previous_data[$extra_id]; // doing it this way so we can save additional details such as license code verification
 									}else{
 										$has_data_error = true;
 										$extra_previous_data_errors[$extra_id] = isset($status['message']) ? $status['message'] : 'Error';
@@ -282,7 +340,8 @@ class SupportHubExtra{
 								}
 							}
 							if(!empty($extra_previous_notes)){
-								$message .= '<div>'. shub_forum_text($extra_previous_notes).'</div>';
+								$message .= '<p>'. shub_forum_text($extra_previous_notes).'</p>';
+								$extra_previous_notes = false;
 							}
 							// pass it through to the message managers to store this information!
 							// (e.g. envato module will validate the 'purchase_code' and return a possible error)
@@ -294,6 +353,10 @@ class SupportHubExtra{
 							}
 							// all done! save our message in the db
 							$SupportHub->message_managers[ $network ]->extra_send_message( $message, $network, $network_account_id, $network_message_id );
+							// redirect browser to a done page.
+							header("Location: ".$_SERVER['REQUEST_URI'].'&done');
+							exit;
+
 
 						}
 						include $SupportHub->get_template('shub_extra_request_form.php');
@@ -301,6 +364,7 @@ class SupportHubExtra{
 						// we display the login form during request_extra_login()
 					}
 					include $SupportHub->get_template('shub_external_footer.php');
+					echo ob_get_clean();
 					exit;
 				}
 			}
@@ -368,7 +432,7 @@ class SupportHubExtraData {
 		$this->reset();
 		$this->shub_extra_data_id = $shub_extra_data_id;
 		if ( $this->shub_extra_data_id ) {
-			$data = shub_get_single( 'shub_extra', 'shub_extra_data_id', $this->shub_extra_data_id );
+			$data = shub_get_single( 'shub_extra_data', 'shub_extra_data_id', $this->shub_extra_data_id );
 			foreach ( $this->details as $key => $val ) {
 				$this->details[ $key ] = $data && isset( $data[ $key ] ) ? $data[ $key ] : $val;
 				if ( in_array( $key, $this->json_fields ) ) {
@@ -416,7 +480,7 @@ class SupportHubExtraData {
 				$value = json_encode( $value );
 			}
 			if ( in_array( $field, $this->json_fields ) ) {
-				shub_update_insert( 'shub_extra_data_id', $this->shub_extra_data_id, 'shub_extra', array(
+				shub_update_insert( 'shub_extra_data_id', $this->shub_extra_data_id, 'shub_extra_data', array(
 					$field => $value,
 				) );
 			}

@@ -710,7 +710,7 @@ class shub_envato extends SupportHub_network {
 		if(!isset($accounts[$network_account_id])){
 			die('Invalid account, please report this error.');
 		}
-		if(true) {
+		if(false) {
 			// for testing without doing a full login:
 			$shub_envato_message = new shub_envato_message( false, false, $network_message_id );
 			ob_start();
@@ -725,7 +725,10 @@ class shub_envato extends SupportHub_network {
 			// user is logged in
 			$shub_envato_message = new shub_envato_message(false, false, $network_message_id);
 			if($shub_envato_message->get('envato_account')->get('shub_envato_id') == $network_account_id && $shub_envato_message->get('shub_envato_message_id') == $network_message_id){
-				//$_SESSION['shub_oauth_envato'] = false;
+				if(isset($_GET['done'])){
+					// submission of extra data was successful, clear the token so the user has to login again
+					$_SESSION['shub_oauth_envato'] = false;
+				}
 				ob_start();
 				$shub_envato_message->full_message_output(false);
 				return array(
@@ -760,6 +763,29 @@ class shub_envato extends SupportHub_network {
 									SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','OAuth Login Success - request extra','User '.$api_result['username'] .' has logged in to provide extra details');
 									// todo: load this api result into a shub user, pull in their email address as well so we can find any links to other social networks.
 									$api_result_email = $api->api('market/private/user/email.json', array(), false);
+									$comment_user = new SupportHubUser();
+									if($api_result_email && !empty($api_result_email['email'])){
+										$email = trim(strtolower($api_result_email['email']));
+									    $comment_user->load_by( 'user_email', $email);
+									    if(!$comment_user->get('shub_user_id')) {
+										    // no existing match by email, find a match by username
+										    $comment_user->load_by( 'user_username', $comment_data['username']);
+											if(!$comment_user->get('shub_user_id') || ($comment_user->get('user_email') && $comment_user->get('user_email') != $email)) {
+												// no existing match by email or username, pump a new entry in
+											    $comment_user->create_new();
+										    }
+									    }
+										$comment_user->update( 'user_email', $email );
+										$comment_user->update( 'user_username', $comment_data['username'] );
+									}else{
+										// no email, only username
+										$comment_user->load_by( 'user_username', $comment_data['username']);
+										if(!$comment_user->get('shub_user_id')) {
+										    $comment_user->create_new();
+										    $comment_user->update( 'user_username', $comment_data['username'] );
+									    }
+									}
+
 									$_SESSION['shub_oauth_envato']            = $token;
 									$_SESSION['shub_oauth_envato']['network_account_id']            = $network_account_id;
 									$_SESSION['shub_oauth_envato']['network_message_id']            = $network_message_id;
@@ -791,7 +817,7 @@ class shub_envato extends SupportHub_network {
 				}else {
 					$login_url                           = $api->get_authorization_url();
 					$_SESSION['shub_oauth_doing_envato'] = array(
-						'url' => $_SERVER['REQUEST_URI'],
+						'url' => str_replace('&done','',$_SERVER['REQUEST_URI']),
 					);
 					?>
 					<a href="<?php echo esc_attr( $login_url );?>">Login to Envato</a>
@@ -808,13 +834,27 @@ class shub_envato extends SupportHub_network {
 			$value = $status['data'];
 		}
 		$possible_purchase_code = strtolower(preg_replace('#([a-z0-9]{8})-?([a-z0-9]{4})-?([a-z0-9]{4})-?([a-z0-9]{4})-?([a-z0-9]{12})#','$1-$2-$3-$4-$5',$value));
-        if(strlen($possible_purchase_code)==36) { // should be 36
+        if(!empty($value) && ($extra->get('extra_name') == 'Purchase Code' || strlen($possible_purchase_code)==36)) { // should be 36
 	        // great! we have a purchase code.
 	        // see if it validates, if it does we return a success along with extra data that will be saved and eventually displayed
 	        $shub_envato_message = new shub_envato_message( false, false, $network_message_id );
-	        $api = $shub_envato_message->get('envato_account')->get_api();
-	        $result = $api->api('market/private/user/verify-purchase:'.$possible_purchase_code.'.json');
-	        print_r($result);exit;
+	        if(strlen($possible_purchase_code)==36) {
+		        $api    = $shub_envato_message->get( 'envato_account' )->get_api();
+		        $result = $api->api( 'market/private/user/verify-purchase:' . $possible_purchase_code . '.json' );
+	        }else{
+		        $result = false;
+	        }
+	        if($result && !empty($result['verify-purchase'])){
+		        // valid purchase code.
+		        $status['success'] = true;
+		        $status['data'] = $possible_purchase_code;
+		        $result['verify-purchase']['time'] = time();
+		        $result['verify-purchase']['valid_purchase_code'] = true;
+		        $status['extra_data'] = $result['verify-purchase'];
+	        }else{
+		        $status['success'] = false;
+		        $status['message'] = 'Invalid purchase code, please try again.';
+	        }
 
         }
 		return $status;
@@ -822,6 +862,59 @@ class shub_envato extends SupportHub_network {
 	}
 	public function extra_save_data($extra, $value, $network, $network_account_id, $network_message_id){
 		$shub_envato_message = new shub_envato_message( false, false, $network_message_id );
+		$shub_user_id = $shub_envato_message->get('shub_user_id');
+		if(is_array($value) && !empty($value['extra_data']['valid_purchase_code'])){
+			// we're saving a previously validated (Above) purchase code.
+			// create a shub user for this purchase and return success along with the purchase data to show
+			$comment_user = new SupportHubUser();
+		    $res = false;
+		    if(!empty($value['extra_data']['buyer'])){
+			    $res = $comment_user->load_by( 'user_username', $value['extra_data']['buyer']);
+		    }
+		    if(!$res) {
+			    $comment_user->create_new();
+			    $comment_user->update( 'user_username', $value['extra_data']['buyer'] );
+		    }
+		    $user_data = $comment_user->get('user_data');
+			if(!is_array($user_data))$user_data=array();
+		    if(!isset($user_data['envato_codes']))$user_data['envato_codes']=array();
+			$user_data_codes = array();
+			$user_data_codes[$value['data']] = $value['extra_data'];
+		    $user_data['envato_codes'] = array_merge($user_data['envato_codes'], $user_data_codes);
+		    $comment_user->update_user_data($user_data);
+			$shub_user_id = $comment_user->get('shub_user_id');
+		}
+
+		$extra->save_and_link(
+			array(
+				'extra_value' => is_array($value) && !empty($value['data']) ? $value['data'] : $value,
+				'extra_data' => is_array($value) && !empty($value['extra_data']) ? $value['extra_data'] : false,
+			),
+			$network,
+			$network_account_id,
+			$network_message_id,
+			$shub_user_id
+		);
+
+	}
+	public function extra_send_message($message, $network, $network_account_id, $network_message_id){
+		// save this message in the database as a new comment.
+		// set the 'private' flag so we know this comment has been added externally to the API scrape.
+		$shub_envato_message = new shub_envato_message( false, false, $network_message_id );
+		$existing_comments = $shub_envato_message->get_comments();
+		shub_update_insert('shub_envato_message_comment_id',false,'shub_envato_message_comment',array(
+		    'shub_envato_message_id' => $shub_envato_message->get('shub_envato_message_id'),
+		    'private' => 1,
+		    'message_text' => $message,
+			'time' => time(),
+		    'shub_user_id' => $shub_envato_message->get('shub_user_id'),
+	    ));
+		// mark the main message as unread so it appears at the top.
+		$shub_envato_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+		$shub_envato_message->update('last_active',time());
+		// todo: update the 'summary' to reflect this latest message?
+		$shub_envato_message->update('summary',$message);
+
 	}
 
 	public function get_install_sql() {
@@ -892,6 +985,7 @@ CREATE TABLE {$wpdb->prefix}shub_envato_message_comment (
   message_text text NOT NULL,
   data text NOT NULL,
   user_id int(11) NOT NULL DEFAULT '0',
+  private tinyint(1) NOT NULL DEFAULT '0',
   shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_envato_message_comment_id (shub_envato_message_comment_id),
   KEY shub_envato_message_id (shub_envato_message_id),

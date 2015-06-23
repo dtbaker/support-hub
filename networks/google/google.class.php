@@ -803,6 +803,8 @@ class shub_google_account{
 			                $value = '';
 			                if (preg_match('/value=(?:["\'])?([^"\'\s]*)/i', $el, $value)) {
 			                    $value = $value[1];
+			                }else{
+				                $value = '';
 			                }
 			                $formFields[$name] = $value;
 			            }

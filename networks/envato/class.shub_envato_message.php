@@ -70,6 +70,25 @@ class shub_envato_message{
 					$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
 					$this->update('comments',json_encode($comments));
 
+					// create/update a user entry for this comments.
+				    $shub_user_id = 0;
+					$first_comment = current($comments);
+				    if(!empty($first_comment['username'])) {
+					    $comment_user = new SupportHubUser();
+					    $res = $comment_user->load_by( 'user_username', $first_comment['username']);
+					    if(!$res){
+						    $comment_user -> create_new();
+						    if(!$comment_user->get('user_username'))$comment_user -> update('user_username', $first_comment['username']);
+						    $comment_user -> update_user_data(array(
+							    'image' => $first_comment['profile_image_url'],
+							    'envato' => $first_comment,
+						    ));
+					    }
+					    $shub_user_id = $comment_user->get('shub_user_id');
+				    }
+					$this->update('shub_user_id', $shub_user_id);
+
+
 					return $existing;
 				}
 				break;
@@ -263,11 +282,17 @@ class shub_envato_message{
 			$comments = array();
 			$comment = $envato_data;
 		}
-//		echo '<pre>';echo $level;print_r($comments);echo '</pre>';
+//		echo '<pre>';echo $level;print_r($comment);echo '</pre>';
 //		echo '<pre>';print_r($envato_data);echo '</pre>';
 		$from = @json_decode($comment['message_from'],true);
+		if(!$from && !empty($comment['private'])){
+			// assume it's from the original message user.
+			$all_comments = $this->get_comments();
+			$first_comment = current($all_comments);
+			$from = @json_decode($first_comment['message_from'],true);
+		}
 		?>
-		<div class="shub_message">
+		<div class="shub_message<?php echo !empty($comment['private']) ? ' shub_message_private':'';?>">
 			<div class="shub_message_picture">
 				<img src="<?php echo isset($from['profile_image_url']) && $from['profile_image_url'] ? $from['profile_image_url'] : plugins_url('networks/envato/default-user.jpg',_DTBAKER_SUPPORT_HUB_CORE_FILE_);?>">
 			</div>

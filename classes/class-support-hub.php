@@ -587,6 +587,24 @@ EOT;
 		// here we hunt down other messages from this user and bring them back to the UI
 		$user_details = array();
 		$other_messages = array();
+
+		// pull out the 'extra data' linked to this ticket
+		$extras = SupportHubExtra::get_all_extras();
+		$extra_datas = array();
+		foreach($extras as $extra_id => $extra){
+			$extra_datas = $extra_datas + $extra->get_data($current_extension, $message_object->get('shub_'.$current_extension.'_id'), $message_object->get('shub_'.$current_extension.'_message_id'), !empty($user_hints['shub_user_id']) ? $user_hints['shub_user_id'] : 0);
+		}
+		foreach($extra_datas as $extra_data){
+			//echo $extra_data->get('shub_extra_data_id') . ' ';
+			?>
+			<div>
+				<strong><?php echo htmlspecialchars($extras[$extra_data->get('shub_extra_id')]->get('extra_name'));?>:</strong>
+				<?php echo shub_forum_text($extra_data->get('extra_value'),false); ?>
+			</div>
+			<?php
+		}
+
+
 		foreach($this->message_managers as $name => $message_manager){
 			$details = $message_manager->find_other_user_details($user_hints, $current_extension, $message_object);
 			if($details && isset($details['messages']) && is_array($details['messages'])){
@@ -609,6 +627,7 @@ EOT;
 			if(isset($user_details[$key]))echo $user_details[$key] .' ';
 		}
 		echo " found ".count($other_messages). " other messages";
+
 
 	}
 
