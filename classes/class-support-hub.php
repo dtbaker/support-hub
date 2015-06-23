@@ -236,6 +236,17 @@ class SupportHub {
 					}
 				}
 
+			}else if($process_action == 'save_encrypted_vault'){
+
+				if(check_admin_referer( 'save-encrypted-vault' ) && !empty($_POST['public_key']) && !empty($_POST['private_key'])){
+
+					update_option('shub_encrypt_public_key',$_POST['public_key']);
+					update_option('shub_encrypt_private_key',$_POST['private_key']);
+
+					header( "Location: admin.php?page=support_hub_settings&tab=extra" );
+					exit;
+				}
+
 			}else if($process_action == 'save_extra_details'){
 
 				$shub_extra_id = !empty($_REQUEST['shub_extra_id']) ? (int)$_REQUEST['shub_extra_id'] : 0;

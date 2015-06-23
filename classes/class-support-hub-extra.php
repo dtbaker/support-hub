@@ -24,6 +24,7 @@ class SupportHubExtra{
 			'extra_description' => '',
 			'extra_order' => 0,
 			'extra_required' => 0,
+			'field_type' => 'text',
 		);
 		foreach($this->details as $field_id => $field_data){
 			$this->{$field_id} = $field_data;
@@ -94,7 +95,7 @@ class SupportHubExtra{
 	        if(in_array($field,$this->json_fields)){
 		        $value = json_encode($value);
 	        }
-	        if(in_array($field,$this->json_fields)) {
+	        if(isset($this->details[$field])) {
 		        shub_update_insert( 'shub_extra_id', $this->shub_extra_id, 'shub_extra', array(
 			        $field => $value,
 		        ) );

@@ -208,6 +208,7 @@ class shub_envato_message{
 
 	private function _update_comments($data, $existing_messages){
 	    if(is_array($data)){
+		    $last_message_user_name = false;
 		    foreach($data as $message){
 			    if($message['id']){
 				    // does this id exist in the db already?
@@ -239,12 +240,22 @@ class shub_envato_message{
 					    'message_text' => isset($message['content']) ? $message['content'] : '',
 					    'shub_user_id' => $shub_user_id,
 				    ));
+				    $last_message_user_name = isset($message['username']) ? $message['username'] : false;
 				    if(isset($existing_messages[$shub_envato_message_comment_id])){
 					    unset($existing_messages[$shub_envato_message_comment_id]);
 				    }
 				    /*if(isset($message['comments']) && is_array($message['comments'])){
 					    $existing_messages = $this->_update_messages($message['comments'], $existing_messages);
 				    }*/
+			    }
+		    }
+		    if($last_message_user_name){
+			    $account_user_data = $this->envato_account->get('envato_data');
+			    if($account_user_data && isset($account_user_data['user']) && $last_message_user_name == $account_user_data['user']['username']){
+				    // the last comment on this item was from the account owner.
+				    // mark this item as resolves so it doesn;t show up in the inbox.
+				    $this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+
 			    }
 		    }
 	    }

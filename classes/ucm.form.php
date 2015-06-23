@@ -1,6 +1,9 @@
 <?php
 
 class shub_module_form{
+
+	public static $done_encrypt_scripts = false;
+
 	 public static function generate_form_element($setting){
 
         if(isset($setting['ignore'])&&$setting['ignore'])return;
@@ -16,6 +19,9 @@ class shub_module_form{
             $setting['class'] = (isset($setting['class']) ? $setting['class'] . ' ': '') . 'time_field';
             $setting['type'] = 'text';
         }
+		 if($setting['type']=='encrypted' && (!isset($setting['id'])||!$setting['id'])){
+			 $setting['id'] = md5($setting['name']);
+		 }
         if($setting['type']=='select' || $setting['type']=='wysiwyg'){
             if(!isset($setting['id'])||!$setting['id']){
                 $setting['id'] = $setting['name'];
@@ -77,6 +83,198 @@ class shub_module_form{
                 case 'number':
                     ?>
                     <input type="text" name="<?php echo $setting['name'];?>" value="<?php echo htmlspecialchars($setting['value']);?>"<?php echo $attributes;?>>
+                    <?php
+                    break;
+                case 'encrypted':
+					if(!self::$done_encrypt_scripts){
+						self::$done_encrypt_scripts = true;
+						?> 
+					
+						<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/json2.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+						<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/jsbn.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+						<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/jsbn2.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+						<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/prng4.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+						<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/rng.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+						<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/rsa.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+						<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/rsa2.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+						<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/sjcl.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+						<script type="text/javascript">
+						    var rsa2 = {
+						        e: '010001', // 010001 (65537 was the old value, this was bad!)
+						        bits: 1024,
+						        public_key: '<?php echo get_option('shub_encrypt_public_key',''); ?>',
+						        private_key: {},
+						        private_encrypted: '<?php ?>', // this is what we get from our server.
+						        generate: function(passphrase){
+						            // we generate a brand new key when creating a new encryption.
+						            var rsakey = new RSAKey();
+						            var dr = document.rsatest;
+						            rsakey.generate(parseInt(this.bits),this.e);
+						            this.public_key = rsakey.n.toString(16);
+						            //console.debug(this.public_key);
+						            this.private_key.d = rsakey.d.toString(16);
+						            this.private_key.p = rsakey.p.toString(16);
+						            this.private_key.q = rsakey.q.toString(16);
+						            this.private_key.dmp1 = rsakey.dmp1.toString(16);
+						            this.private_key.dmq1 = rsakey.dmq1.toString(16);
+						            this.private_key.coeff = rsakey.coeff.toString(16);
+						            var private_string = JSON.stringify(this.private_key);
+						            this.private_key = {};
+						            // encrypt this private key with our password?
+						            this.private_encrypted = sjcl.encrypt(passphrase,private_string);
+						            //console.debug(this.private_encrypted);
+						        },
+						        decrypt_private_key: function(passphrase){
+						            try{
+						                var p = sjcl.decrypt(passphrase,this.private_encrypted);
+						                if(p){
+						                    var j = JSON.parse(p);
+						                    if(j){
+						                        this.private_key = j;
+						                        //console.debug(this.private_key);
+						                        return true;
+						                    }
+						                }
+						            }catch(e){}
+						            return false;
+						        },
+						        encrypt: function(value){
+						            var rsakey = new RSAKey();
+						            rsakey.setPublic(this.public_key, this.e);
+						            return rsakey.encrypt(value);
+						        },
+						        decrypt: function(ciphertext){
+						            var rsakey = new RSAKey();
+						            //console.log(this.public_key);
+						            //console.log(this.e);
+						            //console.log(this.private_key.d);
+						            //console.log(this.private_key.p);
+						            //console.log(this.private_key.q);
+						            //console.log(this.private_key.dmp1);
+						            //console.log(this.private_key.dmq1);
+						            //console.log(this.private_key.coeff);
+						            rsakey.setPrivateEx(this.public_key, this.e, this.private_key.d, this.private_key.p, this.private_key.q, this.private_key.dmp1, this.private_key.dmq1, this.private_key.coeff);
+						            return rsakey.decrypt(ciphertext);
+						        }
+						    };
+						    var do_crypt_success = false;
+						    function do_crypt(passphrase){
+						        if(do_crypt_success)return;
+						        // decrypt our private key from the string.
+						        if(rsa2.decrypt_private_key(passphrase)){
+						            do_crypt_success = true;
+						            var raw = '<?php echo $encrypt['data'];?>';
+						            var decrypt = rsa2.decrypt(raw);
+						            //alert($('#decrypted_value').val().length);
+						            $('#password_box').hide();
+						            $('#unlocking_box').show();
+						            // do an ajax post to tell our logging that we successfully unlocked this entry.
+						            // this is not fool proof. turn off your internet after unlocked the password will get around this.
+						            // but it's a start.
+						            $.ajax({
+						                type: 'GET',
+						                url: '<?php echo $plugins['encrypt']->link('note_admin',array(
+						                    '_process' => 'encrypt_successful',
+						                    'encrypt_field_id' => $encrypt_field_id,
+						                    'encrypt_id' => $encrypt_id,
+						                ));?>',
+						                success: function(){
+						                    $('#unlocking_box').hide();
+						                    if(decrypt && decrypt.length>0){
+						                        $('#decrypted_value').val(decrypt);
+						                    }
+						                    $('#decrypt_box').show();
+						                    $('#decrypted_value')[0].focus();
+						                },
+						                fail: function(){
+						                    alert('Decryption failed. Refresh and try again.');
+						                }
+						            });
+						        }
+						    }
+						    function do_save_decrypted(){
+						        $('#<?php echo htmlspecialchars($callback_id);?>').val($('#decrypted_value').val());
+						        $('#<?php echo htmlspecialchars($callback_id);?>')[0].form.submit();
+						    }
+						    function do_save(){
+						        var enc = rsa2.encrypt($('#decrypted_value').val());
+						        if(enc){
+						            $.ajax({
+						                type: 'POST',
+						                url: '<?php echo $plugins['encrypt']->link('note_admin',array(
+						                    '_process' => 'save_encrypt',
+						                    'encrypt_field_id' => $encrypt_field_id,
+						                    'encrypt_id' => $encrypt_id,
+						                ));?>',
+						                data: {
+						                    encrypt_key_id: $('#encrypt_key_id').val(),
+						                    data: enc
+						                },
+						                dataType: 'json',
+						                success: function(h){
+						                    // update our hidden field back in the other page.
+						                    $('#<?php echo htmlspecialchars($callback_id);?>').val('encrypt:'+ h.encrypt_id);
+						                    //alert('<?php _e('Encrypted successfully! Saving...');?>');
+						                    $('#<?php echo htmlspecialchars($callback_id);?>')[0].form.submit();
+						                },
+						                fail: function(){
+						                    alert('Something went wrong');
+						                }
+						            });
+						        }
+						    }
+						    function create_new(){
+						        var password = $('#new_passphrase').val();
+						        var name = $('#encrypt_key_name').val();
+						        if(name.length > 1 && password.length > 1){
+						            rsa2.generate(password);
+						            // post this to our server so we can save it in the db.
+						            if(rsa2.public_key.length > 2 && rsa2.private_encrypted.length > 5){
+						                // it worked.
+						                $.ajax({
+						                    type: 'POST',
+						                    url: '<?php echo $plugins['encrypt']->link('note_admin',array(
+						                        '_process' => 'save_encrypt_key',
+						                        'encrypt_field_id' => $encrypt_field_id,
+						                    ));?>',
+						                    data: {
+						                        encrypt_key_id: 0,
+						                        encrypt_key_name: name,
+						                        public_key: rsa2.public_key,
+						                        secured_private_key: rsa2.private_encrypted,
+						                        e: rsa2.e
+						                    },
+						                    success: function(h){
+						                        //alert(h);
+						                        //alert('<?php _e('Created successfully!');?>');
+						                        $('#env_vault_name').html(name);
+						                        $('#enc_create_new').hide();
+						                        $('#enc_existing').show();
+						                        do_crypt(password);
+						                    },
+						                    fail: function(){
+						                        alert('Something went wrong');
+						                    }
+						                });
+						
+						            }else{
+						                alert('generation error');
+						            }
+						        }else{
+						            alert('error');
+						        }
+						    }
+						
+						</script>
+					<?php
+					}
+                    ?>
+                    <input type="text" value="<?php echo htmlspecialchars($setting['value']);?>"<?php echo $attributes;?>>
+                    <input type="hidden" name="<?php echo $setting['name'];?>" value="" id="encrypted_<?php echo $setting['id'];?>">
+					[encrypted] <a href="#" onclick="jQuery(this).parent().find('.encrypted_learn_more').show(); jQuery(this).hide(); return false;">(learn more)</a>
+					<div class="encrypted_learn_more" style="display: none">
+						This field is encrypted using industry standard PGP cryptography in JavaScript before getting sent to the server. This provides an extremely high level of security as the raw value is never transmitted with the request and can only be decrypted by a single person here in the office.
+					</div>
                     <?php
                     break;
                 case 'text':

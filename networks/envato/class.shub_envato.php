@@ -915,6 +915,8 @@ class shub_envato extends SupportHub_network {
 		// todo: update the 'summary' to reflect this latest message?
 		$shub_envato_message->update('summary',$message);
 
+		// todo: post a "Thanks for providing information, we will reply soon" message on Envato comment page
+
 	}
 
 	public function get_install_sql() {

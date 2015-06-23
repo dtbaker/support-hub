@@ -28,12 +28,28 @@ if($current_extra !== false){
 						</td>
 					</tr>
                     <tr>
-                        <th class="width1">
+                        <th>
                             <?php _e( 'Extra Description', 'support_hub' ); ?>
                         </th>
                         <td class="">
                             <textarea name="extra_description"><?php echo esc_attr($shub_extra->get( 'extra_description' )); ?></textarea>
 	                        (e.g. Enter your Website Address so we can see the problem)
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>
+                            <?php _e( 'Field Type', 'support_hub' ); ?>
+                        </th>
+                        <td class="">
+                            <?php shub_module_form::generate_form_element(array(
+	                            'type' => 'select',
+	                            'options' => array(
+		                            'text' => 'Text Field',
+		                            'encrypted' => 'Encrypted Field',
+	                            ),
+	                            'value' => $shub_extra->get( 'field_type' ),
+	                            'name' => 'field_type',
+                            )); ?>
                         </td>
                     </tr>
 					</tbody>
@@ -81,6 +97,150 @@ if($current_extra !== false){
 	     $myListTable->display();
 		?>
 	</div>
+	<div class="wrap">
+			<h2>
+				<?php _e( 'Encrypted Field Settings', 'support_hub' ); ?>
+			</h2>
+		<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/json2.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+		<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/jsbn.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+		<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/jsbn2.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+		<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/prng4.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+		<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/rng.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+		<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/rsa.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+		<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/rsa2.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+		<script language="JavaScript" type="text/javascript" src="<?php echo plugins_url('assets/js/sjcl.js', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>"></script>
+		<script type="text/javascript">
+		    var rsa2 = {
+		        e: '010001', // 010001 (65537 was the old value, this was bad!)
+		        bits: 1024,
+		        public_key: '<?php echo get_option('shub_encrypt_public_key',''); ?>',
+		        private_key: {},
+		        private_encrypted: '<?php ?>', // this is what we get from our server.
+		        generate: function(passphrase){
+		            // we generate a brand new key when creating a new encryption.
+		            var rsakey = new RSAKey();
+		            var dr = document.rsatest;
+		            rsakey.generate(parseInt(this.bits),this.e);
+		            this.public_key = rsakey.n.toString(16);
+		            //console.debug(this.public_key);
+		            this.private_key.d = rsakey.d.toString(16);
+		            this.private_key.p = rsakey.p.toString(16);
+		            this.private_key.q = rsakey.q.toString(16);
+		            this.private_key.dmp1 = rsakey.dmp1.toString(16);
+		            this.private_key.dmq1 = rsakey.dmq1.toString(16);
+		            this.private_key.coeff = rsakey.coeff.toString(16);
+		            var private_string = JSON.stringify(this.private_key);
+		            this.private_key = {};
+		            // encrypt this private key with our password?
+		            this.private_encrypted = sjcl.encrypt(passphrase,private_string);
+		            //console.debug(this.private_encrypted);
+		        },
+		        decrypt_private_key: function(passphrase){
+		            try{
+		                var p = sjcl.decrypt(passphrase,this.private_encrypted);
+		                if(p){
+		                    var j = JSON.parse(p);
+		                    if(j){
+		                        this.private_key = j;
+		                        //console.debug(this.private_key);
+		                        return true;
+		                    }
+		                }
+		            }catch(e){}
+		            return false;
+		        },
+		        encrypt: function(value){
+		            var rsakey = new RSAKey();
+		            rsakey.setPublic(this.public_key, this.e);
+		            return rsakey.encrypt(value);
+		        },
+		        decrypt: function(ciphertext){
+		            var rsakey = new RSAKey();
+		            rsakey.setPrivateEx(this.public_key, this.e, this.private_key.d, this.private_key.p, this.private_key.q, this.private_key.dmp1, this.private_key.dmq1, this.private_key.coeff);
+		            return rsakey.decrypt(ciphertext);
+		        }
+		    };
+		    var do_crypt_success = false;
+		    function decrypt_raw_data(raw,passphrase){
+		        if(do_crypt_success)return;
+		        // decrypt our private key from the string.
+		        if(rsa2.decrypt_private_key(passphrase)){
+		            do_crypt_success = true;
+		            var decrypt = rsa2.decrypt(raw);
+		            //alert($('#decrypted_value').val().length);
+		            $('#password_box').hide();
+		            $('#unlocking_box').show();
+
+		        }
+		    }
+		    function create_new(){
+		        var password = jQuery('#encrypt_password').val();
+		        if(password.length > 1){
+			        jQuery('#encrypt_password').val('');
+		            rsa2.generate(password);
+		            // post this to our server so we can save it in the db.
+		            if(rsa2.public_key.length > 2 && rsa2.private_encrypted.length > 5){
+		                // it worked.
+		                jQuery('#public_key').val(rsa2.public_key);
+		                jQuery('#private_key').val(rsa2.private_encrypted);
+			            jQuery('#encryption_form')[0].submit();
+
+		            }else{
+		                alert('Encryption generation error');
+		            }
+		        }else{
+		            alert('Please enter a password');
+		        }
+		    }
+
+		</script>
+
+		<?php if(get_option('shub_encrypt_public_key','')) { ?>
+			<table class="form-table">
+				<tbody>
+				<tr>
+					<th class="width1">
+						<?php _e( 'Public Cryptography Key', 'support_hub' ); ?>
+					</th>
+					<td class="">
+						<pre><?php echo wordwrap(get_option('shub_encrypt_public_key',''),86,"\n",true); ?></pre>
+						<a href="#" onclick="jQuery('#encryption_form').show(); return false;">(generate new key)</a>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+		<?php } ?>
+
+			<form action="" method="post"<?php if(get_option('shub_encrypt_public_key','')) echo ' style="display:none;"'; ?> id="encryption_form">
+				<input type="hidden" name="_process" value="save_encrypted_vault">
+				<?php wp_nonce_field( 'save-encrypted-vault' ); ?>
+
+				<input type="hidden" name="public_key" id="public_key" value="">
+				<input type="hidden" name="private_key" id="private_key" value="">
+
+				<table class="form-table">
+					<tbody>
+					<tr>
+						<th class="width1">
+							<?php _e( 'Choose a Password', 'support_hub' ); ?>
+						</th>
+						<td class="">
+							<input type="password" id="encrypt_password">
+							(this password will be used to decrypt any encrypted values, do not forget this password)
+						</td>
+					</tr>
+					</tbody>
+				</table>
+
+				<p class="submit">
+						<input name="butt_save" type="button" class="button-primary"
+						       onclick="create_new(); return false;"
+						       value="<?php echo esc_attr( __( 'Generate New Encryption Key', 'support_hub' ) ); ?>"/>
+				</p>
+
+
+			</form>
+		</div>
 	<?php
 }
 
