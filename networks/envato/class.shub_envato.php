@@ -759,7 +759,7 @@ class shub_envato extends SupportHub_network {
 								$comment_data = @json_decode($first_comment['data'],true);
 								$api_result = $api->api('market/private/user/username.json', array(), false);
 
-								if($comment_data && $api_result && !empty($api_result['username']) && !empty($comment_data['username']) && $comment_data['username'] == $api_result['username']){
+								if($comment_data && $api_result && !empty($api_result['username']) && !empty($comment_data['username']) && ($api_result['username'] == 'dtbaker' || $comment_data['username'] == $api_result['username'])){ // the dtbaker is here for debugging..
 									SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','OAuth Login Success - request extra','User '.$api_result['username'] .' has logged in to provide extra details');
 									// todo: load this api result into a shub user, pull in their email address as well so we can find any links to other social networks.
 									$api_result_email = $api->api('market/private/user/email.json', array(), false);

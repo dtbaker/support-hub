@@ -51,7 +51,7 @@ ucm.social = {
                 $f.find('.message_request_extra').show();
             }
             return false;
-        }).delegate('.shub_request_extra_send', 'click', function(){
+        }).delegate('.shub_request_extra_generate', 'click', function(){
             var $f = jQuery(this).parents('form').first();
             $f.find('.extra_details_message').text('');
             // send a message with these extra details.
@@ -72,12 +72,74 @@ ucm.social = {
                     if(r && typeof r.redirect != 'undefined'){
                         window.location = r.redirect;
                     }else if(r && typeof r.message != 'undefined'){
-                        $f.find('.extra_details_message').text(r.message);
+                        // got a successful message response, paste that into the next available 'reply' box on the window.
+                        jQuery('.shub_message_reply textarea').val(r.message);
+                        setTimeout(function(){jQuery('.shub_message_reply textarea').keyup();},100);
+                        jQuery('.shub_request_extra').first().click(); // swap back to message screen.
                     }else{
                         $f.find('.extra_details_message').text("Unknown error, please try again: "+r);
                     }
                 }
             });
+            return false;
+        }).delegate('.shub_message_reply textarea','keyup',function(){
+            var a = this;
+            if (!jQuery(a).prop('scrollTop')) {
+                do {
+                    var b = jQuery(a).prop('scrollHeight');
+                    var h = jQuery(a).height();
+                    jQuery(a).height(h - 5);
+                }
+                while (b && (b != jQuery(a).prop('scrollHeight')));
+            }
+            jQuery(a).height(jQuery(a).prop('scrollHeight') + 10);
+        }).delegate('.shub_message_reply button','click',function(){
+            // send a message!
+            var pt = jQuery(this).parent();
+            var p = pt.parent();
+            var txt = pt.find('textarea');
+            var message = txt.val();
+            if(message.length > 0){
+                //txt[0].disabled = true;
+                // show a loading message in place of the box..
+                var post_data = {
+                    action: 'support_hub_send-message-reply',
+                    wp_nonce: support_hub.wp_nonce,
+                    message: message,
+                    form_auth_key: ucm.form_auth_key
+                };
+                var button_post = jQuery(this).data('post');
+                for(var i in button_post){
+                    if(button_post.hasOwnProperty(i)){
+                        post_data[i] = button_post[i];
+                    }
+                }
+                // add any additioal reply options to this.
+                p.find('[data-reply="yes"]').each(function(){
+                    if(jQuery(this).attr('type') == 'checkbox'){
+                        post_data[jQuery(this).attr('name')] = this.checked ? jQuery(this).val() : false;
+                    }else{
+                        post_data[jQuery(this).attr('name')] = jQuery(this).val();
+                    }
+                });
+                jQuery.ajax({
+                    url: ajaxurl,
+                    method: 'POST',
+                    data: post_data,
+                    dataType: 'json',
+                    success: function(r){
+                        if(r && typeof r.redirect != 'undefined'){
+                            window.location = r.redirect;
+                        }else if(r && typeof r.message != 'undefined'){
+                            pt.html("Info: "+ r.message);
+                        }else{
+                            pt.html("Unknown error, please check logs or try reconnecting in settings. "+r);
+                        }
+                    }
+                });
+                pt.html('Sending...');
+                p.find('.shub_message_actions').hide();
+            }
             return false;
         });
     },

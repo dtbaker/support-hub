@@ -371,7 +371,6 @@ class shub_bbpress extends SupportHub_network {
 
 	public function init_js(){
 		?>
-		    ucm.social.bbpress.api_url = ajaxurl;
 		    ucm.social.bbpress.init();
 		<?php
 	}

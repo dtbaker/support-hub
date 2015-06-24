@@ -1,58 +1,10 @@
 ucm.social.envato = {
-    api_url: '',
     init: function(){
 
         jQuery('body').delegate('#envato_edit_form .envato_reply_button','click',function(){
             var f = jQuery(this).parents('.envato_message').first().next('.envato_message_replies').find('.envato_message_reply_box');
             f.show();
             f.find('textarea')[0].focus();
-        }).delegate('#envato_edit_form .shub_message_reply textarea','keyup',function(){
-            var a = this;
-            if (!jQuery(a).prop('scrollTop')) {
-                do {
-                    var b = jQuery(a).prop('scrollHeight');
-                    var h = jQuery(a).height();
-                    jQuery(a).height(h - 5);
-                }
-                while (b && (b != jQuery(a).prop('scrollHeight')));
-            }
-            jQuery(a).height(jQuery(a).prop('scrollHeight') + 10);
-        }).delegate('#envato_edit_form .shub_message_reply button','click',function(){
-            // send a message!
-            var pt = jQuery(this).parent();
-            var p = pt.parent();
-            var txt = pt.find('textarea');
-            var message = txt.val();
-            if(message.length > 0){
-                //txt[0].disabled = true;
-                // show a loading message in place of the box..
-                jQuery.ajax({
-                    url: ucm.social.envato.api_url,
-                    method: 'POST',
-                    data: {
-                        action: 'support_hub_send-message-reply',
-                        wp_nonce: support_hub.wp_nonce,
-                        id: jQuery(this).data('id'),
-                        envato_id: jQuery(this).data('envato-id'),
-                        message: message,
-                        debug: jQuery(p).find('.reply-debug')[0].checked ? 1 : 0,
-                        form_auth_key: ucm.form_auth_key
-                    },
-                    dataType: 'json',
-                    success: function(r){
-                        if(r && typeof r.redirect != 'undefined'){
-                            window.location = r.redirect;
-                        }else if(r && typeof r.message != 'undefined'){
-                            pt.html("Info: "+ r.message);
-                        }else{
-                            pt.html("Unknown error, please try reconnecting to envato in settings. "+r);
-                        }
-                    }
-                });
-                pt.html('Sending...');
-                p.find('.shub_message_actions').hide();
-            }
-            return false;
         }).delegate('.socialenvato_message_action','click',ucm.social.envato.message_action)
             .delegate('.envato_check_all','change',function(){
                 jQuery('.check_envato_item').prop('checked', !!jQuery(this).prop('checked'));
@@ -69,7 +21,7 @@ ucm.social.envato = {
     },
     message_action: function(link){
         jQuery.ajax({
-            url: ucm.social.envato.api_url,
+            url: ajaxurl,
             method: 'POST',
             data: {
                 action: 'support_hub_' + jQuery(this).data('action'),

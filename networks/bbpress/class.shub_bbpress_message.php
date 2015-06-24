@@ -354,11 +354,30 @@ class shub_bbpress_message{
 				</div>
 				<div class="shub_message_reply bbpress_message_reply">
 					<textarea placeholder="Write a reply..."></textarea>
-					<button data-bbpress-id="<?php echo htmlspecialchars($bbpress_id);?>" data-id="<?php echo (int)$this->shub_bbpress_message_id;?>"><?php _e('Send');?></button>
-					<br/>
-					(debug) <input type="checkbox" name="debug" class="reply-debug" value="1">
+					<button data-bbpress-id="<?php echo htmlspecialchars($bbpress_id);?>" data-post="<?php echo esc_attr(json_encode(array(
+						'id' => (int)$this->shub_bbpress_message_id,
+						'bbpress_id' => htmlspecialchars($bbpress_id),
+					)));?>"><?php _e('Send');?></button>
 				</div>
-				<div class="shub_message_actions"></div>
+				<div class="shub_message_actions">
+					(debug) <input type="checkbox" name="debug" data-reply="yes" value="1"> <br/>
+					<?php
+					if(isset($user_data['reply_options']) && is_array($user_data['reply_options'])){
+						foreach($user_data['reply_options'] as $reply_option){
+							if(isset($reply_option['title'])){
+								echo htmlspecialchars($reply_option['title']);
+								if(isset($reply_option['field']) && is_array($reply_option['field'])){
+									$reply_option['field']['data'] = array(
+										'reply' => 'yes'
+									);
+									shub_module_form::generate_form_element($reply_option['field']);
+								}
+								echo '<br/>';
+							}
+						}
+					}
+					?>
+				</div>
 			</div>
 		<?php
 		}else{
@@ -519,7 +538,7 @@ class shub_bbpress_message{
 				return strtotime($a['created_at']) > strtotime($b['created_at']);
 			});
 		}else{
-			$messages = shub_get_multiple('shub_bbpress_message_comment',array('shub_bbpress_message_id'=>$this->shub_bbpress_message_id),'shub_bbpress_message_comment_id'); //@json_decode($this->get('comments'),true);
+			$messages = shub_get_multiple('shub_bbpress_message_comment',array('shub_bbpress_message_id'=>$this->shub_bbpress_message_id),'shub_bbpress_message_comment_id','time'); //@json_decode($this->get('comments'),true);
 		}
 		return $messages;
 	}

@@ -193,9 +193,12 @@ class shub_bbpress_account{
 				echo "Error, the required PHP code has not been added to your bbPress installation. Please check the Support Hub documentation.";
 				return;
 			}
+			// this api_result will contain additional actions that we presentto the user when composing messages
+            // for example ( mark thread as resolved )
 			$api_result['shub_user_id'] = $this->get_api_user_to_id($api_result['user_id']);
 			$this->save_account_data(array(
-				'user' => $api_result
+				'user' => $api_result,
+                'reply_options' => isset($api_result['support_hub']['reply_options']) ? $api_result['support_hub']['reply_options'] : array()
 			));
 		}else{
 			echo 'Failed to get profile from WP Api';
@@ -210,6 +213,7 @@ class shub_bbpress_account{
 			// we have forum, topic and reply post types, so I guess bbpress is working.
 			$api_result = $api->getPosts(array(
 				'post_type' => 'forum',
+                'number' => 50,
 			));
 			//echo '<pre>';print_r($api_result);exit;
 			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);

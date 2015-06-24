@@ -36,7 +36,6 @@ class shub_module_form{
             $setting['class'] = (isset($setting['class']) ? $setting['class'] . ' ': '') . 'submit_button delete_button';
         }
 
-
         if(isset($setting['label']) && (!isset($setting['id'])||!$setting['id'])){
             // labels need ids
             $setting['id'] = md5($setting['name']);
@@ -46,6 +45,12 @@ class shub_module_form{
         foreach(array('size','style','autocomplete','placeholder','class','id','onclick') as $attr){
             if(isset($setting[$attr])){
                 $attributes .= ' '.$attr.'="'.$setting[$attr].'"';
+            }
+        }
+
+        if(isset($setting['data']) && is_array($setting['data'])){
+            foreach($setting['data'] as $key=>$val){
+                $attributes .= ' data-'.$key.'="'.$val.'"';
             }
         }
 

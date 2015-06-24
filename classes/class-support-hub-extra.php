@@ -223,15 +223,16 @@ class SupportHubExtra{
 		<ul>
 			<?php foreach($extras as $extra){ ?>
 			<li>
-				<input type="checkbox" name="extra" class="request_extra" data-extra-id="<?php echo $extra->get('shub_extra_id');?>" /> <?php echo htmlspecialchars($extra->get('extra_name'));?>
+				<input type="checkbox" name="extra" class="request_extra" id="extra_request_<?php echo $extra->get('shub_extra_id');?>" data-extra-id="<?php echo $extra->get('shub_extra_id');?>" />
+				<label for="extra_request_<?php echo $extra->get('shub_extra_id');?>"><?php echo htmlspecialchars($extra->get('extra_name'));?></label>
 			</li>
 			<?php } ?>
 		</ul>
 		<div class="extra_details_message"></div>
 		<p>
-			<a href="#" class="shub_request_extra_send btn btn-primary btn-xs button"<?php foreach($data as $key=>$val){
+			<a href="#" class="shub_request_extra_generate btn btn-primary btn-xs button"<?php foreach($data as $key=>$val){
 				echo ' data-'.$key.'="'.esc_attr($val).'"';
-			} ?>><?php _e( 'Send Request' ); ?></a>
+			} ?>><?php _e( 'Generate Message' ); ?></a>
 			<a href="#" class="shub_request_extra btn btn-default btn-xs button"><?php _e( 'Cancel' ); ?></a>
 		</p>
 		<?php
@@ -240,12 +241,18 @@ class SupportHubExtra{
 		return $network.':'.$network_account_id.':'.$network_message_id.':'.implode(',',$extra_ids).':'.md5(NONCE_SALT.serialize(func_get_args()));
 	}
 	public static function build_message($data){
-		return 'Hello,<br/> please send through some more details and we can assist: <a href="' . add_query_arg(_SUPPORT_HUB_LINK_REQUEST_EXTRA,self::build_message_hash(
+		return 'Hello,
+
+please send through some more details and we can assist:
+
+<a href="' . add_query_arg(_SUPPORT_HUB_LINK_REQUEST_EXTRA,self::build_message_hash(
 			$data['network'],
 			$data['network_account_id'],
 			$data['network_message_id'],
 			$data['extra_ids']
-		),home_url()) . '">click here</a>. Thanks,<br/>dtbaker';
+		),home_url()) . '">click here</a>.
+
+Thanks.';
 	}
 	public static function handle_request_extra(){
 		if(isset($_REQUEST[_SUPPORT_HUB_LINK_REQUEST_EXTRA]) && !empty($_REQUEST[_SUPPORT_HUB_LINK_REQUEST_EXTRA])){

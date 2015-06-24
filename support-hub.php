@@ -46,7 +46,7 @@ require_once( 'vendor/autoload.php' );
 require_once( 'networks/facebook/init.facebook.php' );
 require_once( 'networks/twitter/init.twitter.php' );
 require_once( 'networks/google/init.google.php' );
-require_once( 'networks/linkedin/init.linkedin.php' );
+//require_once( 'networks/linkedin/init.linkedin.php' ); // linkedin doesn't work any more - API has been restricted.
 require_once( 'networks/envato/init.envato.php' );
 require_once( 'networks/bbpress/init.bbpress.php' );
 

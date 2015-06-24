@@ -384,7 +384,7 @@ class shub_envato_message{
 					<button data-envato-id="<?php echo htmlspecialchars($envato_id);?>" data-id="<?php echo (int)$this->shub_envato_message_id;?>"><?php _e('Send');?></button>
 				</div>
 				<div class="shub_message_actions">
-					(enable debug) <input type="checkbox" name="debug" class="reply-debug" value="1">
+					(enable debug) <input type="checkbox" name="debug" data-reply="yes" value="1">
 				</div>
 			</div>
 		<?php
