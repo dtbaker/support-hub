@@ -7,6 +7,7 @@ function shub_managers_envato( $shub ){
 		define('_support_hub_envato_LINK_REWRITE_PREFIX','shenvatolnk');
 		define('_SHUB_ENVATO_OAUTH_DOING_FLAG','shub_envato_oauth');
 		require_once 'class.shub_envato.php';
+		require_once 'class.shub_envato_user.php';
 		require_once 'class.shub_envato_account.php';
 		require_once 'class.shub_envato_item.php';
 		require_once 'class.shub_envato_message.php';

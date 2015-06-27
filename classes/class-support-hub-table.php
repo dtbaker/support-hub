@@ -165,71 +165,33 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 	        switch ( $action ) {
 	            case 'archive':
 					$messages = isset($_POST['shub_message']) && is_array($_POST['shub_message']) ? $_POST['shub_message'] : array();
-					// any facebook messages to process?
-					if(isset($messages) && isset($messages['facebook']) && is_array($messages['facebook'])){
-						foreach($messages['facebook'] as $facebook_message_id){
-							// archive this one.
-							$shub_facebook_message = new shub_facebook_message(false, false, $facebook_message_id);
-							if($shub_facebook_message->get('shub_facebook_message_id') == $facebook_message_id){
-								$shub_facebook_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
-								$change_count++;
-							}
-						}
-					}
-					if(isset($messages) && isset($messages['twitter']) && is_array($messages['twitter'])){
-						foreach($messages['twitter'] as $twitter_message_id){
-							// archive this one.
-							$shub_twitter_message = new shub_twitter_message(false, $twitter_message_id);
-							if($shub_twitter_message->get('shub_twitter_message_id') == $twitter_message_id){
-								$shub_twitter_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
-								$change_count++;
-							}
-						}
-					}
-					if(isset($messages) && isset($messages['google']) && is_array($messages['google'])){
-						foreach($messages['google'] as $google_message_id){
-							// archive this one.
-							$shub_google_message = new shub_google_message(false, $google_message_id);
-							if($shub_google_message->get('shub_google_message_id') == $google_message_id){
-								$shub_google_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
-								$change_count++;
-							}
-						}
-					}
+                    $shub = SupportHub::getInstance();
+					foreach($messages as $network => $network_message_ids){
+                        if(isset($shub->message_managers[$network])){
+                            foreach($network_message_ids as $network_message_id){
+                                $network_message = $shub->message_managers[$network]->get_message(false, false, $network_message_id);
+                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $network_message_id){
+                                    $network_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                                    $change_count++;
+                                }
+                            }
+                        }
+                    }
 	                break;
 	            case 'un-archive':
 					$messages = isset($_POST['shub_message']) && is_array($_POST['shub_message']) ? $_POST['shub_message'] : array();
-					// any facebook messages to process?
-					if(isset($messages) && isset($messages['facebook']) && is_array($messages['facebook'])){
-						foreach($messages['facebook'] as $facebook_message_id){
-							// archive this one.
-							$shub_facebook_message = new shub_facebook_message(false, false, $facebook_message_id);
-							if($shub_facebook_message->get('shub_facebook_message_id') == $facebook_message_id){
-								$shub_facebook_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
-								$change_count++;
-							}
-						}
-					}
-					if(isset($messages) && isset($messages['twitter']) && is_array($messages['twitter'])){
-						foreach($messages['twitter'] as $twitter_message_id){
-							// archive this one.
-							$shub_twitter_message = new shub_twitter_message(false, $twitter_message_id);
-							if($shub_twitter_message->get('shub_twitter_message_id') == $twitter_message_id){
-								$shub_twitter_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
-								$change_count++;
-							}
-						}
-					}
-					if(isset($messages) && isset($messages['google']) && is_array($messages['google'])){
-						foreach($messages['google'] as $google_message_id){
-							// archive this one.
-							$shub_google_message = new shub_google_message(false, $google_message_id);
-							if($shub_google_message->get('shub_google_message_id') == $google_message_id){
-								$shub_google_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
-								$change_count++;
-							}
-						}
-					}
+                    $shub = SupportHub::getInstance();
+                    foreach($messages as $network => $network_message_ids){
+                        if(isset($shub->message_managers[$network])){
+                            foreach($network_message_ids as $network_message_id){
+                                $network_message = $shub->message_managers[$network]->get_message(false, false, $network_message_id);
+                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $network_message_id){
+                                    $network_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+                                    $change_count++;
+                                }
+                            }
+                        }
+                    }
 	                break;
 	            default:
 	                return $change_count;

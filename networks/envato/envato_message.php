@@ -59,8 +59,8 @@ if($shub_envato_id && $shub_envato_message_id){
 					// find out the user details, purchases and if they have any other open messages.
 				    $user_hints = array();
 				    $first_comment = current($comments);
-				    if(isset($first_comment['shub_user_id']) && $first_comment['shub_user_id']){
-					    $user_hints['shub_user_id'] = $first_comment['shub_user_id'];
+				    if(isset($first_comment['shub_envato_user_id']) && $first_comment['shub_envato_user_id']){
+					    $user_hints['shub_envato_user_id'] = $first_comment['shub_envato_user_id'];
 				    }
 				    $message_from = @json_decode($first_comment['message_from'],true);
 				    if($message_from && isset($message_from['username'])){ //} && $message_from['username'] != $envato_message->get('envato_account')->get( 'envato_name' )){

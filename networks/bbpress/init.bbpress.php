@@ -6,6 +6,7 @@ function shub_managers_bbpress( $shub ){
 	if(get_option('shub_manager_enabled_bbpress',0)){
 		define('_support_hub_bbpress_LINK_REWRITE_PREFIX','shbbpresslnk');
 		require_once 'class.shub_bbpress.php';
+		require_once 'class.shub_bbpress_user.php';
 		require_once 'class.shub_bbpress_account.php';
 		require_once 'class.shub_bbpress_forum.php';
 		require_once 'class.shub_bbpress_message.php';

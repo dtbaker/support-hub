@@ -134,11 +134,11 @@ class shub_envato_item{
 
 		// we keep a record of the last message received so we know where to stop checking the feed
 		$last_message_received = (int)$this->get('last_message');
-		if($debug)echo "Getting the latest 20 comments for item: ".$envato_item_id." (last message in database is from ".shub_print_date($last_message_received,true).")<br>\n";
+		if($debug)echo "Getting the latest 60 comments for item: ".$envato_item_id." (last message in database is from ".shub_print_date($last_message_received,true).")<br>\n";
 
 		$newest_message_received = 0;
 
-		$endpoint = 'discovery/search/search/comment?term=&item_id='.$envato_item_id.'&sort_by=newest&page_size=20';
+		$endpoint = 'discovery/search/search/comment?term=&item_id='.$envato_item_id.'&sort_by=newest&page_size=60';
 		$api_result = $api->api($endpoint);
 		if($debug){
 			echo "API Result took :".$api_result['took'].' seconds and produced '.count($api_result['matches']).' results';

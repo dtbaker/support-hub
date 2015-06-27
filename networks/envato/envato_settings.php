@@ -82,6 +82,7 @@ if($current_account !== false){
 	                <li>Tick the "Verify purchase" option</li>
 	                <li>Click "Create Token"</li>
 	                <li>Copy this token and paste it into the box below</li>
+					<li>Enter the Session Cookie as per the <a href="http://supporthub.co/documentation/envato/" target="_blank">help documentation</a> (required for posting item comments) </li>
                     <li>Click the Save and Connect to Envato button below</li>
                 </ul>
 				<table class="form-table">
@@ -125,6 +126,7 @@ if($current_account !== false){
                         </th>
                         <td class="">
                             <input type="password" name="envato_cookie" value="<?php echo $shub_envato_account->get( 'envato_cookie' ) ? 'password' : ''; ?>">
+							<a href="http://supporthub.co/documentation/envato/" target="_blank">(help)</a>
                         </td>
                     </tr>
 					<?php if ( $shub_envato_account->get( 'shub_envato_id' ) ) { ?>

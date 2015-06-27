@@ -100,7 +100,7 @@ class SupportHub {
                             $return  = array();
                             $message = isset( $_POST['message'] ) && $_POST['message'] ? $_POST['message'] : '';
                             $network_id = $_REQUEST[$_REQUEST['network'].'_id'];
-                            $debug = isset( $_POST['debug'] ) && (int)$_POST['debug'] > 1 ? $_POST['debug'] : false;
+                            $debug = isset( $_POST['debug'] ) && (int)$_POST['debug'] > 0 ? $_POST['debug'] : false;
                             if ( $message ) {
                                 if($debug)ob_start();
                                 $extra_data = array();

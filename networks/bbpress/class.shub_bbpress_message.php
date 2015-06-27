@@ -32,7 +32,7 @@ class shub_bbpress_message{
 			'data' => '',
 			'status' => '',
 			'user_id' => '',
-			'shub_user_id' => 0,
+			'shub_bbpress_user_id' => 0,
 		);
 		foreach($this->details as $key=>$val){
 			$this->{$key} = '';
@@ -73,8 +73,8 @@ class shub_bbpress_message{
 					$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
 					$this->update('comments',json_encode($comments));
 					// create/update a user entry for this comments.
-				    $shub_user_id = $this->bbpress_account->get_api_user_to_id($topic_data['post_author']);
-					$this->update('shub_user_id',$shub_user_id);
+				    $shub_bbpress_user_id = $this->bbpress_account->get_api_user_to_id($topic_data['post_author']);
+					$this->update('shub_bbpress_user_id',$shub_bbpress_user_id);
 
 					return $this->get('shub_bbpress_message_id');
 				}
@@ -203,7 +203,7 @@ class shub_bbpress_message{
 
 				    // create/update a user entry for this comments.
 				    // create/update a user entry for this comments.
-				    $shub_user_id = $this->bbpress_account->get_api_user_to_id($message['post_author']);
+				    $shub_bbpress_user_id = $this->bbpress_account->get_api_user_to_id($message['post_author']);
 
 				    $shub_bbpress_message_comment_id = shub_update_insert('shub_bbpress_message_comment_id',$exists ? $exists['shub_bbpress_message_comment_id'] : false,'shub_bbpress_message_comment',array(
 					    'shub_bbpress_message_id' => $this->shub_bbpress_message_id,
@@ -213,7 +213,7 @@ class shub_bbpress_message{
 					    'message_from' => '',
 					    'message_to' => '',
 					    'message_text' => isset($message['post_content']) ? $message['post_content'] : '',
-					    'shub_user_id' => $shub_user_id,
+					    'shub_bbpress_user_id' => $shub_bbpress_user_id,
 				    ));
 				    if(isset($existing_messages[$shub_bbpress_message_comment_id])){
 					    unset($existing_messages[$shub_bbpress_message_comment_id]);
@@ -256,7 +256,7 @@ class shub_bbpress_message{
 			$comments = $this->get_comments();
 			$comment = array(
 				'title' => $bbpress_data['post_title'],
-				'shub_user_id' => $this->get('shub_user_id'),
+				'shub_bbpress_user_id' => $this->get('shub_bbpress_user_id'),
 				'time' => $this->get('last_active'),
 				'message_text' => $this->get('title'),
 				'user_id' => $this->get('user_id'),
@@ -268,7 +268,7 @@ class shub_bbpress_message{
 		}
 //		echo '<pre>';echo $level;print_r($comments);echo '</pre>';
 		//echo '<pre>';print_r($bbpress_data);echo '</pre>';
-		$from = new SupportHubUser($comment['shub_user_id']);
+		$from = new SupportHubUser_bbPress($comment['shub_bbpress_user_id']);
 		?>
 		<div class="shub_message">
 			<div class="shub_message_picture">
@@ -343,7 +343,7 @@ class shub_bbpress_message{
 	public function reply_box($bbpress_id,$level=1){
 		if($this->bbpress_account && $this->shub_bbpress_message_id) {
 			$user_data = $this->bbpress_account->get('bbpress_data');
-			$from = new SupportHubUser($user_data['user']['shub_user_id']);
+			$from = new SupportHubUser_bbPress($user_data['user']['shub_bbpress_user_id']);
 			?>
 			<div class="shub_message shub_message_reply_box shub_message_reply_box_level<?php echo $level;?>">
 				<div class="shub_message_picture">
@@ -560,13 +560,13 @@ class shub_bbpress_message{
 	public function get_from() {
 		if($this->shub_bbpress_message_id){
 			$from = array();
-			if($this->get('shub_user_id')){
-				$from[$this->get('shub_user_id')] = new SupportHubUser($this->get('shub_user_id'));
+			if($this->get('shub_bbpress_user_id')){
+				$from[$this->get('shub_bbpress_user_id')] = new SupportHubUser_bbPress($this->get('shub_bbpress_user_id'));
 			}
 			$messages = $this->get_comments();
 			foreach($messages as $message){
-				if($message['shub_user_id'] && !isset($from[$message['shub_user_id']])){
-					$from[$message['shub_user_id']] = new SupportHubUser($message['shub_user_id']);
+				if($message['shub_bbpress_user_id'] && !isset($from[$message['shub_bbpress_user_id']])){
+					$from[$message['shub_bbpress_user_id']] = new SupportHubUser_bbPress($message['shub_bbpress_user_id']);
 				}
 			}
 			return $from;

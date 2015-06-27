@@ -593,9 +593,9 @@ class shub_bbpress extends SupportHub_network {
 		$details['user']['purchases'] = '1 purchases';
 
 		// find other bbpress messages by this user.
-		if(isset($user_hints['shub_user_id']) && (int)$user_hints['shub_user_id']>0){
+		if(isset($user_hints['shub_bbpress_user_id']) && (int)$user_hints['shub_bbpress_user_id']>0){
 			$comments = shub_get_multiple('shub_bbpress_message_comment',array(
-				'shub_user_id' => (int)$user_hints['shub_user_id']
+				'shub_bbpress_user_id' => (int)$user_hints['shub_bbpress_user_id']
 			),'shub_bbpress_message_comment_id', '`time` DESC');
 			if(is_array($comments)){
 				foreach($comments as $comment){
@@ -636,6 +636,23 @@ CREATE TABLE {$wpdb->prefix}shub_bbpress (
   PRIMARY KEY  shub_bbpress_id (shub_bbpress_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
+
+CREATE TABLE {$wpdb->prefix}shub_bbpress_user (
+  shub_bbpress_user_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_user_id int(11) NOT NULL DEFAULT '0',
+  user_fname varchar(255) NOT NULL,
+  user_lname varchar(255) NOT NULL,
+  user_username varchar(255) NOT NULL,
+  user_email varchar(255) NOT NULL,
+  user_data mediumtext NOT NULL,
+  user_id_key1 int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_bbpress_user_id (shub_bbpress_user_id),
+  KEY user_email (user_email),
+  KEY user_username (user_username),
+  KEY user_id_key1 (user_id_key1),
+  KEY shub_user_id (shub_user_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
 CREATE TABLE {$wpdb->prefix}shub_bbpress_message (
   shub_bbpress_message_id int(11) NOT NULL AUTO_INCREMENT,
   shub_bbpress_id int(11) NOT NULL,
@@ -652,12 +669,12 @@ CREATE TABLE {$wpdb->prefix}shub_bbpress_message (
   data text NOT NULL,
   status tinyint(1) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
-  shub_user_id int(11) NOT NULL DEFAULT '0',
+  shub_bbpress_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_bbpress_message_id (shub_bbpress_message_id),
   KEY shub_bbpress_id (shub_bbpress_id),
   KEY shub_message_id (shub_message_id),
   KEY shub_product_id (shub_product_id),
-  KEY shub_user_id (shub_user_id),
+  KEY shub_bbpress_user_id (shub_bbpress_user_id),
   KEY last_active (last_active),
   KEY shub_bbpress_forum_id (shub_bbpress_forum_id),
   KEY bbpress_id (bbpress_id),
@@ -683,10 +700,10 @@ CREATE TABLE {$wpdb->prefix}shub_bbpress_message_comment (
   message_text text NOT NULL,
   data text NOT NULL,
   user_id int(11) NOT NULL DEFAULT '0',
-  shub_user_id int(11) NOT NULL DEFAULT '0',
+  shub_bbpress_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_bbpress_message_comment_id (shub_bbpress_message_comment_id),
   KEY shub_bbpress_message_id (shub_bbpress_message_id),
-  KEY shub_user_id (shub_user_id),
+  KEY shub_bbpress_user_id (shub_bbpress_user),
   KEY bbpress_id (bbpress_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 

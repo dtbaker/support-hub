@@ -9,11 +9,14 @@ class SupportHubUser{
 	}
 
 	private $shub_user_id = false; // the current user id in our system.
-    private $details = array();
+    public $details = array();
 	private $json_fields = array('user_data');
 
-	private function reset(){
-		$this->shub_user_id = false;
+	public $db_table = 'shub_user'; // overwritten by individual network user classes
+	public $db_primary_key = 'shub_user_id'; // overwritten by individual network user classes
+
+	public function reset(){
+		$this->{$this->db_primary_key} = false;
 		$this->details = array(
 			'shub_user_id' => '',
 			'user_fname' => '',
@@ -30,8 +33,8 @@ class SupportHubUser{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_user_id = shub_update_insert('shub_user_id',false,'shub_user',array());
-		$this->load($this->shub_user_id);
+		$this->{$this->db_primary_key} = shub_update_insert($this->db_primary_key,false,$this->db_table,array());
+		$this->load($this->{$this->db_primary_key});
 	}
 
 	private static $_latest_load_create = array();
@@ -42,13 +45,13 @@ class SupportHubUser{
 				$this->load(self::$_latest_load_create[$field][$value]);
 				return true;
 			}
-			$data = shub_get_single('shub_user',$field,$value);
+			$data = shub_get_single($this->db_table,$field,$value);
 			if(!$data){
 				// check if it was recently created? gets around weird WP caching issue, resuling in mass duplicate of user details on bulk import
 				if(!isset(self::$_latest_load_create[$field]))self::$_latest_load_create[$field]=array();
 				self::$_latest_load_create[$field][$value] = false; // pending creating maybe?
-			}else if($data && isset($data[$field]) && $data[$field] == $value && $data['shub_user_id']){
-				$this->load($data['shub_user_id']);
+			}else if($data && isset($data[$field]) && $data[$field] == $value && $data[$this->db_primary_key]){
+				$this->load($data[$this->db_primary_key]);
 				return true;
 			}
 		}
@@ -56,11 +59,11 @@ class SupportHubUser{
 	}
 
     public function load($shub_user_id = false){
-	    if(!$shub_user_id)$shub_user_id = $this->shub_user_id;
+	    if(!$shub_user_id)$shub_user_id = $this->{$this->db_primary_key};
 	    $this->reset();
-	    $this->shub_user_id = $shub_user_id;
-        if($this->shub_user_id){
-	        $data = shub_get_single('shub_user','shub_user_id',$this->shub_user_id);
+	    $this->{$this->db_primary_key} = $shub_user_id;
+        if($this->{$this->db_primary_key}){
+	        $data = shub_get_single($this->db_table,$this->db_primary_key,$this->{$this->db_primary_key});
 	        foreach($this->details as $key=>$val){
 		        $this->details[$key] = $data && isset($data[$key]) ? $data[$key] : $val;
 		        if(in_array($key,$this->json_fields)){
@@ -68,7 +71,7 @@ class SupportHubUser{
 			        if(!is_array($this->details[$key]))$this->details[$key] = array();
 		        }
 	        }
-	        if(!is_array($this->details) || $this->details['shub_user_id'] != $this->shub_user_id){
+	        if(!is_array($this->details) || $this->details[$this->db_primary_key] != $this->{$this->db_primary_key}){
 		        $this->reset();
 		        return false;
 	        }
@@ -76,7 +79,7 @@ class SupportHubUser{
         foreach($this->details as $key=>$val){
             $this->{$key} = $val;
         }
-        return $this->shub_user_id;
+        return $this->{$this->db_primary_key};
     }
 
 	public function get($field){
@@ -85,16 +88,16 @@ class SupportHubUser{
 
     public function update($field,$value){
 	    // what fields to we allow? or not allow?
-	    if(in_array($field,array('shub_user_id')))return;
-        if($this->shub_user_id){
+	    if(in_array($field,array($this->db_primary_key)))return;
+        if($this->{$this->db_primary_key}){
             $this->{$field} = $value;
 	        if(isset(self::$_latest_load_create[$field][$value])){
-		        self::$_latest_load_create[$field][$value] = $this->shub_user_id;
+		        self::$_latest_load_create[$field][$value] = $this->{$this->db_primary_key};
 	        }
 	        if(in_array($field,$this->json_fields)){
 		        $value = json_encode($value);
 	        }
-            shub_update_insert('shub_user_id',$this->shub_user_id,'shub_user',array(
+            shub_update_insert($this->db_primary_key,$this->{$this->db_primary_key},$this->db_table,array(
 	            $field => $value,
             ));
         }
@@ -110,8 +113,8 @@ class SupportHubUser{
 		}
 	}
 	public function delete(){
-		if($this->shub_user_id) {
-			shub_delete_from_db( 'shub_user', 'shub_user_id', $this->shub_user_id );
+		if($this->{$this->db_primary_key}) {
+			shub_delete_from_db( $this->db_table, $this->db_primary_key, $this->{$this->db_primary_key} );
 		}
 	}
 
