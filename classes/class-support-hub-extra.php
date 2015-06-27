@@ -114,7 +114,7 @@ class SupportHubExtra{
 	}
 
 	// find out if there is any data saved against this particular extra field and message.
-	public function get_data($shub_network, $shub_network_account_id, $shub_network_message_id, $shub_user_id){
+	public function get_data($shub_network, $shub_network_account_id, $shub_network_message_id, $shub_network_user_id){
 
 		$return = array();
 
@@ -130,10 +130,11 @@ class SupportHubExtra{
 				$return[ $d['shub_extra_data_id'] ] = new SupportHubExtraData( $d['shub_extra_data_id'] );
 			}
 		}
-		// find any data items that are linked to this particular user:
-		if($shub_user_id) {
-			$data = shub_get_multiple( 'shub_extra_data', array(
-				'shub_user_id' => $shub_user_id,
+		// find any data items that are linked to this particular user from other support messages from this network:
+		if($shub_network_user_id) {
+			$data = shub_get_multiple( 'shub_extra_data_rel', array(
+				'shub_network' => $shub_network,
+				'shub_network_user_id' => $shub_network_user_id,
 			), 'shub_extra_data_id' );
 			foreach ( $data as $d ) {
 				if ( ! isset( $return[ $d['shub_extra_data_id'] ] ) ) {
@@ -141,6 +142,8 @@ class SupportHubExtra{
 				}
 			}
 		}
+		// todo: find link between this network user id and other netwwork user ids, return extra data for those accounts.
+		// todo: this is where the globa shub_user_id will come into play. too tired now cannot figure it out nicely.
 		return $return;
 	}
 
@@ -198,9 +201,17 @@ class SupportHubExtra{
 			$value = $value_all;
 		}
 		if(!empty($value)) {
-			return '<p>
-<strong>' . htmlspecialchars( $this->get( 'extra_name' ) ) . ':</strong> ' . htmlspecialchars( $value ) . '
-</p>';
+			$str = '<p>
+<strong>' . htmlspecialchars( $this->get( 'extra_name' ) ) . ':</strong> ';
+			switch($this->get('field_type')){
+				case 'encrypted':
+					$str .= '(encrypted)';
+					break;
+				default:
+					$str .= htmlspecialchars( $value );
+			}
+			$str .= '</p>';
+			return $str;
 		}
 		return '';
 	}

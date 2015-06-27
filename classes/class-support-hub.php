@@ -583,10 +583,12 @@ CREATE TABLE {$wpdb->prefix}shub_extra_data_rel (
   shub_network varchar(40) NOT NULL DEFAULT '',
   shub_network_account_id int(11) NOT NULL DEFAULT '0',
   shub_network_message_id int(11) NOT NULL DEFAULT '0',
+  shub_network_user_id int(11) NOT NULL DEFAULT '0',
   KEY shub_extra_data_id (shub_extra_data_id),
   KEY shub_network (shub_network),
   KEY shub_network_account_id (shub_network_account_id),
   KEY shub_network_message_id (shub_network_message_id),
+  KEY shub_network_user_id (shub_network_user_id),
   KEY shub_extra_id (shub_extra_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
@@ -668,7 +670,15 @@ EOT;
 			?>
 			<div>
 				<strong><?php echo htmlspecialchars($extras[$extra_data->get('shub_extra_id')]->get('extra_name'));?>:</strong>
-				<?php echo shub_forum_text($extra_data->get('extra_value'),false); ?>
+				<?php
+                switch($extras[$extra_data->get('shub_extra_id')]->get('field_type')){
+                    case 'encrypted':
+                        echo '(encrypted)';
+                        break;
+                    default:
+                        echo shub_forum_text($extra_data->get('extra_value'),false);
+                }
+                ?>
 			</div>
 			<?php
 		}

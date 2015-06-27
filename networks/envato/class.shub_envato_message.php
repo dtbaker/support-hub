@@ -298,9 +298,11 @@ class shub_envato_message{
 		$from = @json_decode($comment['message_from'],true);
 		if(!$from && !empty($comment['private'])){
 			// assume it's from the original message user.
-			$all_comments = $this->get_comments();
-			$first_comment = current($all_comments);
-			$from = @json_decode($first_comment['message_from'],true);
+			$from_user = new SupportHubUser_Envato($comment['shub_envato_user_id']);
+			$from = array(
+				'profile_image_url' => $from_user->get_image(),
+				'username' => $from_user->get('user_username'),
+			);;
 		}
 		?>
 		<div class="shub_message<?php echo !empty($comment['private']) ? ' shub_message_private':'';?>">

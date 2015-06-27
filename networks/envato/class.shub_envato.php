@@ -739,7 +739,9 @@ class shub_envato extends SupportHub_network {
 								$comment_data = @json_decode($first_comment['data'],true);
 								$api_result = $api->api('market/private/user/username.json', array(), false);
 
-								if($comment_data && $api_result && !empty($api_result['username']) && !empty($comment_data['username']) && ($api_result['username'] == 'dtbaker' || $comment_data['username'] == $api_result['username'])){ // the dtbaker is here for debugging..
+                                $account_data = $shub_envato_account->get('envato_data');
+
+								if($comment_data && $api_result && !empty($api_result['username']) && !empty($comment_data['username']) && (($account_data && isset($account_data['user']['username']) && $api_result['username'] == $account_data['user']['username']) || $comment_data['username'] == $api_result['username'])){ // the dtbaker is here for debugging..
 									SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','OAuth Login Success - request extra','User '.$api_result['username'] .' has logged in to provide extra details');
 									// todo: load this api result into a shub user, pull in their email address as well so we can find any links to other social networks.
 									$api_result_email = $api->api('market/private/user/email.json', array(), false);
@@ -749,20 +751,20 @@ class shub_envato extends SupportHub_network {
 									    $comment_user->load_by( 'user_email', $email);
 									    if(!$comment_user->get('shub_envato_user_id')) {
 										    // no existing match by email, find a match by username
-										    $comment_user->load_by( 'user_username', $comment_data['username']);
+										    $comment_user->load_by( 'user_username', $api_result['username']);
 											if(!$comment_user->get('shub_envato_user_id') || ($comment_user->get('user_email') && $comment_user->get('user_email') != $email)) {
 												// no existing match by email or username, pump a new entry in
 											    $comment_user->create_new();
 										    }
 									    }
 										$comment_user->update( 'user_email', $email );
-										$comment_user->update( 'user_username', $comment_data['username'] );
+										$comment_user->update( 'user_username', $api_result['username'] );
 									}else{
 										// no email, only username
-										$comment_user->load_by( 'user_username', $comment_data['username']);
+										$comment_user->load_by( 'user_username', $api_result['username']);
 										if(!$comment_user->get('shub_envato_user_id')) {
 										    $comment_user->create_new();
-										    $comment_user->update( 'user_username', $comment_data['username'] );
+										    $comment_user->update( 'user_username', $api_result['username'] );
 									    }
 									}
 
@@ -770,6 +772,7 @@ class shub_envato extends SupportHub_network {
 									$_SESSION['shub_oauth_envato']['network_account_id']            = $network_account_id;
 									$_SESSION['shub_oauth_envato']['network_message_id']            = $network_message_id;
 									$_SESSION['shub_oauth_envato']['expires'] = time() + $token['expires_in'];
+									$_SESSION['shub_oauth_envato']['shub_envato_user_id'] = $comment_user->get('shub_envato_user_id');
 									ob_start();
 									$shub_envato_message->full_message_output(false);
 									return array(
@@ -842,7 +845,7 @@ class shub_envato extends SupportHub_network {
 	}
 	public function extra_save_data($extra, $value, $network, $network_account_id, $network_message_id){
 		$shub_envato_message = new shub_envato_message( false, false, $network_message_id );
-		$shub_envato_user_id = $shub_envato_message->get('shub_envato_user_id');
+		$shub_envato_user_id = !empty($_SESSION['shub_oauth_envato']['shub_envato_user_id']) ? $_SESSION['shub_oauth_envato']['shub_envato_user_id'] : $shub_envato_message->get('shub_envato_user_id');
 		if(is_array($value) && !empty($value['extra_data']['valid_purchase_code'])){
 			// we're saving a previously validated (Above) purchase code.
 			// create a shub user for this purchase and return success along with the purchase data to show
@@ -887,7 +890,7 @@ class shub_envato extends SupportHub_network {
 		    'private' => 1,
 		    'message_text' => $message,
 			'time' => time(),
-		    'shub_envato_user_id' => $shub_envato_message->get('shub_envato_user_id'),
+		    'shub_envato_user_id' => !empty($_SESSION['shub_oauth_envato']['shub_envato_user_id']) ? $_SESSION['shub_oauth_envato']['shub_envato_user_id'] : $shub_envato_message->get('shub_envato_user_id'),
 	    ));
 		// mark the main message as unread so it appears at the top.
 		$shub_envato_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);

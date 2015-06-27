@@ -19,6 +19,9 @@ class shub_module_form{
             $setting['class'] = (isset($setting['class']) ? $setting['class'] . ' ': '') . 'time_field';
             $setting['type'] = 'text';
         }
+		 if($setting['type']=='encrypted' && !get_option('shub_encrypt_public_key','')){
+             $setting['type'] = 'text';
+         }
 		 if($setting['type']=='encrypted' && (!isset($setting['id'])||!$setting['id'])){
 			 $setting['id'] = md5($setting['name']);
 		 }
@@ -162,113 +165,17 @@ class shub_module_form{
 						            return rsakey.decrypt(ciphertext);
 						        }
 						    };
-						    var do_crypt_success = false;
-						    function do_crypt(passphrase){
-						        if(do_crypt_success)return;
-						        // decrypt our private key from the string.
-						        if(rsa2.decrypt_private_key(passphrase)){
-						            do_crypt_success = true;
-						            var raw = '<?php echo $encrypt['data'];?>';
-						            var decrypt = rsa2.decrypt(raw);
-						            //alert($('#decrypted_value').val().length);
-						            $('#password_box').hide();
-						            $('#unlocking_box').show();
-						            // do an ajax post to tell our logging that we successfully unlocked this entry.
-						            // this is not fool proof. turn off your internet after unlocked the password will get around this.
-						            // but it's a start.
-						            $.ajax({
-						                type: 'GET',
-						                url: '<?php echo $plugins['encrypt']->link('note_admin',array(
-						                    '_process' => 'encrypt_successful',
-						                    'encrypt_field_id' => $encrypt_field_id,
-						                    'encrypt_id' => $encrypt_id,
-						                ));?>',
-						                success: function(){
-						                    $('#unlocking_box').hide();
-						                    if(decrypt && decrypt.length>0){
-						                        $('#decrypted_value').val(decrypt);
-						                    }
-						                    $('#decrypt_box').show();
-						                    $('#decrypted_value')[0].focus();
-						                },
-						                fail: function(){
-						                    alert('Decryption failed. Refresh and try again.');
-						                }
-						            });
-						        }
-						    }
-						    function do_save_decrypted(){
-						        $('#<?php echo htmlspecialchars($callback_id);?>').val($('#decrypted_value').val());
-						        $('#<?php echo htmlspecialchars($callback_id);?>')[0].form.submit();
-						    }
 						    function do_save(){
 						        var enc = rsa2.encrypt($('#decrypted_value').val());
 						        if(enc){
-						            $.ajax({
-						                type: 'POST',
-						                url: '<?php echo $plugins['encrypt']->link('note_admin',array(
-						                    '_process' => 'save_encrypt',
-						                    'encrypt_field_id' => $encrypt_field_id,
-						                    'encrypt_id' => $encrypt_id,
-						                ));?>',
-						                data: {
-						                    encrypt_key_id: $('#encrypt_key_id').val(),
-						                    data: enc
-						                },
-						                dataType: 'json',
-						                success: function(h){
-						                    // update our hidden field back in the other page.
-						                    $('#<?php echo htmlspecialchars($callback_id);?>').val('encrypt:'+ h.encrypt_id);
-						                    //alert('<?php _e('Encrypted successfully! Saving...');?>');
-						                    $('#<?php echo htmlspecialchars($callback_id);?>')[0].form.submit();
-						                },
-						                fail: function(){
-						                    alert('Something went wrong');
-						                }
-						            });
+
 						        }
 						    }
-						    function create_new(){
-						        var password = $('#new_passphrase').val();
-						        var name = $('#encrypt_key_name').val();
-						        if(name.length > 1 && password.length > 1){
-						            rsa2.generate(password);
-						            // post this to our server so we can save it in the db.
-						            if(rsa2.public_key.length > 2 && rsa2.private_encrypted.length > 5){
-						                // it worked.
-						                $.ajax({
-						                    type: 'POST',
-						                    url: '<?php echo $plugins['encrypt']->link('note_admin',array(
-						                        '_process' => 'save_encrypt_key',
-						                        'encrypt_field_id' => $encrypt_field_id,
-						                    ));?>',
-						                    data: {
-						                        encrypt_key_id: 0,
-						                        encrypt_key_name: name,
-						                        public_key: rsa2.public_key,
-						                        secured_private_key: rsa2.private_encrypted,
-						                        e: rsa2.e
-						                    },
-						                    success: function(h){
-						                        //alert(h);
-						                        //alert('<?php _e('Created successfully!');?>');
-						                        $('#env_vault_name').html(name);
-						                        $('#enc_create_new').hide();
-						                        $('#enc_existing').show();
-						                        do_crypt(password);
-						                    },
-						                    fail: function(){
-						                        alert('Something went wrong');
-						                    }
-						                });
-						
-						            }else{
-						                alert('generation error');
-						            }
-						        }else{
-						            alert('error');
-						        }
-						    }
+                            jQuery(function(){
+                                jQuery('#<?php echo $setting['id'];?>').change(function(){
+                                    jQuery('#encrypted_<?php echo $setting['id'];?>').val(rsa2.encrypt(jQuery(this).val()));
+                                });
+                            });
 						
 						</script>
 					<?php
