@@ -89,8 +89,42 @@ class SupportHub {
 			$_POST    = stripslashes_deep( $_POST );
 			$_GET     = stripslashes_deep( $_GET );
 			$_REQUEST = stripslashes_deep( $_REQUEST );
-
 			$action = isset( $_REQUEST['action'] ) ? str_replace( 'support_hub_', '', $_REQUEST['action'] ) : false;
+			switch($action){
+                case 'send-message-reply':
+                    // handle this for bbpress and envato,
+                    // todo: move the other modules into this 'generic' format here.
+                    if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST[$_REQUEST['network'].'_id']) && isset($_REQUEST['id']) && (int)$_REQUEST['id'] > 0) {
+                        $shub_network_message = $this->message_managers[$_REQUEST['network']]->get_message( false, false, $_REQUEST['id']);
+                        if($shub_network_message->get('shub_'.$_REQUEST['network'].'_message_id') == $_REQUEST['id']){
+                            $return  = array();
+                            $message = isset( $_POST['message'] ) && $_POST['message'] ? $_POST['message'] : '';
+                            $network_id = $_REQUEST[$_REQUEST['network'].'_id'];
+                            $debug = isset( $_POST['debug'] ) && (int)$_POST['debug'] > 1 ? $_POST['debug'] : false;
+                            if ( $message ) {
+                                if($debug)ob_start();
+                                $extra_data = array();
+                                foreach($_POST as $key=>$val){
+                                    if(strpos($key,'extra-') !== false){
+                                        $extra_data[substr($key,6)] = $val;
+                                    }
+                                }
+                                $shub_network_message->send_reply( $network_id, $message, $debug, $extra_data );
+                                if($debug){
+                                    $return['message'] = ob_get_clean();
+                                }else {
+                                    //set_message( _l( 'message sent and conversation archived.' ) );
+                                    $return['redirect'] = 'admin.php?page=support_hub_main';
+
+                                }
+                            }
+                            if (!headers_sent())header('Content-type: text/javascript');
+                            echo json_encode( $return );
+                            exit;
+                        }
+                    }
+                    break;
+			}
 			// pass off the ajax handling to our media managers:
 			foreach ( $this->message_managers as $name => $message_manager ) {
 				if ( $message_manager->handle_ajax( $action, $this ) ) {
@@ -234,6 +268,28 @@ class SupportHub {
 						header( "Location: admin.php?page=support_hub_settings" );
 						exit;
 					}
+				}
+
+			}else if($process_action == 'save_log_settings'){
+
+				if(check_admin_referer( 'save-log-settings' )){
+
+                    if(!empty($_POST['enable_logging'])){
+                        update_option('shub_logging_enabled',time() + (3600 * 24));
+                    }
+                    if(!empty($_POST['remove_logs'])){
+                        global $wpdb;
+                        $wpdb->query(
+                            $wpdb->prepare(
+                                "DELETE FROM `"._support_hub_DB_PREFIX."shub_log` WHERE log_time <= %d",
+                                $_POST['remove_logs']
+                            )
+                        );
+
+                    }
+
+					header( "Location: admin.php?page=support_hub_settings&tab=logs" );
+					exit;
 				}
 
 			}else if($process_action == 'save_encrypted_vault'){
@@ -563,13 +619,15 @@ EOT;
 	}
 
 	public function log_data($error_level, $extension, $subject, $data = array()){
-        shub_update_insert('shub_log_id',false,'shub_log',array(
-            'log_time' => time(),
-            'log_error_level' => $error_level,
-            'log_extension' => $extension,
-            'log_subject' => $subject,
-            'log_data' => $data ? serialize($data) : '',
-        ));
+        if(get_option('shub_logging_enabled',0) > time() || $error_level>0) {
+            shub_update_insert('shub_log_id', false, 'shub_log', array(
+                'log_time' => time(),
+                'log_error_level' => $error_level,
+                'log_extension' => $extension,
+                'log_subject' => $subject,
+                'log_data' => $data ? serialize($data) : '',
+            ));
+        }
 	}
 
 	/**

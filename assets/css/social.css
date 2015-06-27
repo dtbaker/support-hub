@@ -211,3 +211,7 @@
 #TB_ajaxContent{
     padding-top:0;
 }
+
+tr.log_error{
+    background: #FBFF66 !important;
+}

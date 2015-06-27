@@ -533,6 +533,11 @@ class shub_envato extends SupportHub_network {
 		}
 	}
 
+
+	public function get_message($envato_account = false, $envato_item = false, $shub_envato_message_id = false){
+		return new shub_envato_message($envato_account, $envato_item, $shub_envato_message_id);
+	}
+
 	public function handle_ajax($action, $support_hub_wp){
 		switch($action){
 			case 'request_extra_details':
@@ -572,31 +577,6 @@ class shub_envato extends SupportHub_network {
 
 					echo json_encode($response);
 					exit;
-				}
-				break;
-			case 'send-message-reply':
-				if (!headers_sent())header('Content-type: text/javascript');
-				if(isset($_REQUEST['envato_id']) && !empty($_REQUEST['envato_id']) && isset($_REQUEST['id']) && (int)$_REQUEST['id'] > 0) {
-					$shub_envato_message = new shub_envato_message( false, false, $_REQUEST['id'] );
-					if($shub_envato_message->get('shub_envato_message_id') == $_REQUEST['id']){
-						$return  = array();
-						$message = isset( $_POST['message'] ) && $_POST['message'] ? $_POST['message'] : '';
-						$envato_id = isset( $_REQUEST['envato_id'] ) && $_REQUEST['envato_id'] ? $_REQUEST['envato_id'] : false;
-						$debug = isset( $_POST['debug'] ) && $_POST['debug'] ? $_POST['debug'] : false;
-						if ( $message ) {
-							if($debug)ob_start();
-							$shub_envato_message->send_reply( $envato_id, $message, $debug );
-							if($debug){
-								$return['message'] = ob_get_clean();
-							}else {
-								//set_message( _l( 'message sent and conversation archived.' ) );
-								$return['redirect'] = 'admin.php?page=support_hub_main';
-
-							}
-						}
-						echo json_encode( $return );
-					}
-
 				}
 				break;
 			case 'modal':

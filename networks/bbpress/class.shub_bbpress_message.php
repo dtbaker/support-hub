@@ -356,6 +356,7 @@ class shub_bbpress_message{
 					<textarea placeholder="Write a reply..."></textarea>
 					<button data-bbpress-id="<?php echo htmlspecialchars($bbpress_id);?>" data-post="<?php echo esc_attr(json_encode(array(
 						'id' => (int)$this->shub_bbpress_message_id,
+                        'network' => 'bbpress',
 						'bbpress_id' => htmlspecialchars($bbpress_id),
 					)));?>"><?php _e('Send');?></button>
 				</div>
@@ -367,6 +368,7 @@ class shub_bbpress_message{
 							if(isset($reply_option['title'])){
 								echo htmlspecialchars($reply_option['title']);
 								if(isset($reply_option['field']) && is_array($reply_option['field'])){
+									$reply_option['field']['name'] = 'extra-'.$reply_option['field']['name'];
 									$reply_option['field']['data'] = array(
 										'reply' => 'yes'
 									);
@@ -453,7 +455,7 @@ class shub_bbpress_message{
 		}
 		return false;
 	}
-	public function send_reply($bbpress_id, $message, $debug = false){
+	public function send_reply($bbpress_id, $message, $debug = false, $extra_data = array()){
 		if($this->bbpress_account && $this->shub_bbpress_message_id) {
 
 
@@ -473,13 +475,14 @@ class shub_bbpress_message{
 					if($debug)echo "Sending a reply to bbPress Topic ID: $bbpress_id <br>\n";
 					$api_result = false;
 					try{
+						$extra_data['api'] = 1;
 						$api_result = $api->newPost('Reply to: '.((isset($bbpress_post_data['post_title'])) ? $bbpress_post_data['post_title'] : 'Post'),$message,array(
 							'post_type' => 'reply',
 							'post_parent' => $bbpress_id,
 							'custom_fields' => array(
 								array(
 									'key' => 'support_hub',
-									'value' => 'api',
+									'value' => json_encode($extra_data),
 								)
 							)
 						));

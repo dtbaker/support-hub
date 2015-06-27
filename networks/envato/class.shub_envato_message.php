@@ -381,10 +381,14 @@ class shub_envato_message{
 				</div>
 				<div class="shub_message_reply envato_message_reply">
 					<textarea placeholder="Write a reply..."></textarea>
-					<button data-envato-id="<?php echo htmlspecialchars($envato_id);?>" data-id="<?php echo (int)$this->shub_envato_message_id;?>"><?php _e('Send');?></button>
+					<button data-envato-id="<?php echo htmlspecialchars($envato_id);?>" data-post="<?php echo esc_attr(json_encode(array(
+						'id' => (int)$this->shub_envato_message_id,
+						'network' => 'envato',
+						'envato_id' => htmlspecialchars($envato_id),
+					)));?>"><?php _e('Send');?></button>
 				</div>
 				<div class="shub_message_actions">
-					(enable debug) <input type="checkbox" name="debug" data-reply="yes" value="1">
+					(debug) <input type="checkbox" name="debug" data-reply="yes" value="1"> <br/>
 				</div>
 			</div>
 		<?php

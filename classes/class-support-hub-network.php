@@ -59,5 +59,6 @@ class SupportHub_network{
 	public function extra_process_login($network, $network_account_id, $network_message_id, $extra_ids){ return false; }
 	public function extra_save_data($extra, $value, $network, $network_account_id, $network_message_id){ return false; }
 	public function extra_send_message($message, $network, $network_account_id, $network_message_id){ return false; }
+	public function get_message($account, $item, $message_id){ return false; }
 
 }

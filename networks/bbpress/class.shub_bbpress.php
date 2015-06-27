@@ -518,33 +518,12 @@ class shub_bbpress extends SupportHub_network {
 		}
 	}
 
+	public function get_message($bbpress_account = false, $bbpress_forum = false, $shub_bbpress_message_id = false){
+		return new shub_bbpress_message($bbpress_account, $bbpress_forum, $shub_bbpress_message_id);
+	}
+
 	public function handle_ajax($action, $support_hub_wp){
 		switch($action){
-			case 'send-message-reply':
-				if (!headers_sent())header('Content-type: text/javascript');
-				if(isset($_REQUEST['bbpress_id']) && !empty($_REQUEST['bbpress_id']) && isset($_REQUEST['id']) && (int)$_REQUEST['id'] > 0) {
-					$shub_bbpress_message = new shub_bbpress_message( false, false, $_REQUEST['id'] );
-					if($shub_bbpress_message->get('shub_bbpress_message_id') == $_REQUEST['id']){
-						$return  = array();
-						$message = isset( $_POST['message'] ) && $_POST['message'] ? $_POST['message'] : '';
-						$bbpress_id = isset( $_REQUEST['bbpress_id'] ) && $_REQUEST['bbpress_id'] ? $_REQUEST['bbpress_id'] : false;
-						$debug = isset( $_POST['debug'] ) && $_POST['debug'] ? $_POST['debug'] : false;
-						if ( $message ) {
-							if($debug)ob_start();
-							$shub_bbpress_message->send_reply( $bbpress_id, $message, $debug );
-							if($debug){
-								$return['message'] = ob_get_clean();
-							}else {
-								//set_message( _l( 'message sent and conversation archived.' ) );
-								$return['redirect'] = 'admin.php?page=support_hub_main';
-
-							}
-						}
-						echo json_encode( $return );
-					}
-
-				}
-				break;
 			case 'modal':
 				if(isset($_REQUEST['socialbbpressmessageid']) && (int)$_REQUEST['socialbbpressmessageid'] > 0) {
 					$shub_bbpress_message = new shub_bbpress_message( false, false, $_REQUEST['socialbbpressmessageid'] );

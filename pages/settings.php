@@ -19,6 +19,7 @@
 				   class="nav-tab <?php echo $tab == $message_manager_id ? ' nav-tab-active' : '';?>"><?php echo $message_manager->get_friendly_icon();?><?php echo $message_manager->friendly_name;?></a>
 			<?php }
 		}?>
+		<a href="?page=support_hub_settings&amp;tab=logs" class="nav-tab <?php echo $tab == 'logs' ? ' nav-tab-active' : '';?>"><?php _e('Logs','support_hub');?></a>
 		<!-- <a href="?page=support_hub_settings&amp;tab=pending" class="nav-tab">Ticksy</a>
 		<a href="?page=support_hub_settings&amp;tab=pending" class="nav-tab">Help Scout</a>
 		<a href="?page=support_hub_settings&amp;tab=pending" class="nav-tab">Zendesk</a>

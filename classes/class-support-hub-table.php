@@ -440,3 +440,56 @@ class SupportHubSentList extends SupportHub_Account_Data_List_Table{
 	    }
     }
 }
+
+class SupportHubLogList extends SupportHub_Account_Data_List_Table{
+	private $row_output = array();
+
+	function __construct($args = array()) {
+		$args = wp_parse_args( $args, array(
+			'plural'   => __( 'extra_details', 'support_hub' ),
+			'singular' => __( 'extra_detail', 'support_hub' ),
+			'ajax'     => false,
+		) );
+		parent::__construct( $args );
+	}
+
+
+	private $message_managers = array();
+	function set_message_managers($message_managers){
+		$this->message_managers = $message_managers;
+	}
+
+	public function single_row( $item ) {
+		echo '<tr class="' . (isset($item['log_error_level']) && $item['log_error_level'] > 0 ? 'log_error' : 'log_normal').'">';
+		$this->single_row_columns( $item );
+		echo '</tr>';
+	}
+
+	private $column_details = array();
+	function column_default($item, $column_name){
+
+		if(is_object($item)){
+			return $item->get($column_name);
+		}else if( is_array($item) && isset($item[$column_name])){
+			switch($column_name){
+				case 'log_data':
+					$data = maybe_unserialize($item[$column_name]);
+					if(is_array($data)){
+                        echo '<pre>';
+                        echo htmlspecialchars(var_export($data,true));
+                        echo '</pre>';
+                        return false;
+                    }else{
+                        return $data;
+                    }
+					break;
+				case 'log_time':
+					return shub_print_date($item[$column_name],true);
+					break;
+			}
+			return $item[$column_name];
+		}else{
+			return 'No';
+		}
+	}
+}
