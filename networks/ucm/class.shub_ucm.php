@@ -612,9 +612,9 @@ CREATE TABLE {$wpdb->prefix}shub_ucm (
   import_stream int(11) NOT NULL DEFAULT '0',
   post_stream int(11) NOT NULL DEFAULT '0',
   ucm_data text NOT NULL,
-  ucm_wordpress_xmlrpc varchar(255) NOT NULL,
+  ucm_api_url varchar(255) NOT NULL,
   ucm_username varchar(255) NOT NULL,
-  ucm_password varchar(255) NOT NULL,
+  ucm_api_key varchar(255) NOT NULL,
   PRIMARY KEY  shub_ucm_id (shub_ucm_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
@@ -641,7 +641,7 @@ CREATE TABLE {$wpdb->prefix}shub_ucm_message (
   shub_message_id int(11) NOT NULL DEFAULT '0',
   shub_ucm_product_id int(11) NOT NULL,
   shub_product_id int(11) NOT NULL DEFAULT '-1',
-  ucm_id varchar(255) NOT NULL,
+  ucm_ticket_id varchar(255) NOT NULL,
   summary text NOT NULL,
   title text NOT NULL,
   last_active int(11) NOT NULL DEFAULT '0',
@@ -659,7 +659,7 @@ CREATE TABLE {$wpdb->prefix}shub_ucm_message (
   KEY shub_ucm_user_id (shub_ucm_user_id),
   KEY last_active (last_active),
   KEY shub_ucm_product_id (shub_ucm_product_id),
-  KEY ucm_id (ucm_id),
+  KEY ucm_ticket_id (ucm_ticket_id),
   KEY status (status)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 

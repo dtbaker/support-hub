@@ -22,16 +22,17 @@ if($current_account !== false){
 		?>
 		<div class="wrap">
 			<h2>
-				<?php _e( 'ucm Account', 'support_hub' ); ?>
+				<?php _e( 'UCM Account', 'support_hub' ); ?>
 			</h2>
 		<?php
-		if($shub_ucm_account->get('shub_ucm_id') && $shub_ucm_account->get('shub_ucm_id') == $current_account && $shub_ucm_account->get( 'ucm_wordpress_xmlrpc' ) && $shub_ucm_account->get( 'ucm_username' ) && $shub_ucm_account->get( 'ucm_password' )) {
+		if($shub_ucm_account->get('shub_ucm_id') && $shub_ucm_account->get('shub_ucm_id') == $current_account && $shub_ucm_account->get( 'ucm_api_url' ) &&
+			$shub_ucm_account->get( 'ucm_api_key' )) {
 
             // now we load in a list of ucm products to manage and redirect the user back to the 'edit' screen where they can continue managing the account.
             $shub_ucm_account->load_available_products();
             $url = $shub_ucm_account->link_edit();
             ?>
-            <p>You have successfully connected ucm with the Support Hub plugin. Please click the button below:</p>
+            <p>You have successfully connected UCM with the Support Hub plugin. Please click the button below:</p>
             <p><a href="<?php echo $shub_ucm_account->link_edit(); ?>" class="button">Click here to continue.</a></p>
 			<p>&nbsp;</p>
 			<p>&nbsp;</p>
@@ -48,7 +49,7 @@ if($current_account !== false){
 		?>
 		<div class="wrap">
 			<h2>
-				<?php _e( 'ucm Account', 'support_hub' ); ?>
+				<?php _e( 'UCM Account', 'support_hub' ); ?>
 			</h2>
 
 			<form action="" method="post">
@@ -59,11 +60,11 @@ if($current_account !== false){
 
                 <p>Setup Instructions:</p>
                 <ul>
-                    <li>Login to your WordPress website</li>
-                    <li>Create a new WordPress user, set the "Role" as "Administrator", and the "product Role" as "Keymaster". (if running a WP Network install, you may need to grant this user Super Admin privileges, as edit_user capability is needed)</li>
-                    <li>Type in your WordPress XML-PRC url below (usually http://yourwebsite.com/xmlrpc.php)</li>
-                    <li>Type in your new WordPress username and password below (the one you just created)</li>
-                    <li>Click "Save and Connect to ucm"</li>
+                    <li>Login to your Ultimate Client Manager installation</li>
+                    <li>Go to Settings > API</li>
+					<li>Copy your API URL into the box below</li>
+					<li>Copy your unique API key into the box below</li>
+                    <li>Click "Save and Connect to UCM"</li>
                 </ul>
 				<table class="form-table">
 					<tbody>
@@ -73,32 +74,24 @@ if($current_account !== false){
 						</th>
 						<td class="">
 							<input type="text" name="ucm_name" value="<?php echo esc_attr( $shub_ucm_account->get( 'ucm_name' ) ); ?>">
-							(e.g. My Support product)
+							(e.g. My UCM Install)
 						</td>
 					</tr>
                     <tr>
                         <th class="width1">
-                            <?php _e( 'WordPress XML-RPC URL', 'support_hub' ); ?>
+                            <?php _e( 'API URL', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="text" name="ucm_wordpress_xmlrpc" value="<?php echo esc_attr($shub_ucm_account->get( 'ucm_wordpress_xmlrpc' )); ?>">
-	                        (e.g. http://mysite.com/xmlrpc.php)
+                            <input type="text" name="ucm_api_url" value="<?php echo esc_attr($shub_ucm_account->get( 'ucm_api_url' )); ?>">
+	                        (e.g. http://mysite.com/ucm/ext.php?m=api&amp;h=v1&amp;)
                         </td>
                     </tr>
                     <tr>
                         <th class="width1">
-                            <?php _e( 'WordPress Username', 'support_hub' ); ?>
+                            <?php _e( 'API Key', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="text" name="ucm_username" value="<?php echo esc_attr( $shub_ucm_account->get( 'ucm_username' ) ); ?>">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th class="width1">
-                            <?php _e( 'WordPress Password', 'support_hub' ); ?>
-                        </th>
-                        <td class="">
-                            <input type="password" name="ucm_password" value="<?php echo $shub_ucm_account->get( 'ucm_password' ) ? 'password' : ''; ?>">
+							<input type="password" name="ucm_api_key" value="<?php echo $shub_ucm_account->get( 'ucm_api_key' ) ? 'password' : ''; ?>">
                         </td>
                     </tr>
 					<?php if ( $shub_ucm_account->get( 'shub_ucm_id' ) ) { ?>
@@ -112,11 +105,11 @@ if($current_account !== false){
 						</tr>
 						<tr>
 							<th class="width1">
-								<?php _e( 'Available ucm products', 'support_hub' ); ?>
+								<?php _e( 'Available UCM Support products', 'support_hub' ); ?>
 							</th>
 							<td class="">
 								<input type="hidden" name="save_ucm_products" value="yep">
-								<strong><?php _e( 'Choose which ucm products you would like to manage:', 'support_hub' ); ?></strong><br>
+								<strong><?php _e( 'Choose which UCM products you would like to manage tickets for:', 'support_hub' ); ?></strong><br>
 								<?php
 								$data = $shub_ucm_account->get( 'ucm_data' );
 								if ( $data && isset( $data['products'] ) && is_array( $data['products'] ) && count( $data['products'] ) > 0 ) {
@@ -131,7 +124,7 @@ if($current_account !== false){
 										<thead>
 										<tr>
 											<th>Enabled</th>
-											<th>ucm product</th>
+											<th>UCM Product</th>
 											<th>Support Hub Product</th>
 											<th>Last Checked</th>
 											<th>Action</th>
@@ -148,7 +141,7 @@ if($current_account !== false){
 													       value="1" <?php echo $shub_ucm_account->is_product_active( $product_id ) ? ' checked' : ''; ?>>
 												</td>
 												<td>
-													<?php echo htmlspecialchars( $product_data['post_title'] ); ?>
+													<?php echo htmlspecialchars( $product_data['name'] ); ?>
 												</td>
 												<td>
 													<?php shub_module_form::generate_form_element(array(
@@ -192,13 +185,13 @@ if($current_account !== false){
 						<input name="butt_save" type="submit" class="button-primary"
 						       value="<?php echo esc_attr( __( 'Save', 'support_hub' ) ); ?>"/>
 						<input name="butt_save_reconnect" type="submit" class="button"
-						       value="<?php echo esc_attr( __( 'Re-Connect to ucm', 'support_hub' ) ); ?>"/>
+						       value="<?php echo esc_attr( __( 'Re-Connect to UCM', 'support_hub' ) ); ?>"/>
 						<input name="butt_delete" type="submit" class="button"
 						       value="<?php echo esc_attr( __( 'Delete', 'support_hub' ) ); ?>"
-						       onclick="return confirm('<?php _e( 'Really delete this ucm account and all associated data?', 'support_hub' ); ?>');"/>
+						       onclick="return confirm('<?php _e( 'Really delete this UCM account and all associated data?', 'support_hub' ); ?>');"/>
 					<?php } else { ?>
 						<input name="butt_save_reconnect" type="submit" class="button-primary"
-						       value="<?php echo esc_attr( __( 'Save and Connect to ucm', 'support_hub' ) ); ?>"/>
+						       value="<?php echo esc_attr( __( 'Save and Connect to UCM', 'support_hub' ) ); ?>"/>
 					<?php } ?>
 				</p>
 
@@ -222,7 +215,7 @@ if($current_account !== false){
 	?>
 	<div class="wrap">
 		<h2>
-			<?php _e('ucm Accounts','support_hub');?>
+			<?php _e('UCM Accounts','support_hub');?>
 			<a href="?page=<?php echo esc_attr($_GET['page']);?>&tab=<?php echo esc_attr($_GET['tab']);?>&shub_ucm_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
 		</h2>
 	    <?php

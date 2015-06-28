@@ -45,36 +45,41 @@ class shub_ucm_message{
 		$this->load($this->shub_ucm_message_id);
 	}
 
-	public function load_by_ucm_id($ucm_id, $topic_data, $type, $debug = false){
+	public function load_by_ucm_id($ucm_ticket_id, $ticket, $type, $debug = false){
 
 		switch($type){
-			case 'product_topic':
-				/*{"post_id":"3381","post_title":"Child THEME IMPOSSIBLE","post_date":{"scalar":"20150304T00:19:51","xmlrpc_type":"datetime","timestamp":1425428391},"post_date_gmt":{"scalar":"20150304T00:19:51","xmlrpc_type":"datetime","timestamp":1425428391},"post_modified":{"scalar":"20150304T00:19:51","xmlrpc_type":"datetime","timestamp":1425428391},"post_modified_gmt":{"scalar":"20150304T00:19:51","xmlrpc_type":"datetime","timestamp":1425428391},"post_status":"publish","post_type":"topic","post_name":"child-theme-impossible","post_author":"1442","post_password":"","post_excerpt":"","post_content":"Has anyone been able to create a child theme that keeps the animations please help","post_parent":"2613","post_mime_type":"","link":"http:\/\/dtbaker.net\/products\/topic\/child-theme-impossible\/","guid":"http:\/\/dtbaker.net\/products\/topic\/child-theme-impossible\/","menu_order":0,"comment_status":"closed","ping_status":"closed","sticky":false,"post_thumbnail":[],"post_format":"standard","terms":[],"custom_fields":[{"id":"9897","key":"author","value":""},{"id":"9898","key":"stars","value":""}],"replies":[{"post_id":"3409","post_title":"","post_date":{"scalar":"20150413T18:16:41","xmlrpc_type":"datetime","timestamp":1428949001},"post_date_gmt":{"scalar":"20150413T18:16:41","xmlrpc_type":"datetime","timestamp":1428949001},"post_modified":{"scalar":"20150413T18:16:41","xmlrpc_type":"datetime","timestamp":1428949001},"post_modified_gmt":{"scalar":"20150413T18:16:41","xmlrpc_type":"datetime","timestamp":1428949001},"post_status":"publish","post_type":"reply","post_name":"3409","post_author":"1692","post_password":"","post_excerpt":"","post_content":"I just purchased this last week and am having problems too. Support for this template seems to be nonexistent. This design has been approved by my client but I'm unable to get the theme to function correctly and I can't get any support from the developer. The deadline for this site is approaching and I'm dead in the water. Hopefully I can get a refund on this one.","post_parent":"3381","post_mime_type":"","link":"http:\/\/dtbaker.net\/products\/reply\/3409\/","guid":"http:\/\/dtbaker.net\/products\/reply\/3409\/","menu_order":2,"comment_status":"closed","ping_status":"closed","sticky":false,"post_thumbnail":[],"post_format":"standard","terms":[],"custom_fields":[]},{"post_id":"3394","post_title":"","post_date":{"scalar":"20150318T22:42:54","xmlrpc_type":"datetime","timestamp":1426718574},"post_date_gmt":{"scalar":"20150318T22:42:54","xmlrpc_type":"datetime","timestamp":1426718574},"post_modified":{"scalar":"20150318T22:42:54","xmlrpc_type":"datetime","timestamp":1426718574},"post_modified_gmt":{"scalar":"20150318T22:42:54","xmlrpc_type":"datetime","timestamp":1426718574},"post_status":"publish","post_type":"reply","post_name":"3394","post_author":"1458","post_password":"","post_excerpt":"","post_content":"I have not been able to and just posted that same question before I found your question..","post_parent":"3381","post_mime_type":"","link":"http:\/\/dtbaker.net\/products\/reply\/3394\/","guid":"http:\/\/dtbaker.net\/products\/reply\/3394\/","menu_order":1,"comment_status":"closed","ping_status":"closed","sticky":false,"post_thumbnail":[],"post_format":"standard","terms":[],"custom_fields":[]}],"timestamp":1428949001}*/
-				$existing = shub_get_single('shub_ucm_message', 'ucm_id', $ucm_id);
+			case 'ticket':
+				$existing = shub_get_single('shub_ucm_message', 'ucm_ticket_id', $ucm_ticket_id);
 				if($existing){
 					// load it up.
 					$this->load($existing['shub_ucm_message_id']);
 				}
-				if($topic_data && isset($topic_data['post_id']) && $topic_data['post_id'] == $ucm_id){
-					if(!$existing){
-						$this->create_new();
-					}
-					$this->update('shub_ucm_id',$this->ucm_account->get('shub_ucm_id'));
-					$this->update('shub_ucm_product_id',$this->ucm_product->get('shub_ucm_product_id'));
-					$comments = $topic_data['replies'];
-					$this->update('title',$topic_data['post_content']);
-					// latest comment goes in summary
-					$this->update('summary',isset($comments[0]) ? $comments[0]['post_content'] : $topic_data['post_content']);
-					$this->update('last_active',!empty($topic_data['timestamp']) ? $topic_data['timestamp'] : (is_array($topic_data['post_date']) ? $topic_data['post_date']['timestamp'] : (isset($topic_data['post_date']->timestamp) ? $topic_data['post_date']->timestamp : 0)));
-					$this->update('type',$type);
-					$this->update('data',json_encode($topic_data));
-					$this->update('link',$topic_data['link'].'#post-'.(isset($comments[0]) ? $comments[0]['post_id'] : $topic_data['post_id']));
-					$this->update('ucm_id', $ucm_id);
-					$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
-					$this->update('comments',json_encode($comments));
-					// create/update a user entry for this comments.
-				    $shub_ucm_user_id = $this->ucm_account->get_api_user_to_id($topic_data['post_author']);
-					$this->update('shub_ucm_user_id',$shub_ucm_user_id);
+				if($ticket && isset($ticket['ticket_id']) && $ticket['ticket_id'] == $ucm_ticket_id){
+                    // get the messages from the API
+                    $api = $this->ucm_account->get_api();
+                    $api_result = $api->api('ticket','message',array('ticket_ids'=>$ucm_ticket_id));
+                    print_r($api_result);exit;
+                    if($api_result && isset($api_result['messages'])) {
+                        if (!$existing) {
+                            $this->create_new();
+                        }
+                        $this->update('shub_ucm_id', $this->ucm_account->get('shub_ucm_id'));
+                        $this->update('shub_ucm_product_id', $this->ucm_product->get('shub_ucm_product_id'));
+                        $comments = $ticket['replies'];
+                        $this->update('title', $ticket['post_content']);
+                        // latest comment goes in summary
+                        $this->update('summary', $ticket['subject']);
+                        $this->update('last_active', $ticket['last_message_timestamp']);
+                        $this->update('type', $type);
+                        $this->update('data', json_encode($ticket));
+                        $this->update('link', $ticket['url']);
+                        $this->update('ucm_ticket_id', $ucm_ticket_id);
+                        $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                        $this->update('comments', json_encode($comments));
+                        // create/update a user entry for this comments.
+                        $shub_ucm_user_id = $this->ucm_account->get_api_user_to_id($ticket['user']);
+                        $this->update('shub_ucm_user_id', $shub_ucm_user_id);
+                    }
 
 					return $this->get('shub_ucm_message_id');
 				}
@@ -462,7 +467,7 @@ class shub_ucm_message{
 			$api = $this->ucm_account->get_api();
 			if($debug)echo "Type: ".$this->get('type')." <br>\n";
 			switch($this->get('type')) {
-				case 'product_topic':
+				case 'ticket':
 
 					if(!$this->ucm_product){
 						echo 'Error no product, report this';
@@ -549,7 +554,7 @@ class shub_ucm_message{
 	public function get_type_pretty() {
 		$type = $this->get('type');
 		switch($type){
-			case 'product_topic':
+			case 'ticket':
 				return 'product Topic';
 				break;
 			default:

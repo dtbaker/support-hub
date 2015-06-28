@@ -132,124 +132,36 @@ class shub_ucm_product{
 			return;
 		}
 
-		// first we seed the cache with the latest ucm replies and topics
-		// we do this because it's not possible to filter based on "post_parent" through the WordPress API (SILLY!)
-		// so this saves us calling getPost() a lot of times.
-		$filter_replies = array(
-			'post_type' => 'reply',
-			'number' => 100,
-			'post_status' => 'publish',
-			//'post_parent' =>
-		);
-		$api_result_latest_replies = $this->ucm_account->get_api_cache($filter_replies);
-		$api_result_latest_replies = $api_result_latest_replies ? $api_result_latest_replies : $api->getPosts($filter_replies);
-
-		$filter_topics = array(
-			'post_type' => 'topic',
-			'number' => 100,
-			'post_status' => 'publish',
-			//'post_parent' =>
-		);
-		$api_result_latest_topics = $this->ucm_account->get_api_cache($filter_topics);
-		$api_result_latest_topics = $api_result_latest_topics ? $api_result_latest_topics : $api->getPosts($filter_topics);
-
-
-		// loop through our latest replies and see if any of them are from a thread that sits under this product
-		// COMPLETELY THE REVERSE WAY THAT WE SHOULD BE DOING IT! rar!
-
-		$product_topics = array();
-
-		foreach($api_result_latest_topics as $product_topic){
-			if($product_topic['post_parent'] == $ucm_product_id){
-				// yay! this reply is part of a topic that is part of this product. keep it.
-				if(!isset($product_topics[$product_topic['post_id']])){
-					$product_topics[$product_topic['post_id']] = $product_topic;
-				}
-				if(!isset($product_topics[$product_topic['post_id']]['replies'])){
-					$product_topics[$product_topic['post_id']]['replies'] = array();
-				}
-				$product_topics[$product_topic['post_id']]['timestamp'] = $product_topic['post_date']->timestamp;
-			}
-		}
-		foreach($api_result_latest_replies as $product_reply){
-
-			// find its parent and see if it is from this product.
-			$found_parent = false;
-			foreach($api_result_latest_topics as $product_topic){
-				if($product_topic['post_id'] == $product_reply['post_parent']){
-					$found_parent = $product_topic;
-					break;
-				}
-			}
-			if(!$found_parent){
-				$api_result_parent = $api->getPost($product_reply['post_parent']);
-				if($api_result_parent){
-					$found_parent = $api_result_parent;
-					$api_result_latest_topics[] = $api_result_parent; // add to cache so we hopefully dont have to hit it again if it's a popular topic
-				}
-			}
-			if($found_parent){
-				// found a parent post, check if it's part of this product.
-				if($found_parent['post_parent'] == $ucm_product_id){
-					// yay! this reply is part of a topic that is part of this product. keep it.
-					if(!isset($product_topics[$found_parent['post_id']])){
-						$product_topics[$found_parent['post_id']] = $found_parent;
-					}
-					if(!isset($product_topics[$found_parent['post_id']]['replies'])){
-						$product_topics[$found_parent['post_id']]['replies'] = array();
-					}
-					$product_topics[$found_parent['post_id']]['replies'][] = $product_reply;
-					if(!isset($product_topics[$found_parent['post_id']]['timestamp'])){
-						$product_topics[$found_parent['post_id']]['timestamp'] = $found_parent['post_date']->timestamp;
-					}
-					$product_topics[$found_parent['post_id']]['timestamp'] = max($product_reply['post_date']->timestamp,$product_topics[$found_parent['post_id']]['timestamp']);
-				}
-
-				/*echo date('Y-m-d',$product_reply['post_date']->timestamp);
-				echo " <a href='".$product_reply['link']."'>'".$product_reply['link'].'</a> ';
-				echo $product_reply['post_content'];
-				echo "Parent is: ";
-				echo date('Y-m-d',$found_parent['post_date']->timestamp);
-				echo " <a href='".$found_parent['link']."'>'".$found_parent['link'].'</a> ';
-				echo '<hr>';*/
-			}
-		}
-		uasort($product_topics,function($a,$b){
-			return $a['timestamp'] < $b['timestamp'];
-		});
-
-		// cache them for any other ucm product calls that are run during the same cron job process.
-		$this->ucm_account->set_api_cache($filter_replies,$api_result_latest_replies);
-		$this->ucm_account->set_api_cache($filter_topics,$api_result_latest_topics);
-
+		// find any messages from this particular UCM product.
+        $tickets = $api->api('ticket','list',array('search'=>array('faq_product_id'=>$ucm_product_id)));
 
 		// we keep a record of the last message received so we know where to stop checking the feed
 		$last_message_received = (int)$this->get('last_message');
-		if($debug)echo "Getting the latest replies for product: ".$ucm_product_id." (last message in database is from ".shub_print_date($last_message_received,true).")<br>\n";
+		if($debug)echo "Getting the latest tickets for product: ".$ucm_product_id." (last message in database is from ".shub_print_date($last_message_received,true).")<br>\n";
 
 		$newest_message_received = 0;
 
 		$count = 0;
-		foreach($product_topics as $product_topic){
-			$message_time = $product_topic['timestamp'];
+		foreach($tickets['tickets'] as $ticket){
+			$message_time = $ticket['last_message_timestamp'];
 			$newest_message_received = max($newest_message_received,$message_time);
 			if($message_time <= $last_message_received)break; // all done here.
 
 			$ucm_message = new shub_ucm_message($this->ucm_account, $this, false);
-			$ucm_message -> load_by_ucm_id($product_topic['post_id'], $product_topic, 'product_topic', $debug);
+			$ucm_message -> load_by_ucm_id($ticket['ticket_id'], $ticket, 'ticket', $debug);
 			$count++;
 			if($debug) {
 				?>
 				<div>
-				<pre> Imported product topic ID: <?php echo $ucm_message->get( 'ucm_id' ); ?> with <?php echo count($product_topic['replies']);?> replies. </pre>
+				<pre> Imported Ticket ID: <?php echo $ucm_message->get( 'ucm_id' ); ?> with <?php echo $ticket['message_count'];?> message. </pre>
 				</div>
 			<?php
 			}
 
 		}
 		// get user, return envato_codes in meta
-		SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'ucm', 'Imported  '.$count.' product topics into database');
-		if($debug)echo " imported $count new product comments <br>";
+		SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'ucm', 'Imported  '.$count.' product tickets into database');
+		if($debug)echo " imported $count new product tickets <br>";
 
 		$this->update('last_message',$newest_message_received);
 		$this->update('last_checked',time());

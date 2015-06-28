@@ -16,7 +16,7 @@ function shub_managers_ucm( $shub ){
 	}
 	$shub['ucm']->id = 'ucm';
 	$shub['ucm']->friendly_name = 'UCM';
-	$shub['ucm']->desc = 'View and Reply to UCM Support Ticket messages.';
+	$shub['ucm']->desc = 'View and Reply to Ultimate Client Manager Support Tickets.';
 	return $shub;
 }
 
