@@ -32,11 +32,17 @@ if($shub_envato_id && $shub_envato_message_id){
 						<a href="<?php echo $envato_item_data['url'];?>/comments/<?php echo $envato_message->get('envato_id');?>" class="socialenvato_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
 						<?php } ?>
 					    <?php if($envato_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
-						    <a href="#" class="socialenvato_message_action  btn btn-default btn-xs button"
-						       data-action="set-unanswered" data-id="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Inbox' ); ?></a>
+						    <a href="#" class="socialenvato_message_action shub_message_action btn btn-default btn-xs button"
+						       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
+								'network' => 'envato',
+								'shub_envato_message_id' => $envato_message->get('shub_envato_message_id'),
+							)));?>"><?php _e( 'Inbox' ); ?></a>
 					    <?php }else{ ?>
-						    <a href="#" class="socialenvato_message_action  btn btn-default btn-xs button"
-						       data-action="set-answered" data-id="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Archive' ); ?></a>
+						    <a href="#" class="socialenvato_message_action shub_message_action btn btn-default btn-xs button"
+						       data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
+								'network' => 'envato',
+								'shub_envato_message_id' => $envato_message->get('shub_envato_message_id'),
+							)));?>"><?php _e( 'Archive' ); ?></a>
 					    <?php } ?>
 					</header>
 

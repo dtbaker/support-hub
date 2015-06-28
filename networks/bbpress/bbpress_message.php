@@ -28,11 +28,17 @@ if($shub_bbpress_id && $shub_bbpress_message_id){
 					<header>
 						<a href="<?php echo $bbpress_message->get('link');?>" class="socialbbpress_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Thread' ); ?></a>
 					    <?php if($bbpress_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
-						    <a href="#" class="socialbbpress_message_action  btn btn-default btn-xs button"
-						       data-action="set-unanswered" data-id="<?php echo (int)$bbpress_message->get('shub_bbpress_message_id');?>"><?php _e( 'Inbox' ); ?></a>
+						    <a href="#" class="socialbbpress_message_action shub_message_action btn btn-default btn-xs button"
+						       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
+								'network' => 'bbpress',
+								'shub_bbpress_message_id' => $bbpress_message->get('shub_bbpress_message_id'),
+							)));?>"><?php _e( 'Inbox' ); ?></a>
 					    <?php }else{ ?>
-						    <a href="#" class="socialbbpress_message_action  btn btn-default btn-xs button"
-						       data-action="set-answered" data-id="<?php echo (int)$bbpress_message->get('shub_bbpress_message_id');?>"><?php _e( 'Archive' ); ?></a>
+						    <a href="#" class="socialbbpress_message_action shub_message_action btn btn-default btn-xs button"
+						       data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
+								'network' => 'bbpress',
+								'shub_bbpress_message_id' => $bbpress_message->get('shub_bbpress_message_id'),
+							)));?>"><?php _e( 'Archive' ); ?></a>
 					    <?php } ?>
 					</header>
 

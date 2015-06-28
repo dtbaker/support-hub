@@ -371,11 +371,17 @@ class shub_envato extends SupportHub_network {
 		?>
 		<a href="<?php echo $envato_message->link_open();?>" class="socialenvato_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($title);?>" data-socialenvatomessageid="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Open' );?></a>
 	    <?php if($envato_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
-		    <a href="#" class="socialenvato_message_action  button"
-		       data-action="set-unanswered" data-id="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Inbox' ); ?></a>
+		    <a href="#" class="socialenvato_message_action shub_message_action button"
+		       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
+                'network' => 'envato',
+                'shub_envato_message_id' => $envato_message->get('shub_envato_message_id'),
+            )));;?>"><?php _e( 'Inbox' ); ?></a>
 	    <?php }else{ ?>
-		    <a href="#" class="socialenvato_message_action  button"
-		       data-action="set-answered" data-id="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Archive' ); ?></a>
+		    <a href="#" class="socialenvato_message_action shub_message_action button"
+		       data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
+                'network' => 'envato',
+                'shub_envato_message_id' => $envato_message->get('shub_envato_message_id'),
+            )));?>"><?php _e( 'Archive' ); ?></a>
 	    <?php } ?>
 		<?php
 		$return['shub_column_action'] = ob_get_clean();
@@ -385,7 +391,6 @@ class shub_envato extends SupportHub_network {
 
 	public function init_js(){
 		?>
-		    ucm.social.envato.api_url = ajaxurl;
 		    ucm.social.envato.init();
 		<?php
 	}
@@ -589,30 +594,6 @@ class shub_envato extends SupportHub_network {
 						include( trailingslashit( $support_hub_wp->dir ) . 'networks/envato/envato_message.php');
 					}
 
-				}
-				break;
-			case 'set-answered':
-				if (!headers_sent())header('Content-type: text/javascript');
-				if(isset($_REQUEST['shub_envato_message_id']) && (int)$_REQUEST['shub_envato_message_id'] > 0){
-					$shub_envato_message = new shub_envato_message(false, false, $_REQUEST['shub_envato_message_id']);
-					if($shub_envato_message->get('shub_envato_message_id') == $_REQUEST['shub_envato_message_id']){
-						$shub_envato_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
-						?>
-						jQuery('.socialenvato_message_action[data-id=<?php echo (int)$shub_envato_message->get('shub_envato_message_id'); ?>]').parents('tr').first().hide();
-						<?php
-					}
-				}
-				break;
-			case 'set-unanswered':
-				if (!headers_sent())header('Content-type: text/javascript');
-				if(isset($_REQUEST['shub_envato_message_id']) && (int)$_REQUEST['shub_envato_message_id'] > 0){
-					$shub_envato_message = new shub_envato_message(false, false, $_REQUEST['shub_envato_message_id']);
-					if($shub_envato_message->get('shub_envato_message_id') == $_REQUEST['shub_envato_message_id']){
-						$shub_envato_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
-						?>
-						jQuery('.socialenvato_message_action[data-id=<?php echo (int)$shub_envato_message->get('shub_envato_message_id'); ?>]').parents('tr').first().hide();
-						<?php
-					}
 				}
 				break;
 		}

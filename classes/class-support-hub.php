@@ -91,6 +91,30 @@ class SupportHub {
 			$_REQUEST = stripslashes_deep( $_REQUEST );
 			$action = isset( $_REQUEST['action'] ) ? str_replace( 'support_hub_', '', $_REQUEST['action'] ) : false;
 			switch($action){
+                case 'set-answered':
+                    if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_'.$_REQUEST['network'].'_message_id'])) {
+                        $shub_network_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']);
+                        if ($shub_network_message->get('shub_' . $_REQUEST['network'] . '_message_id') == $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']) {
+                            $shub_network_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                            if (!headers_sent())header('Content-type: text/javascript');
+                            ?>
+                            jQuery('tr.shub_network_message[data-network=<?php echo $_REQUEST['network']; ?>][data-network-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]').hide();
+                            <?php
+                        }
+                    }
+                    break;
+                case 'set-unanswered':
+                    if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_'.$_REQUEST['network'].'_message_id'])) {
+                        $shub_network_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']);
+                        if ($shub_network_message->get('shub_' . $_REQUEST['network'] . '_message_id') == $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']) {
+                            $shub_network_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+                            if (!headers_sent())header('Content-type: text/javascript');
+                            ?>
+                            jQuery('tr.shub_network_message[data-network=<?php echo $_REQUEST['network']; ?>][data-network-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]').hide();
+                            <?php
+                        }
+                    }
+                    break;
                 case 'send-message-reply':
                     // handle this for bbpress and envato,
                     // todo: move the other modules into this 'generic' format here.

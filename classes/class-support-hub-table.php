@@ -316,6 +316,18 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 
 		echo $this->_pagination;
 	}
+
+    public function single_row( $item ) {
+        echo '<tr';
+        if(is_array($item) && isset($item['message_manager']) && $item['message_manager']->id){
+            echo ' class="shub_network_message"';
+            echo ' data-network="'.$item['message_manager']->id.'"';
+            echo ' data-network-message-id="'.$item['shub_' . $item['message_manager']->id . '_message_id'].'"';
+        }
+        echo '>';
+        $this->single_row_columns( $item );
+        echo '</tr>';
+    }
 }
 
 

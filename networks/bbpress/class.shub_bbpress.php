@@ -357,11 +357,17 @@ class shub_bbpress extends SupportHub_network {
 		?>
 		<a href="<?php echo $bbpress_message->link_open();?>" class="socialbbpress_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($title);?>" data-socialbbpressmessageid="<?php echo (int)$bbpress_message->get('shub_bbpress_message_id');?>"><?php _e( 'Open' );?></a>
 	    <?php if($bbpress_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
-		    <a href="#" class="socialbbpress_message_action  button"
-		       data-action="set-unanswered" data-id="<?php echo (int)$bbpress_message->get('shub_bbpress_message_id');?>"><?php _e( 'Inbox' ); ?></a>
+		    <a href="#" class="socialbbpress_message_action shub_message_action button"
+		       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
+                'network' => 'bbpress',
+                'shub_bbpress_message_id' => $bbpress_message->get('shub_bbpress_message_id'),
+            )));?>"><?php _e( 'Inbox' ); ?></a>
 	    <?php }else{ ?>
-		    <a href="#" class="socialbbpress_message_action  button"
-		       data-action="set-answered" data-id="<?php echo (int)$bbpress_message->get('shub_bbpress_message_id');?>"><?php _e( 'Archive' ); ?></a>
+		    <a href="#" class="socialbbpress_message_action shub_message_action button"
+		       data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
+                'network' => 'bbpress',
+                'shub_bbpress_message_id' => $bbpress_message->get('shub_bbpress_message_id'),
+            )));?>"><?php _e( 'Archive' ); ?></a>
 	    <?php } ?>
 		<?php
 		$return['shub_column_action'] = ob_get_clean();
@@ -536,30 +542,6 @@ class shub_bbpress extends SupportHub_network {
 
 				}
 				break;
-			case 'set-answered':
-				if (!headers_sent())header('Content-type: text/javascript');
-				if(isset($_REQUEST['shub_bbpress_message_id']) && (int)$_REQUEST['shub_bbpress_message_id'] > 0){
-					$shub_bbpress_message = new shub_bbpress_message(false, false, $_REQUEST['shub_bbpress_message_id']);
-					if($shub_bbpress_message->get('shub_bbpress_message_id') == $_REQUEST['shub_bbpress_message_id']){
-						$shub_bbpress_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
-						?>
-						jQuery('.socialbbpress_message_action[data-id=<?php echo (int)$shub_bbpress_message->get('shub_bbpress_message_id'); ?>]').parents('tr').first().hide();
-						<?php
-					}
-				}
-				break;
-			case 'set-unanswered':
-				if (!headers_sent())header('Content-type: text/javascript');
-				if(isset($_REQUEST['shub_bbpress_message_id']) && (int)$_REQUEST['shub_bbpress_message_id'] > 0){
-					$shub_bbpress_message = new shub_bbpress_message(false, false, $_REQUEST['shub_bbpress_message_id']);
-					if($shub_bbpress_message->get('shub_bbpress_message_id') == $_REQUEST['shub_bbpress_message_id']){
-						$shub_bbpress_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
-						?>
-						jQuery('.socialbbpress_message_action[data-id=<?php echo (int)$shub_bbpress_message->get('shub_bbpress_message_id'); ?>]').parents('tr').first().hide();
-						<?php
-					}
-				}
-				break;
 		}
 		return false;
 	}
@@ -703,7 +685,7 @@ CREATE TABLE {$wpdb->prefix}shub_bbpress_message_comment (
   shub_bbpress_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_bbpress_message_comment_id (shub_bbpress_message_comment_id),
   KEY shub_bbpress_message_id (shub_bbpress_message_id),
-  KEY shub_bbpress_user_id (shub_bbpress_user),
+  KEY shub_bbpress_user_id (shub_bbpress_user_id),
   KEY bbpress_id (bbpress_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 

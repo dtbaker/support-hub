@@ -49,6 +49,7 @@ require_once( 'networks/google/init.google.php' );
 //require_once( 'networks/linkedin/init.linkedin.php' ); // linkedin doesn't work any more - API has been restricted.
 require_once( 'networks/envato/init.envato.php' );
 require_once( 'networks/bbpress/init.bbpress.php' );
+require_once( 'networks/ucm/init.ucm.php' );
 
 // commence the awesome:
 SupportHub::getInstance( _DTBAKER_SUPPORT_HUB_CORE_FILE_ );
