@@ -59,13 +59,20 @@ class shub_ucm_message{
                     $api = $this->ucm_account->get_api();
                     $api_result = $api->api('ticket','message',array('ticket_ids'=>$ucm_ticket_id));
                     if($api_result && isset($api_result['tickets'][$ucm_ticket_id]) && count($api_result['tickets'][$ucm_ticket_id])) {
-                        //print_r($api_result);exit;
+                        //print_r($api_result);
+						$all_comments = $api_result['tickets'][$ucm_ticket_id];
+						$comments = array();
+						foreach($all_comments as $comment_id => $comment){
+							if(isset($comment['cache']) && $comment['cache'] != 'autoreply'){
+								$comments[] = $comment;
+							}
+						}
                         if (!$existing) {
                             $this->create_new();
                         }
                         $this->update('shub_ucm_id', $this->ucm_account->get('shub_ucm_id'));
                         $this->update('shub_ucm_product_id', $this->ucm_product->get('shub_ucm_product_id'));
-                        $comments = $api_result['tickets'][$ucm_ticket_id];
+
                         $this->update('title', $ticket['subject']);
                         // latest comment goes in summary
                         $this->update('summary', $comments[count($comments)-1]['content']);

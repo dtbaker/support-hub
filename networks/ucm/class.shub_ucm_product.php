@@ -145,7 +145,7 @@ class shub_ucm_product{
 		foreach($tickets['tickets'] as $ticket){
 			$message_time = $ticket['last_message_timestamp'];
 			$newest_message_received = max($newest_message_received,$message_time);
-			if($message_time <= $last_message_received)break; // all done here.
+			//if($message_time <= $last_message_received)break; // all done here.
 
 			$ucm_message = new shub_ucm_message($this->ucm_account, $this, false);
 			$ucm_message -> load_by_ucm_id($ticket['ticket_id'], $ticket, 'ticket', $debug);

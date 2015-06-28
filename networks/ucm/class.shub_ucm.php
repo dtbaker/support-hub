@@ -645,7 +645,7 @@ CREATE TABLE {$wpdb->prefix}shub_ucm_message (
   summary text NOT NULL,
   title text NOT NULL,
   last_active int(11) NOT NULL DEFAULT '0',
-  comments text NOT NULL,
+  comments longtext NOT NULL,
   type varchar(20) NOT NULL,
   link varchar(255) NOT NULL,
   data text NOT NULL,
