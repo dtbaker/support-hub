@@ -261,6 +261,7 @@ class shub_ucm_account{
 		return self::$api;
 	}
 	public function get_api_user_to_id($ucm_user_data){
+        return false;
 		if((int)$wp_user_id > 0) {
 		    $wordpress_user = $this->get_api_user($wp_user_id);
 		    /* Array ( [user_id] => 1442 [username] => palumboe1 [registered] => stdClass Object ( [scalar] => 20150303T19:24:05 [xmlrpc_type] => datetime [timestamp] => 1425410645 ) [email] => palumboe1@gmail.com [nicename] => palumboe1 [display_name] => palumboe1 [support_hub] => done ) */

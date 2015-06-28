@@ -58,17 +58,17 @@ class shub_ucm_message{
                     // get the messages from the API
                     $api = $this->ucm_account->get_api();
                     $api_result = $api->api('ticket','message',array('ticket_ids'=>$ucm_ticket_id));
-                    print_r($api_result);exit;
-                    if($api_result && isset($api_result['messages'])) {
+                    if($api_result && isset($api_result['tickets'][$ucm_ticket_id]) && count($api_result['tickets'][$ucm_ticket_id])) {
+                        //print_r($api_result);exit;
                         if (!$existing) {
                             $this->create_new();
                         }
                         $this->update('shub_ucm_id', $this->ucm_account->get('shub_ucm_id'));
                         $this->update('shub_ucm_product_id', $this->ucm_product->get('shub_ucm_product_id'));
-                        $comments = $ticket['replies'];
-                        $this->update('title', $ticket['post_content']);
+                        $comments = $api_result['tickets'][$ucm_ticket_id];
+                        $this->update('title', $ticket['subject']);
                         // latest comment goes in summary
-                        $this->update('summary', $ticket['subject']);
+                        $this->update('summary', $comments[count($comments)-1]['content']);
                         $this->update('last_active', $ticket['last_message_timestamp']);
                         $this->update('type', $type);
                         $this->update('data', json_encode($ticket));
@@ -202,22 +202,22 @@ class shub_ucm_message{
 	private function _update_comments($data, $existing_messages){
 	    if(is_array($data)){
 		    foreach($data as $message){
-			    if($message['post_id']){
+			    if($message['ticket_message_id']){
 				    // does this id exist in the db already?
-				    $exists = shub_get_single('shub_ucm_message_comment',array('ucm_id','shub_ucm_message_id'),array($message['post_id'],$this->shub_ucm_message_id));
+				    $exists = shub_get_single('shub_ucm_message_comment',array('ucm_ticket_message_id','shub_ucm_message_id'),array($message['ticket_message_id'],$this->shub_ucm_message_id));
 
 				    // create/update a user entry for this comments.
 				    // create/update a user entry for this comments.
-				    $shub_ucm_user_id = $this->ucm_account->get_api_user_to_id($message['post_author']);
+				    $shub_ucm_user_id = $this->ucm_account->get_api_user_to_id($message['user']);
 
 				    $shub_ucm_message_comment_id = shub_update_insert('shub_ucm_message_comment_id',$exists ? $exists['shub_ucm_message_comment_id'] : false,'shub_ucm_message_comment',array(
 					    'shub_ucm_message_id' => $this->shub_ucm_message_id,
-					    'ucm_id' => $message['post_id'],
-					    'time' => isset($message['post_date']) ? (is_array($message['post_date']) ? $message['post_date']['timestamp'] : $message['post_date']->timestamp) : 0,
+					    'ucm_ticket_message_id' => $message['ticket_message_id'],
+					    'time' => $message['message_time'],
 					    'data' => json_encode($message),
 					    'message_from' => '',
 					    'message_to' => '',
-					    'message_text' => isset($message['post_content']) ? $message['post_content'] : '',
+					    'message_text' => isset($message['content']) ? $message['content'] : '',
 					    'shub_ucm_user_id' => $shub_ucm_user_id,
 				    ));
 				    if(isset($existing_messages[$shub_ucm_message_comment_id])){

@@ -675,7 +675,7 @@ CREATE TABLE {$wpdb->prefix}shub_ucm_message_read (
 CREATE TABLE {$wpdb->prefix}shub_ucm_message_comment (
   shub_ucm_message_comment_id int(11) NOT NULL AUTO_INCREMENT,
   shub_ucm_message_id int(11) NOT NULL,
-  ucm_id varchar(255) NOT NULL,
+  ucm_ticket_message_id varchar(255) NOT NULL,
   time int(11) NOT NULL,
   message_from text NOT NULL,
   message_to text NOT NULL,
@@ -686,7 +686,7 @@ CREATE TABLE {$wpdb->prefix}shub_ucm_message_comment (
   PRIMARY KEY  shub_ucm_message_comment_id (shub_ucm_message_comment_id),
   KEY shub_ucm_message_id (shub_ucm_message_id),
   KEY shub_ucm_user_id (shub_ucm_user_id),
-  KEY ucm_id (ucm_id)
+  KEY ucm_ticket_message_id (ucm_ticket_message_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
