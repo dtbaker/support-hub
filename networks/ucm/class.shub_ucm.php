@@ -567,26 +567,21 @@ class shub_ucm extends SupportHub_network {
 			'messages' => array(),
 			'user' => array(),
 		);
-		if(isset($user_hints['ucm_username'])){
-			$details['user']['username'] = $user_hints['ucm_username'];
-			$details['user']['url'] = 'http://themeforest.net/user/'.$user_hints['ucm_username'];
-		}
-		// todo: find any purchases here. display those in the details
-		$details['user']['purchases'] = '1 purchases';
 
 		// find other ucm messages by this user.
 		if(isset($user_hints['shub_user_id']) && (int)$user_hints['shub_user_id']>0){
-			$comments = shub_get_multiple('shub_ucm_message_comment',array(
+			$messages = shub_get_multiple('shub_ucm_message',array(
 				'shub_user_id' => (int)$user_hints['shub_user_id']
-			),'shub_ucm_message_comment_id', '`time` DESC');
-			if(is_array($comments)){
-				foreach($comments as $comment){
-					if(!isset($details['messages']['ucm'.$comment['shub_ucm_message_id']])){
+			),'shub_ucm_message_id', '`last_active` DESC');
+			if(is_array($messages)){
+				foreach($messages as $message){
+                    if($current_extension == 'ucm' && $message_object->get('shub_ucm_message_id') == $message['shub_ucm_message_id'])continue;
+					if(!isset($details['messages']['ucm'.$message['shub_ucm_message_id']])){
 //						$other_message = new shub_ucm_message();
-//						$other_message->load($comment['shub_ucm_message_id']);
-						$details['messages']['ucm'.$comment['shub_ucm_message_id']] = array(
-							'summary' => $comment['message_text'],
-							'time' => $comment['time'],
+//						$other_message->load($message['shub_ucm_message_id']);
+						$details['messages']['ucm'.$message['shub_ucm_message_id']] = array(
+							'summary' => $message['title'],
+							'time' => $message['last_active'],
 //							'message_status' => $other_message->get('status'),
 						);
 					}

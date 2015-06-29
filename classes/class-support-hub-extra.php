@@ -33,7 +33,10 @@ class SupportHubExtra{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_extra_id = shub_update_insert('shub_extra_id',false,'shub_extra',array());
+		$this->shub_extra_id = shub_update_insert('shub_extra_id',false,'shub_extra',array(
+            'extra_required' => 0,
+            'field_type' => 'text',
+        ));
 		$this->load($this->shub_extra_id);
 	}
 
@@ -147,9 +150,20 @@ class SupportHubExtra{
 		return $return;
 	}
 
+    /**
+     * @param $data array('extra_value'=>'SOMETHING', 'extra_data'=>array(SOMETHING))
+     * @param $shub_network
+     * @param $shub_network_account_id
+     * @param $shub_network_message_id
+     * @param $shub_user_id
+     *
+     * This method will save a set of extra data against a message/user
+     *
+     */
 	public function save_and_link($data, $shub_network, $shub_network_account_id, $shub_network_message_id, $shub_user_id ){
 		// find if this data exists already in the table.
 		$shub_extra_data_ids = shub_get_multiple('shub_extra_data',array(
+			'shub_extra_id' => $this->shub_extra_id,
 			'extra_value' => $data['extra_value'],
 			'shub_user_id' => $shub_user_id,
 		),'shub_extra_data_id');

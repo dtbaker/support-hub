@@ -649,6 +649,7 @@ class shub_envato extends SupportHub_network {
 			),'shub_envato_message_comment_id', '`time` DESC');
 			if(is_array($comments)){
 				foreach($comments as $comment){
+                    if($current_extension == 'envato' && $message_object->get('shub_envato_message_id') == $comment['shub_envato_message_id'])continue;
 					if(!isset($details['messages']['envato'.$comment['shub_envato_message_id']])){
 //						$other_message = new shub_envato_message();
 //						$other_message->load($comment['shub_envato_message_id']);

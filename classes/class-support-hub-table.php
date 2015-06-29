@@ -103,6 +103,7 @@ class SupportHub_Account_Data_List_Table extends WP_List_Table {
 
 		// only ncessary because we have sample data
 		$this->found_data = array_slice( $this->items, ( ( $current_page - 1 ) * $this->items_per_page ), $this->items_per_page );
+        if(!$this->found_data)$this->found_data = $this->items; // hack to stop the page overflow bug
 
 		$this->set_pagination_args( array(
 			'total_items' => $total_items, //WE have to calculate the total number of items

@@ -310,15 +310,31 @@ class shub_ucm_account{
         }
         if(isset($ucm_user_data['envato']['user'])){
             $first = current($ucm_user_data['envato']['user']);
-            if($first && !empty($first['envato_username']) && $comment_user->get_meta('envato_username',strtolower($first['envato_username']))){
+            if($first && !empty($first['envato_username']) && !$comment_user->get_meta('envato_username',strtolower($first['envato_username']))){
                 $comment_user->add_meta('envato_username', strtolower($first['envato_username']));
             }
         }
-        foreach($ucm_user_data['envato']['purchases'] as $purchase){
-            if(!empty($purchase['license_code']) && !$comment_user->get_meta('envato_license_code',strtolower($purchase['license_code']))) {
-                $comment_user->add_meta('envato_license_code', strtolower($purchase['license_code']));
+        if(isset($ucm_user_data['envato']['purchases'])) {
+            foreach ($ucm_user_data['envato']['purchases'] as $purchase) {
+                if (!empty($purchase['license_code']) && !$comment_user->get_meta('envato_license_code', strtolower($purchase['license_code']))) {
+                    $comment_user->add_meta('envato_license_code', strtolower($purchase['license_code']));
+                }
             }
         }
+        if(!empty($ucm_user_data['name'])){
+            if(empty($ucm_user_data['last_name'])){
+                $bits = explode(" ",$ucm_user_data['name']);
+                $ucm_user_data['name'] = array_shift($bits);
+                $ucm_user_data['last_name'] = implode(" ",$bits);
+            }
+        }
+        if(!$comment_user->get('user_fname') && !empty($ucm_user_data['name'])){
+            $comment_user->update('user_fname',$ucm_user_data['name']);
+        }
+        if(!$comment_user->get('user_lname') && !empty($ucm_user_data['last_name'])){
+            $comment_user->update('user_lname',$ucm_user_data['last_name']);
+        }
+        $comment_user->update_user_data($ucm_user_data);
         return $comment_user->get('shub_user_id');
 	}
 

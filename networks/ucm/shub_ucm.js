@@ -9,13 +9,5 @@ ucm.social.ucm = {
                 jQuery('.check_ucm_product').prop('checked', !!jQuery(this).prop('checked'));
 
             });
-        jQuery('.ucm_message_summary a').click(function(){
-            var p = jQuery(this).parents('tr').first().find('.socialucm_message_open').click();
-            return false;
-        });
-        /*jQuery('.pagination_links a').click(function(){
-            jQuery(this).parents('.ui-tabs-panel').first().load(jQuery(this).attr('href'));
-            return false;
-        });*/
     }
 };

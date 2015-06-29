@@ -87,6 +87,25 @@ class shub_ucm_message{
                         $this->update('ucm_ticket_id', $ucm_ticket_id);
                         $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
                         $this->update('comments', json_encode($comments));
+
+                        // add the extra fields from UCM into the ticket.
+                        if(!empty($ticket['extra']) && is_array($ticket['extra'])){
+                            foreach($ticket['extra'] as $extra_key => $extra_val){
+                                $extra_val = trim($extra_val);
+                                if(strlen($extra_val)) {
+                                    // add this one into the system.
+                                    $ExtraField = new SupportHubExtra();
+                                    if (!$ExtraField->load_by('extra_name', $extra_key)) {
+                                        $ExtraField->create_new();
+                                        $ExtraField->update('extra_name', $extra_key);
+                                    }
+                                    $ExtraField->save_and_link(array(
+                                        'extra_value' => $extra_val
+                                    ),'ucm',$this->ucm_account->get('shub_ucm_id'),$this->get('shub_ucm_message_id'),$shub_user_id);
+                                }
+
+                            }
+                        }
                     }
 
 					return $this->get('shub_ucm_message_id');

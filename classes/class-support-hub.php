@@ -738,8 +738,19 @@ EOT;
 		foreach(array('codes','products') as $key){
 			if(isset($user_details[$key]))echo $user_details[$key] .' ';
 		}
-		echo " found ".count($other_messages). " other messages";
-
+        if(count($other_messages)){
+            ?>
+            <br/>
+            <strong><?php _e('Other Messages:');?></strong><br/>
+            <ul>
+            <?php
+            foreach($other_messages as $other_message){
+                ?>
+                <li><a href="#"><?php echo shub_print_date($other_message['time']);?> - <?php echo esc_html($other_message['summary']);?></a></li>
+                <?php
+            }
+            ?></ul><?php
+        }
 
 	}
 

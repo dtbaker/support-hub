@@ -581,12 +581,15 @@ class shub_bbpress extends SupportHub_network {
 			),'shub_bbpress_message_comment_id', '`time` DESC');
 			if(is_array($comments)){
 				foreach($comments as $comment){
+                    if($current_extension == 'bbpress' && $message_object->get('shub_bbpress_message_id') == $comment['shub_bbpress_message_id'])continue;
 					if(!isset($details['messages']['bbpress'.$comment['shub_bbpress_message_id']])){
 //						$other_message = new shub_bbpress_message();
 //						$other_message->load($comment['shub_bbpress_message_id']);
 						$details['messages']['bbpress'.$comment['shub_bbpress_message_id']] = array(
 							'summary' => $comment['message_text'],
 							'time' => $comment['time'],
+                            'network' => 'bbpress',
+                            'message_id' => $comment['shub_bbpress_message_id'],
 //							'message_status' => $other_message->get('status'),
 						);
 					}
