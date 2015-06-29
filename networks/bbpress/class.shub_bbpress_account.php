@@ -195,7 +195,7 @@ class shub_bbpress_account{
 			}
 			// this api_result will contain additional actions that we presentto the user when composing messages
             // for example ( mark thread as resolved )
-			$api_result['shub_bbpress_user_id'] = $this->get_api_user_to_id($api_result['user_id']);
+			$api_result['shub_user_id'] = $this->get_api_user_to_id($api_result['user_id']);
 			$this->save_account_data(array(
 				'user' => $api_result,
                 'reply_options' => isset($api_result['support_hub']['reply_options']) ? $api_result['support_hub']['reply_options'] : array()
@@ -295,7 +295,7 @@ class shub_bbpress_account{
 				    $user_data['envato_codes'] = array_merge($user_data['envato_codes'], $wordpress_user['envato_codes']);
 			    }
 			    $comment_user->update_user_data($user_data);
-			    return $comment_user->get('shub_bbpress_user_id');
+			    return $comment_user->get('shub_user_id');
 		    }
 	    }
 		return false;

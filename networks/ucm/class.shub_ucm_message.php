@@ -32,7 +32,7 @@ class shub_ucm_message{
 			'data' => '',
 			'status' => '',
 			'user_id' => '',
-			'shub_ucm_user_id' => 0,
+			'shub_user_id' => 0,
 		);
 		foreach($this->details as $key=>$val){
 			$this->{$key} = '';
@@ -73,6 +73,10 @@ class shub_ucm_message{
                         $this->update('shub_ucm_id', $this->ucm_account->get('shub_ucm_id'));
                         $this->update('shub_ucm_product_id', $this->ucm_product->get('shub_ucm_product_id'));
 
+						// create/update a user entry for this comments.
+						$shub_user_id = $this->ucm_account->get_api_user_to_id($ticket['user']);
+						$this->update('shub_user_id', $shub_user_id);
+
                         $this->update('title', $ticket['subject']);
                         // latest comment goes in summary
                         $this->update('summary', $comments[count($comments)-1]['content']);
@@ -83,9 +87,6 @@ class shub_ucm_message{
                         $this->update('ucm_ticket_id', $ucm_ticket_id);
                         $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
                         $this->update('comments', json_encode($comments));
-                        // create/update a user entry for this comments.
-                        $shub_ucm_user_id = $this->ucm_account->get_api_user_to_id($ticket['user']);
-                        $this->update('shub_ucm_user_id', $shub_ucm_user_id);
                     }
 
 					return $this->get('shub_ucm_message_id');
@@ -215,7 +216,7 @@ class shub_ucm_message{
 
 				    // create/update a user entry for this comments.
 				    // create/update a user entry for this comments.
-				    $shub_ucm_user_id = $this->ucm_account->get_api_user_to_id($message['user']);
+				    $shub_user_id = $this->ucm_account->get_api_user_to_id($message['user']);
 
 				    $shub_ucm_message_comment_id = shub_update_insert('shub_ucm_message_comment_id',$exists ? $exists['shub_ucm_message_comment_id'] : false,'shub_ucm_message_comment',array(
 					    'shub_ucm_message_id' => $this->shub_ucm_message_id,
@@ -225,7 +226,7 @@ class shub_ucm_message{
 					    'message_from' => '',
 					    'message_to' => '',
 					    'message_text' => isset($message['content']) ? $message['content'] : '',
-					    'shub_ucm_user_id' => $shub_ucm_user_id,
+					    'shub_user_id' => $shub_user_id,
 				    ));
 				    if(isset($existing_messages[$shub_ucm_message_comment_id])){
 					    unset($existing_messages[$shub_ucm_message_comment_id]);
@@ -266,13 +267,9 @@ class shub_ucm_message{
 		if($level == 1){
 			// display the info from the main 'message' table
 			$comments = $this->get_comments();
-			$comment = array(
-				'title' => $ucm_data['post_title'],
-				'shub_ucm_user_id' => $this->get('shub_ucm_user_id'),
-				'time' => $this->get('last_active'),
-				'message_text' => $this->get('title'),
-				'user_id' => $this->get('user_id'),
-			);
+			$comment = array_shift($comments);
+			$comment['title'] = $this->get('title');
+			$comment['shub_user_id'] = $this->get('shub_user_id');
 		}else{
 			// display the info from the 'comments' table.
 			$comment = $ucm_data;
@@ -280,7 +277,7 @@ class shub_ucm_message{
 		}
 //		echo '<pre>';echo $level;print_r($comments);echo '</pre>';
 		//echo '<pre>';print_r($ucm_data);echo '</pre>';
-		$from = new SupportHubUser_ucm($comment['shub_ucm_user_id']);
+		$from = new SupportHubUser_ucm($comment['shub_user_id']);
 		?>
 		<div class="shub_message">
 			<div class="shub_message_picture">
@@ -308,7 +305,7 @@ class shub_ucm_message{
 				</div>
 				<?php } ?>
 				<div>
-					<?php echo shub_product_text($comment['message_text']);?>
+					<?php echo shub_forum_text($comment['message_text']);?>
 				</div>
 			</div>
 			<div class="shub_message_actions">
@@ -355,7 +352,7 @@ class shub_ucm_message{
 	public function reply_box($ucm_id,$level=1){
 		if($this->ucm_account && $this->shub_ucm_message_id) {
 			$user_data = $this->ucm_account->get('ucm_data');
-			$from = new SupportHubUser_ucm($user_data['user']['shub_ucm_user_id']);
+			$from = new SupportHubUser_ucm($user_data['user']['shub_user_id']);
 			?>
 			<div class="shub_message shub_message_reply_box shub_message_reply_box_level<?php echo $level;?>">
 				<div class="shub_message_picture">
@@ -572,13 +569,13 @@ class shub_ucm_message{
 	public function get_from() {
 		if($this->shub_ucm_message_id){
 			$from = array();
-			if($this->get('shub_ucm_user_id')){
-				$from[$this->get('shub_ucm_user_id')] = new SupportHubUser_ucm($this->get('shub_ucm_user_id'));
+			if($this->get('shub_user_id')){
+				$from[$this->get('shub_user_id')] = new SupportHubUser_ucm($this->get('shub_user_id'));
 			}
 			$messages = $this->get_comments();
 			foreach($messages as $message){
-				if($message['shub_ucm_user_id'] && !isset($from[$message['shub_ucm_user_id']])){
-					$from[$message['shub_ucm_user_id']] = new SupportHubUser_ucm($message['shub_ucm_user_id']);
+				if($message['shub_user_id'] && !isset($from[$message['shub_user_id']])){
+					$from[$message['shub_user_id']] = new SupportHubUser_ucm($message['shub_user_id']);
 				}
 			}
 			return $from;

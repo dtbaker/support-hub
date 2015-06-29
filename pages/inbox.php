@@ -35,7 +35,11 @@
     $limit_pages = 2; // get about 10 pages of data to display in WordPress.
 	foreach($this->message_managers as $message_manager_id => $message_manager){
 		if(isset($search['type']) && !empty($search['type']) && $search['type'] != $message_manager_id)continue;
-		$message_manager->load_all_messages($search, $order, $limit_each);
+        $this_search = $search;
+        if(isset($this_search['status']) && $this_search['status'] == -1){
+            unset($this_search['status']);
+        }
+		$message_manager->load_all_messages($this_search, $order, $limit_each);
 	}
 
 	// filter through each mysql resource so we get the date views. output each row using their individual classes.
@@ -94,8 +98,8 @@
 	$myListTable->prepare_items();
     $myListTable->pagination_has_more = $has_more;
     ?>
-	<form method="post">
-	    <input type="hidden" name="page" value="<?php echo htmlspecialchars($_REQUEST['page']); ?>" />
+	<form method="post" id="shub_search_form">
+	    <input type="hidden" name="paged" value="<?php echo isset($_REQUEST['paged']) ? (int)$_REQUEST['paged'] : 0; ?>" />
 	    <?php //$myListTable->search_box(__('Search','support_hub'), 'search_id'); ?>
 		<p class="search-box">
 		<label for="simple_inbox-search-type"><?php _e('Network:','support_hub');?></label>
@@ -117,6 +121,7 @@
 
 		<label for="simple_inbox-search-status"><?php _e('Status:','support_hub');?></label>
 		<select id="simple_inbox-search-status" name="search[status]">
+			<option value="-1"<?php echo isset($search['status']) && $search['status'] == -1 ? ' selected' : '';?>><?php _e('All','support_hub');?></option>
 			<option value="<?php echo _shub_MESSAGE_STATUS_UNANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_UNANSWERED ? ' selected' : '';?>><?php _e('Inbox','support_hub');?></option>
 			<option value="<?php echo _shub_MESSAGE_STATUS_ANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_ANSWERED ? ' selected' : '';?>><?php _e('Archived','support_hub');?></option>
 		</select>

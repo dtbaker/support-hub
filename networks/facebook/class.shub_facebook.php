@@ -259,7 +259,7 @@ class shub_facebook extends SupportHub_network {
 			$sql .= " AND `shub_facebook_id` = ".(int)$search['shub_facebook_id'];
 		}
 		if(isset($search['generic']) && !empty($search['generic'])){
-			$sql .= " AND `summary` LIKE '%".mysql_real_escape_string($search['generic'])."%'";
+			$sql .= " AND `summary` LIKE '%".esc_sql($search['generic'])."%'";
 		}
 		$sql .= " ORDER BY `last_active` DESC ";
 		if($limit_batch){

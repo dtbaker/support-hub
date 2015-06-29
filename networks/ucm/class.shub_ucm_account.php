@@ -261,38 +261,65 @@ class shub_ucm_account{
 		return self::$api;
 	}
 	public function get_api_user_to_id($ucm_user_data){
-        return false;
-		if((int)$wp_user_id > 0) {
-		    $wordpress_user = $this->get_api_user($wp_user_id);
-		    /* Array ( [user_id] => 1442 [username] => palumboe1 [registered] => stdClass Object ( [scalar] => 20150303T19:24:05 [xmlrpc_type] => datetime [timestamp] => 1425410645 ) [email] => palumboe1@gmail.com [nicename] => palumboe1 [display_name] => palumboe1 [support_hub] => done ) */
-		    if($wordpress_user && !empty($wordpress_user['user_id']) && $wordpress_user['user_id'] == $wp_user_id){
-			    $comment_user = new SupportHubUser_ucm();
-			    $res = false;
-			    $wordpress_user['email'] = trim(strtolower($wordpress_user['email']));
-			    if(!empty($wordpress_user['email'])){
-				    $res = $comment_user->load_by( 'user_email', $wordpress_user['email']);
-			    }
-			    if(!$res) {
-				    $comment_user->create_new();
-				    $comment_user->update( 'user_email', $wordpress_user['email'] );
-				    if ( ! $comment_user->get( 'user_username' ) ) {
-					    $comment_user->update( 'user_username', $wordpress_user['username'] );
-				    }
-			    }
-			    $user_data = $comment_user->get('user_data');
-				if(!is_array($user_data))$user_data=array();
-			    /*$user_data['source'] = array_merge(isset($user_data['source']) ? $user_data['source'] : array(), array(
-				    'ucm'
-			    ));*/
-			    if(!empty($wordpress_user['envato_codes'])){
-				    if(!isset($user_data['envato_codes']))$user_data['envato_codes']=array();
-				    $user_data['envato_codes'] = array_merge($user_data['envato_codes'], $wordpress_user['envato_codes']);
-			    }
-			    $comment_user->update_user_data($user_data);
-			    return $comment_user->get('shub_ucm_user_id');
-		    }
-	    }
-		return false;
+		//print_r($ucm_user_data);exit;
+        $comment_user = new SupportHubUser_ucm();
+        if(isset($ucm_user_data['envato']['purchases']) && is_array($ucm_user_data['envato']['purchases'])){
+            // find a matching user account with these purchases.
+            foreach($ucm_user_data['envato']['purchases'] as $purchase){
+                if(!empty($purchase['license_code'])) {
+                    if ($comment_user->load_by_meta('envato_license_code', strtolower($purchase['license_code']))) {
+                        // found! yay!
+                        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'ucm','Found a user based on license code.',array(
+                            'license_code' => $purchase['license_code'],
+                            'found_user_id' => $comment_user->get('shub_user_id'),
+                        ));
+                        break;
+                    }
+                }
+            }
+        }
+        if(!$comment_user->get('shub_user_id')){
+            // didn't find one yet.
+            // find by envato username?
+            if(isset($ucm_user_data['envato']['user'])){
+                $first = current($ucm_user_data['envato']['user']);
+                if($first && !empty($first['envato_username'])){
+                    if ($comment_user->load_by_meta('envato_username', strtolower($first['envato_username']))) {
+                        // found! yay!
+                        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'ucm','Found a user based on envato username.',array(
+                            'username' => $first['envato_username'],
+                            'found_user_id' => $comment_user->get('shub_user_id'),
+                        ));
+                    }
+                }
+            }
+        }
+        if(!$comment_user->get('shub_user_id')){
+            // find a match based on email.
+            if(!empty($ucm_user_data['email'])){
+                $comment_user->load_by( 'user_email', trim(strtolower($ucm_user_data['email'])));
+            }
+        }
+        if(!$comment_user->get('shub_user_id')){
+            // no existing matches yet, create a new user with the above meta values so that we can find them again in the future.
+            $comment_user->create_new();
+        }
+        // now we add/update various meta/values of the user if anything is missing.
+        if(!empty($ucm_user_data['email']) && !$comment_user->get('user_email')) {
+            $comment_user->update('user_email', trim(strtolower($ucm_user_data['email'])));
+        }
+        if(isset($ucm_user_data['envato']['user'])){
+            $first = current($ucm_user_data['envato']['user']);
+            if($first && !empty($first['envato_username']) && $comment_user->get_meta('envato_username',strtolower($first['envato_username']))){
+                $comment_user->add_meta('envato_username', strtolower($first['envato_username']));
+            }
+        }
+        foreach($ucm_user_data['envato']['purchases'] as $purchase){
+            if(!empty($purchase['license_code']) && !$comment_user->get_meta('envato_license_code',strtolower($purchase['license_code']))) {
+                $comment_user->add_meta('envato_license_code', strtolower($purchase['license_code']));
+            }
+        }
+        return $comment_user->get('shub_user_id');
 	}
 
 	public function get_picture(){

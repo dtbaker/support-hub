@@ -566,6 +566,15 @@ CREATE TABLE {$wpdb->prefix}shub_user (
   KEY shub_linked_user_id (shub_linked_user_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
+CREATE TABLE {$wpdb->prefix}shub_user_meta (
+  shub_user_id int(11) NOT NULL,
+  meta_key varchar(255) NOT NULL,
+  meta_val text NOT NULL,
+  KEY shub_user_id (shub_user_id),
+  KEY meta_key (meta_key),
+  KEY meta_key_val (meta_key,meta_val)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
 CREATE TABLE {$wpdb->prefix}shub_timer (
   shub_timer_id int(11) NOT NULL AUTO_INCREMENT,
   wp_user_id int(11) NOT NULL DEFAULT '0',

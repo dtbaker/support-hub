@@ -52,7 +52,7 @@ if($shub_bbpress_id && $shub_bbpress_message_id){
 
 					// find out the user details, purchases and if they have any other open messages.
 				    $user_hints = array();
-				    $user_hints['shub_bbpress_user_id'] = $bbpress_message->get('shub_bbpress_user_id');
+				    $user_hints['shub_user_id'] = $bbpress_message->get('shub_user_id');
 					SupportHub::getInstance()->message_user_summary($user_hints, 'bbpress', $bbpress_message);
 					do_action('supporthub_message_header', 'bbpress', $bbpress_message);
 					?>

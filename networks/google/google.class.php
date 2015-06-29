@@ -138,7 +138,7 @@ class shub_google extends SupportHub_network {
 			$sql .= " AND `shub_google_id` = ".(int)$search['shub_google_id'];
 		}
 		if(isset($search['generic']) && !empty($search['generic'])){
-			$sql .= " AND `summary` LIKE '%".mysql_real_escape_string($search['generic'])."%'";
+			$sql .= " AND `summary` LIKE '%".esc_sql($search['generic'])."%'";
 		}else{
 			//$sql .= " AND `type` != "._GOOGLE_MESSAGE_TYPE_OTHERTWEET;
 		}

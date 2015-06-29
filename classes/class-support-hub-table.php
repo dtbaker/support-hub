@@ -260,21 +260,24 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 		if ( $current == $total_pages ) {
 			$disable_last = ' disabled';
 		}
-		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s'>%s</a>",
-			'first-page' . $disable_first,
+		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s' data-paged='%s'>%s</a>",
+			'shub_page_links first-page' . $disable_first,
 			esc_attr__( 'Go to the first page' ),
 			esc_url( remove_query_arg( 'paged', $current_url ) ),
+			'',
 			'&laquo;'
 		);
 
-		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s'>%s</a>",
-			'prev-page' . $disable_first,
+		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s' data-paged='%s'>%s</a>",
+			'shub_page_links prev-page' . $disable_first,
 			esc_attr__( 'Go to the previous page' ),
 			esc_url( add_query_arg( 'paged', max( 1, $current-1 ), $current_url ) ),
+			max( 1, $current-1 ),
 			'&lsaquo;'
 		);
 
-		if ( 'bottom' == $which ) {
+		if ( true || 'bottom' == $which ) {
+			// no page input button, it messes with our shub page form post.
 			$html_current_page = $current;
 		} else {
 			$html_current_page = sprintf( "%s<input class='current-page' id='current-page-selector' title='%s' type='text' name='paged' value='%s' size='%d' />",
@@ -287,17 +290,19 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 		$html_total_pages = sprintf( "<span class='total-pages'>%s</span>", number_format_i18n( $total_pages ) );
 		$page_links[] = '<span class="paging-input">' . sprintf( _x( '%1$s of %2$s', 'paging' ), $html_current_page, $this->pagination_has_more ? 'many' : $html_total_pages ) . '</span>';
 
-		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s'>%s</a>",
-			'next-page' . $disable_last,
+		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s' data-paged='%s'>%s</a>",
+			'shub_page_links next-page' . $disable_last,
 			esc_attr__( 'Go to the next page' ),
 			esc_url( add_query_arg( 'paged', min( $total_pages, $current+1 ), $current_url ) ),
+			min( $total_pages, $current+1 ),
 			'&rsaquo;'
 		);
 
-		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s'>%s</a>",
-			'last-page' . $disable_last,
+		$page_links[] = sprintf( "<a class='%s' title='%s' href='%s' data-paged='%s'>%s</a>",
+			'shub_page_links last-page' . $disable_last,
 			esc_attr__( 'Go to the last page' ),
 			esc_url( add_query_arg( 'paged', $total_pages, $current_url ) ),
+			$total_pages,
 			'&raquo;'
 		);
 
@@ -315,6 +320,18 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 		$this->_pagination = "<div class='tablenav-pages{$page_class}'>$output</div>";
 
 		echo $this->_pagination;
+		?>
+		<script type="text/javascript">
+			jQuery(function(){
+				jQuery('.shub_page_links').click(function(){
+					var $form = jQuery(this).parents('form').first();
+					$form.find('[name="paged"]').val(jQuery(this).data('paged'));
+					$form[0].submit();
+					return false;
+				});
+			});
+		</script>
+		<?php
 	}
 
     public function single_row( $item ) {

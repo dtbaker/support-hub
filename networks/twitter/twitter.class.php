@@ -165,7 +165,7 @@ class shub_twitter extends SupportHub_network {
 			$sql .= " AND `shub_twitter_id` = ".(int)$search['shub_twitter_id'];
 		}
 		if(isset($search['generic']) && !empty($search['generic'])){
-			$sql .= " AND `summary` LIKE '%".mysql_real_escape_string($search['generic'])."%'";
+			$sql .= " AND `summary` LIKE '%".esc_sql($search['generic'])."%'";
 		}else{
 			$sql .= " AND `type` != "._TWITTER_MESSAGE_TYPE_OTHERTWEET;
 		}

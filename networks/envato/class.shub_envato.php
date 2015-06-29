@@ -206,8 +206,8 @@ class shub_envato extends SupportHub_network {
 		}
 		if(isset($search['generic']) && !empty($search['generic'])){
 			// todo: search item comments too.. not just title (first comment) and summary (last comment)
-			$sql .= " AND (`title` LIKE '%".mysql_real_escape_string($search['generic'])."%'";
-			$sql .= " OR `summary` LIKE '%".mysql_real_escape_string($search['generic'])."%' )";
+			$sql .= " AND (`title` LIKE '%".esc_sql($search['generic'])."%'";
+			$sql .= " OR `summary` LIKE '%".esc_sql($search['generic'])."%' )";
 		}
 		$sql .= " ORDER BY `last_active` DESC ";
 		if($limit_batch){
@@ -625,9 +625,9 @@ class shub_envato extends SupportHub_network {
 			$details['user']['username'] = $user_hints['envato_username'];
 			$details['user']['url'] = 'http://themeforest.net/user/'.$user_hints['envato_username'];
 		}
-		// todo: find any purchases here. display those in the details
-		if($user_hints['shub_envato_user_id']){
-			$shub_user = new SupportHubUser_Envato($user_hints['shub_envato_user_id']);
+        // todo: find user meta for envato purchase code details.
+		if(!empty($user_hints['shub_user_id'])){
+			$shub_user = new SupportHubUser_Envato($user_hints['shub_user_id']);
 			$user_data = $shub_user->get('user_data');
 			if(isset($user_data['envato_codes'])){
 				// these come in from bbPress (and hopefully other places)
@@ -643,9 +643,9 @@ class shub_envato extends SupportHub_network {
 
 
 		// find other envato messages by this user.
-		if(isset($user_hints['shub_envato_user_id']) && (int)$user_hints['shub_envato_user_id']>0){
+		if(isset($user_hints['shub_user_id']) && (int)$user_hints['shub_user_id']>0){
 			$comments = shub_get_multiple('shub_envato_message_comment',array(
-				'shub_envato_user_id' => (int)$user_hints['shub_envato_user_id']
+				'shub_user_id' => (int)$user_hints['shub_user_id']
 			),'shub_envato_message_comment_id', '`time` DESC');
 			if(is_array($comments)){
 				foreach($comments as $comment){
@@ -730,10 +730,10 @@ class shub_envato extends SupportHub_network {
 									if($api_result_email && !empty($api_result_email['email'])){
 										$email = trim(strtolower($api_result_email['email']));
 									    $comment_user->load_by( 'user_email', $email);
-									    if(!$comment_user->get('shub_envato_user_id')) {
+									    if(!$comment_user->get('shub_user_id')) {
 										    // no existing match by email, find a match by username
 										    $comment_user->load_by( 'user_username', $api_result['username']);
-											if(!$comment_user->get('shub_envato_user_id') || ($comment_user->get('user_email') && $comment_user->get('user_email') != $email)) {
+											if(!$comment_user->get('shub_user_id') || ($comment_user->get('user_email') && $comment_user->get('user_email') != $email)) {
 												// no existing match by email or username, pump a new entry in
 											    $comment_user->create_new();
 										    }
@@ -743,7 +743,7 @@ class shub_envato extends SupportHub_network {
 									}else{
 										// no email, only username
 										$comment_user->load_by( 'user_username', $api_result['username']);
-										if(!$comment_user->get('shub_envato_user_id')) {
+										if(!$comment_user->get('shub_user_id')) {
 										    $comment_user->create_new();
 										    $comment_user->update( 'user_username', $api_result['username'] );
 									    }
@@ -753,7 +753,7 @@ class shub_envato extends SupportHub_network {
 									$_SESSION['shub_oauth_envato']['network_account_id']            = $network_account_id;
 									$_SESSION['shub_oauth_envato']['network_message_id']            = $network_message_id;
 									$_SESSION['shub_oauth_envato']['expires'] = time() + $token['expires_in'];
-									$_SESSION['shub_oauth_envato']['shub_envato_user_id'] = $comment_user->get('shub_envato_user_id');
+									$_SESSION['shub_oauth_envato']['shub_user_id'] = $comment_user->get('shub_user_id');
 									ob_start();
 									$shub_envato_message->full_message_output(false);
 									return array(
@@ -826,7 +826,7 @@ class shub_envato extends SupportHub_network {
 	}
 	public function extra_save_data($extra, $value, $network, $network_account_id, $network_message_id){
 		$shub_envato_message = new shub_envato_message( false, false, $network_message_id );
-		$shub_envato_user_id = !empty($_SESSION['shub_oauth_envato']['shub_envato_user_id']) ? $_SESSION['shub_oauth_envato']['shub_envato_user_id'] : $shub_envato_message->get('shub_envato_user_id');
+		$shub_user_id = !empty($_SESSION['shub_oauth_envato']['shub_user_id']) ? $_SESSION['shub_oauth_envato']['shub_user_id'] : $shub_envato_message->get('shub_user_id');
 		if(is_array($value) && !empty($value['extra_data']['valid_purchase_code'])){
 			// we're saving a previously validated (Above) purchase code.
 			// create a shub user for this purchase and return success along with the purchase data to show
@@ -846,7 +846,7 @@ class shub_envato extends SupportHub_network {
 			$user_data_codes[$value['data']] = $value['extra_data'];
 		    $user_data['envato_codes'] = array_merge($user_data['envato_codes'], $user_data_codes);
 		    $comment_user->update_user_data($user_data);
-			$shub_envato_user_id = $comment_user->get('shub_envato_user_id');
+			$shub_user_id = $comment_user->get('shub_user_id');
 		}
 
 		$extra->save_and_link(
@@ -857,7 +857,7 @@ class shub_envato extends SupportHub_network {
 			$network,
 			$network_account_id,
 			$network_message_id,
-			$shub_envato_user_id
+			$shub_user_id
 		);
 
 	}
@@ -871,7 +871,7 @@ class shub_envato extends SupportHub_network {
 		    'private' => 1,
 		    'message_text' => $message,
 			'time' => time(),
-		    'shub_envato_user_id' => !empty($_SESSION['shub_oauth_envato']['shub_envato_user_id']) ? $_SESSION['shub_oauth_envato']['shub_envato_user_id'] : $shub_envato_message->get('shub_envato_user_id'),
+		    'shub_user_id' => !empty($_SESSION['shub_oauth_envato']['shub_user_id']) ? $_SESSION['shub_oauth_envato']['shub_user_id'] : $shub_envato_message->get('shub_user_id'),
 	    ));
 		// mark the main message as unread so it appears at the top.
 		$shub_envato_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
@@ -907,22 +907,6 @@ CREATE TABLE {$wpdb->prefix}shub_envato (
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}shub_envato_user (
-  shub_envato_user_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_user_id int(11) NOT NULL DEFAULT '0',
-  user_fname varchar(255) NOT NULL,
-  user_lname varchar(255) NOT NULL,
-  user_username varchar(255) NOT NULL,
-  user_email varchar(255) NOT NULL,
-  user_data mediumtext NOT NULL,
-  user_id_key1 int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_envato_user_id (shub_envato_user_id),
-  KEY user_email (user_email),
-  KEY user_username (user_username),
-  KEY user_id_key1 (user_id_key1),
-  KEY shub_user_id (shub_user_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
 CREATE TABLE {$wpdb->prefix}shub_envato_message (
   shub_envato_message_id int(11) NOT NULL AUTO_INCREMENT,
   shub_envato_id int(11) NOT NULL,
@@ -938,14 +922,14 @@ CREATE TABLE {$wpdb->prefix}shub_envato_message (
   data text NOT NULL,
   status tinyint(1) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
-  shub_envato_user_id int(11) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_envato_message_id (shub_envato_message_id),
   KEY shub_envato_id (shub_envato_id),
   KEY shub_message_id (shub_message_id),
   KEY last_active (last_active),
   KEY shub_envato_item_id (shub_envato_item_id),
   KEY envato_id (envato_id),
-  KEY shub_envato_user_id (shub_envato_user_id),
+  KEY shub_user_id (shub_user_id),
   KEY status (status)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
@@ -969,10 +953,10 @@ CREATE TABLE {$wpdb->prefix}shub_envato_message_comment (
   data text NOT NULL,
   user_id int(11) NOT NULL DEFAULT '0',
   private tinyint(1) NOT NULL DEFAULT '0',
-  shub_envato_user_id int(11) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_envato_message_comment_id (shub_envato_message_comment_id),
   KEY shub_envato_message_id (shub_envato_message_id),
-  KEY shub_envato_user_id (shub_envato_user_id),
+  KEY shub_user_id (shub_user_id),
   KEY envato_id (envato_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 

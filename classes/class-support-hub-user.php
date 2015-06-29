@@ -13,6 +13,7 @@ class SupportHubUser{
 	private $json_fields = array('user_data');
 
 	public $db_table = 'shub_user'; // overwritten by individual network user classes
+	public $db_table_meta = 'shub_user_meta'; // overwritten by individual network user classes
 	public $db_primary_key = 'shub_user_id'; // overwritten by individual network user classes
 
 	public function reset(){
@@ -51,6 +52,17 @@ class SupportHubUser{
 				if(!isset(self::$_latest_load_create[$field]))self::$_latest_load_create[$field]=array();
 				self::$_latest_load_create[$field][$value] = false; // pending creating maybe?
 			}else if($data && isset($data[$field]) && $data[$field] == $value && $data[$this->db_primary_key]){
+				$this->load($data[$this->db_primary_key]);
+				return true;
+			}
+		}
+		return false;
+	}
+	public function load_by_meta($meta_key, $meta_val){
+		$this->reset();
+		if(!empty($meta_key) && !empty($meta_val)){
+			$data = shub_get_single($this->db_table_meta,array('meta_key','meta_val'),array($meta_key,$meta_val));
+			if($data && isset($data['meta_key']) && isset($data['meta_val']) && $data['meta_key'] == $meta_key && $data['meta_val'] == $meta_val){
 				$this->load($data[$this->db_primary_key]);
 				return true;
 			}
@@ -112,6 +124,54 @@ class SupportHubUser{
 			$this->update('user_data',$save_data);
 		}
 	}
+    public function get_meta($key=false,$val=false){
+        $return = array();
+        if(!$key){
+            // return all meta values in an associative array.
+            $all_meta = shub_get_multiple($this->db_table_meta,array('shub_user_id'=>$this->shub_user_id));
+            foreach($all_meta as $meta){
+                if(!isset($return[$meta['meta_key']]))$return[$meta['meta_key']]=array();
+                $return[$meta['meta_key']][] = $meta['meta_val'];
+            }
+        }else if($key && !$val){
+            // return all matching meta values in an associative array.
+            $all_meta = shub_get_multiple($this->db_table_meta,array('shub_user_id'=>$this->shub_user_id,'meta_key'=>$key));
+            foreach($all_meta as $meta){
+                $return[] = $meta['meta_val'];
+            }
+        }else{
+            // return all matching meta values in an associative array.
+            $all_meta = shub_get_single($this->db_table_meta,array('shub_user_id','meta_key','meta_val'),array($this->shub_user_id,$key,$val));
+            $return = $all_meta['meta_val'];
+        }
+        return $return;
+    }
+    public function add_meta($key,$val){
+        if((int)$this->shub_user_id>0) {
+            shub_update_insert(false, false, $this->db_table_meta, array(
+                'shub_user_id' => $this->shub_user_id,
+                'meta_key' => $key,
+                'meta_val' => $val,
+            ));
+        }
+    }
+    public function update_meta($key,$oldval,$newval){
+        $existing = $this->get_meta($key,$oldval);
+        if(!$existing){
+            $this->add_meta($key,$newval);
+        }else{
+            global $wpdb;
+            $wpdb->update(_support_hub_DB_PREFIX.$this->db_table_meta,array(
+                'meta_key' => $key,
+                'meta_val' => $newval,
+            ), array(
+                'shub_user_id' => $this->shub_user_id,
+                'meta_key' => $key,
+                'meta_val' => $oldval,
+            ));
+        }
+
+    }
 	public function delete(){
 		if($this->{$this->db_primary_key}) {
 			shub_delete_from_db( $this->db_table, $this->db_primary_key, $this->{$this->db_primary_key} );

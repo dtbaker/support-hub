@@ -26,7 +26,7 @@ if($shub_ucm_id && $shub_ucm_message_id){
 			<form action="" method="post" id="ucm_edit_form">
 				<section class="message_sidebar">
 					<header>
-						<a href="<?php echo $ucm_message->get('link');?>" class="socialucm_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Thread' ); ?></a>
+						<a href="<?php echo $ucm_message->get('link');?>" class="socialucm_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Ticket' ); ?></a>
 					    <?php if($ucm_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 						    <a href="#" class="socialucm_message_action shub_message_action btn btn-default btn-xs button"
 						       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
@@ -52,7 +52,7 @@ if($shub_ucm_id && $shub_ucm_message_id){
 
 					// find out the user details, purchases and if they have any other open messages.
 				    $user_hints = array();
-				    $user_hints['shub_ucm_user_id'] = $ucm_message->get('shub_ucm_user_id');
+				    $user_hints['shub_user_id'] = $ucm_message->get('shub_user_id');
 					SupportHub::getInstance()->message_user_summary($user_hints, 'ucm', $ucm_message);
 					do_action('supporthub_message_header', 'ucm', $ucm_message);
 					?>

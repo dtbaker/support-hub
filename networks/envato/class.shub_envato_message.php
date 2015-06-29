@@ -31,7 +31,7 @@ class shub_envato_message{
 			'data' => '',
 			'status' => '',
 			'user_id' => '',
-			'shub_envato_user_id' => 0,
+			'shub_user_id' => 0,
 		);
 		foreach($this->details as $key=>$val){
 			$this->{$key} = '';
@@ -71,7 +71,7 @@ class shub_envato_message{
 					$this->update('comments',json_encode($comments));
 
 					// create/update a user entry for this comments.
-				    $shub_envato_user_id = 0;
+				    $shub_user_id = 0;
 					$first_comment = current($comments);
 				    if(!empty($first_comment['username'])) {
 					    $comment_user = new SupportHubUser_Envato();
@@ -84,9 +84,9 @@ class shub_envato_message{
 							    'envato' => $first_comment,
 						    ));
 					    }
-					    $shub_envato_user_id = $comment_user->get('shub_envato_user_id');
+					    $shub_user_id = $comment_user->get('shub_user_id');
 				    }
-					$this->update('shub_envato_user_id', $shub_envato_user_id);
+					$this->update('shub_user_id', $shub_user_id);
 
 
 					return $existing;
@@ -215,7 +215,7 @@ class shub_envato_message{
 				    $exists = shub_get_single('shub_envato_message_comment',array('envato_id','shub_envato_message_id'),array($message['id'],$this->shub_envato_message_id));
 
 				    // create/update a user entry for this comments.
-				    $shub_envato_user_id = 0;
+				    $shub_user_id = 0;
 				    if(!empty($message['username'])) {
 					    $comment_user = new SupportHubUser_Envato();
 					    $res = $comment_user->load_by( 'user_username', $message['username']);
@@ -227,7 +227,7 @@ class shub_envato_message{
 							    'envato' => $message,
 						    ));
 					    }
-					    $shub_envato_user_id = $comment_user->get('shub_envato_user_id');
+					    $shub_user_id = $comment_user->get('shub_user_id');
 				    }
 
 				    $shub_envato_message_comment_id = shub_update_insert('shub_envato_message_comment_id',$exists ? $exists['shub_envato_message_comment_id'] : false,'shub_envato_message_comment',array(
@@ -238,7 +238,7 @@ class shub_envato_message{
 					    'message_from' => isset($message['username']) ? json_encode(array("username"=>$message['username'],"profile_image_url"=>$message['profile_image_url'])) : '',
 					    'message_to' => '',
 					    'message_text' => isset($message['content']) ? $message['content'] : '',
-					    'shub_envato_user_id' => $shub_envato_user_id,
+					    'shub_user_id' => $shub_user_id,
 				    ));
 				    $last_message_user_name = isset($message['username']) ? $message['username'] : false;
 				    if(isset($existing_messages[$shub_envato_message_comment_id])){
@@ -298,7 +298,7 @@ class shub_envato_message{
 		$from = @json_decode($comment['message_from'],true);
 		if(!$from && !empty($comment['private'])){
 			// assume it's from the original message user.
-			$from_user = new SupportHubUser_Envato($comment['shub_envato_user_id']);
+			$from_user = new SupportHubUser_Envato($comment['shub_user_id']);
 			$from = array(
 				'profile_image_url' => $from_user->get_image(),
 				'username' => $from_user->get('user_username'),

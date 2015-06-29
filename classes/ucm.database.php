@@ -25,8 +25,10 @@ function shub_update_insert($primary_key_name, $primary_key_value, $table_name, 
 	// does it exist?
 	$exists = $primary_key_value ? shub_get_single($table_name, $primary_key_name, $primary_key_value) : false;
 	if(!$exists){
-		$data[$primary_key_name] = $primary_key_value;
-		$wpdb->replace(_support_hub_DB_PREFIX.$table_name, $data);
+        if($primary_key_name && $primary_key_value){
+            $data[$primary_key_name] = $primary_key_value;
+        }
+		$wpdb->insert(_support_hub_DB_PREFIX.$table_name, $data);
 		return $wpdb->insert_id;
 	}else if($primary_key_value){
 		$stat = $wpdb->update(_support_hub_DB_PREFIX.$table_name, $data, array($primary_key_name => $primary_key_value));
@@ -36,7 +38,7 @@ function shub_update_insert($primary_key_name, $primary_key_value, $table_name, 
 		exit;
 	}
 }
-function shub_get_multiple($table, $search, $index, $order_by = ''){
+function shub_get_multiple($table, $search, $index = false, $order_by = ''){
 	global $wpdb;
 	$sql = "SELECT * FROM `"._support_hub_DB_PREFIX.esc_sql($table)."` WHERE 1 ";
 	foreach($search as $key=>$val){

@@ -188,8 +188,8 @@ class shub_ucm extends SupportHub_network {
 		}
 		if(isset($search['generic']) && !empty($search['generic'])){
 			// todo: search product comments too.. not just title (first comment) and summary (last comment)
-			$sql .= " AND (`title` LIKE '%".mysql_real_escape_string($search['generic'])."%'";
-			$sql .= " OR `summary` LIKE '%".mysql_real_escape_string($search['generic'])."%' )";
+			$sql .= " AND (`title` LIKE '%".esc_sql($search['generic'])."%'";
+			$sql .= " OR `summary` LIKE '%".esc_sql($search['generic'])."%' )";
 		}
 		$sql .= " ORDER BY `last_active` DESC ";
 		if($limit_batch){
@@ -575,9 +575,9 @@ class shub_ucm extends SupportHub_network {
 		$details['user']['purchases'] = '1 purchases';
 
 		// find other ucm messages by this user.
-		if(isset($user_hints['shub_ucm_user_id']) && (int)$user_hints['shub_ucm_user_id']>0){
+		if(isset($user_hints['shub_user_id']) && (int)$user_hints['shub_user_id']>0){
 			$comments = shub_get_multiple('shub_ucm_message_comment',array(
-				'shub_ucm_user_id' => (int)$user_hints['shub_ucm_user_id']
+				'shub_user_id' => (int)$user_hints['shub_user_id']
 			),'shub_ucm_message_comment_id', '`time` DESC');
 			if(is_array($comments)){
 				foreach($comments as $comment){
@@ -619,22 +619,6 @@ CREATE TABLE {$wpdb->prefix}shub_ucm (
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}shub_ucm_user (
-  shub_ucm_user_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_user_id int(11) NOT NULL DEFAULT '0',
-  user_fname varchar(255) NOT NULL,
-  user_lname varchar(255) NOT NULL,
-  user_username varchar(255) NOT NULL,
-  user_email varchar(255) NOT NULL,
-  user_data mediumtext NOT NULL,
-  user_id_key1 int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_ucm_user_id (shub_ucm_user_id),
-  KEY user_email (user_email),
-  KEY user_username (user_username),
-  KEY user_id_key1 (user_id_key1),
-  KEY shub_user_id (shub_user_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
 CREATE TABLE {$wpdb->prefix}shub_ucm_message (
   shub_ucm_message_id int(11) NOT NULL AUTO_INCREMENT,
   shub_ucm_id int(11) NOT NULL,
@@ -651,12 +635,12 @@ CREATE TABLE {$wpdb->prefix}shub_ucm_message (
   data text NOT NULL,
   status tinyint(1) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
-  shub_ucm_user_id int(11) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_ucm_message_id (shub_ucm_message_id),
   KEY shub_ucm_id (shub_ucm_id),
   KEY shub_message_id (shub_message_id),
   KEY shub_product_id (shub_product_id),
-  KEY shub_ucm_user_id (shub_ucm_user_id),
+  KEY shub_user_id (shub_user_id),
   KEY last_active (last_active),
   KEY shub_ucm_product_id (shub_ucm_product_id),
   KEY ucm_ticket_id (ucm_ticket_id),
@@ -682,10 +666,10 @@ CREATE TABLE {$wpdb->prefix}shub_ucm_message_comment (
   message_text text NOT NULL,
   data text NOT NULL,
   user_id int(11) NOT NULL DEFAULT '0',
-  shub_ucm_user_id int(11) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_ucm_message_comment_id (shub_ucm_message_comment_id),
   KEY shub_ucm_message_id (shub_ucm_message_id),
-  KEY shub_ucm_user_id (shub_ucm_user_id),
+  KEY shub_user_id (shub_user_id),
   KEY ucm_ticket_message_id (ucm_ticket_message_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
