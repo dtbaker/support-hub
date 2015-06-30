@@ -32,7 +32,9 @@ class shub_ucm_product{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_ucm_product_id = shub_update_insert('shub_ucm_product_id',false,'shub_ucm_product',array());
+		$this->shub_ucm_product_id = shub_update_insert('shub_ucm_product_id',false,'shub_ucm_product',array(
+            'product_name' => '',
+        ));
 		$this->load($this->shub_ucm_product_id);
 	}
 
@@ -146,7 +148,7 @@ class shub_ucm_product{
 		foreach($tickets['tickets'] as $ticket){
 			$message_time = $ticket['last_message_timestamp'];
 			$newest_message_received = max($newest_message_received,$message_time);
-			//if($message_time <= $last_message_received)break; // all done here.
+			if($message_time <= $last_message_received)break; // all done here.
 
 			$ucm_message = new shub_ucm_message($this->ucm_account, $this, false);
 			$ucm_message -> load_by_ucm_id($ticket['ticket_id'], $ticket, 'ticket', $debug);

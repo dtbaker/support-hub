@@ -24,9 +24,8 @@ class ucm_api_basic{
 		$headers = array(
 		    'user-agent' => 'SupportHub WP Plugin',
 		);
-		$headers['headers'] = array(
-			'Authorization' => $this->_api_key,
-		);
+		//$headers['headers'] = array('Authorization' => $this->_api_key,);
+        $params['auth'] = $this->_api_key;
 		if($params){
 			$headers['body'] = $params;
 			$response     = wp_remote_post($this->_api_url . "&endpoint=$endpoint&method=$method", $headers);

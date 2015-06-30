@@ -32,7 +32,9 @@ class shub_envato_item{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_envato_item_id = shub_update_insert('shub_envato_item_id',false,'shub_envato_item',array());
+		$this->shub_envato_item_id = shub_update_insert('shub_envato_item_id',false,'shub_envato_item',array(
+            'item_name' => '',
+        ));
 		$this->load($this->shub_envato_item_id);
 	}
 

@@ -34,7 +34,9 @@ class shub_ucm_account{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_ucm_id = shub_update_insert('shub_ucm_id',false,'shub_ucm',array());
+		$this->shub_ucm_id = shub_update_insert('shub_ucm_id',false,'shub_ucm',array(
+            'ucm_name' => ''
+        ));
 		$this->load($this->shub_ucm_id);
 	}
 
@@ -106,7 +108,7 @@ class shub_ucm_account{
 							$product = new shub_ucm_product($this);
 							$product->create_new();
 							$product->update('shub_ucm_id', $this->shub_ucm_id);
-							$product->update('ucm_token', 'same'); // $available_products[$ucm_product_id]['access_token']
+							//$product->update('ucm_token', 'same'); // $available_products[$ucm_product_id]['access_token']
 							$product->update('product_name', $available_products[$ucm_product_id]['post_title']);
 							$product->update('product_id', $ucm_product_id);
 							$product->update('ucm_data', $available_products[$ucm_product_id]);
@@ -152,6 +154,8 @@ class shub_ucm_account{
 		if(!$this->get('last_checked')){
 			return false; // never checked this account, not active yet.
 		}else{
+			return true;
+
 			// do we have a token?
 			if($this->get('ucm_token')){
 				// assume we have access, we remove the token if we get a ucm failure at any point.

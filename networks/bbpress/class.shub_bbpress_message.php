@@ -41,7 +41,9 @@ class shub_bbpress_message{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_bbpress_message_id = shub_update_insert('shub_bbpress_message_id',false,'shub_bbpress_message',array());
+		$this->shub_bbpress_message_id = shub_update_insert('shub_bbpress_message_id',false,'shub_bbpress_message',array(
+            'title' => '',
+        ));
 		$this->load($this->shub_bbpress_message_id);
 	}
 

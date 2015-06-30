@@ -41,7 +41,9 @@ class shub_ucm_message{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_ucm_message_id = shub_update_insert('shub_ucm_message_id',false,'shub_ucm_message',array());
+		$this->shub_ucm_message_id = shub_update_insert('shub_ucm_message_id',false,'shub_ucm_message',array(
+            'title' => '',
+        ));
 		$this->load($this->shub_ucm_message_id);
 	}
 

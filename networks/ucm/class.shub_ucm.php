@@ -175,7 +175,7 @@ class shub_ucm extends SupportHub_network {
 			$sql .= " AND `status` = ".(int)$search['status'];
 		}
 		if(isset($search['shub_ucm_product_id']) && $search['shub_ucm_product_id'] !== false){
-			$sql .= " AND `shub_ucm_product_id` = ".(int)$search['shub_ucm_product_id'];
+			$sql .= " AND m.`shub_ucm_product_id` = ".(int)$search['shub_ucm_product_id'];
 		}
 		if(isset($search['shub_product_id']) && (int)$search['shub_product_id']){
 			$sql .= " AND `shub_product_id` = ".(int)$search['shub_product_id'];
@@ -587,7 +587,7 @@ CREATE TABLE {$wpdb->prefix}shub_ucm (
   last_checked int(11) NOT NULL DEFAULT '0',
   import_stream int(11) NOT NULL DEFAULT '0',
   post_stream int(11) NOT NULL DEFAULT '0',
-  ucm_data text NOT NULL,
+  ucm_data longtext NOT NULL,
   ucm_api_url varchar(255) NOT NULL,
   ucm_username varchar(255) NOT NULL,
   ucm_api_key varchar(255) NOT NULL,

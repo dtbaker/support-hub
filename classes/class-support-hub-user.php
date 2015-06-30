@@ -34,7 +34,9 @@ class SupportHubUser{
 
 	public function create_new(){
 		$this->reset();
-		$this->{$this->db_primary_key} = shub_update_insert($this->db_primary_key,false,$this->db_table,array());
+		$this->{$this->db_primary_key} = shub_update_insert($this->db_primary_key,false,$this->db_table,array(
+            'user_fname' => '',
+        ));
 		$this->load($this->{$this->db_primary_key});
 	}
 

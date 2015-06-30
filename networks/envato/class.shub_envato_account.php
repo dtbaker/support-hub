@@ -36,7 +36,9 @@ class shub_envato_account{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_envato_id = shub_update_insert('shub_envato_id',false,'shub_envato',array());
+		$this->shub_envato_id = shub_update_insert('shub_envato_id',false,'shub_envato',array(
+            'envato_name' => '',
+        ));
 		$this->load($this->shub_envato_id);
 	}
 

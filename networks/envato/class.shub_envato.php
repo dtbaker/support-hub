@@ -644,6 +644,9 @@ class shub_envato extends SupportHub_network {
 						$details['messages']['envato'.$comment['shub_envato_message_id']] = array(
 							'summary' => $comment['message_text'],
 							'time' => $comment['time'],
+                            'network' => 'envato',
+                            'network_message_id' => $comment['shub_envato_message_id'],
+                            'network_message_comment_id' => $comment['shub_envato_message_comment_id'],
 //							'message_status' => $other_message->get('status'),
 						);
 					}

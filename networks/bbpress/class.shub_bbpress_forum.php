@@ -32,7 +32,9 @@ class shub_bbpress_forum{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_bbpress_forum_id = shub_update_insert('shub_bbpress_forum_id',false,'shub_bbpress_forum',array());
+		$this->shub_bbpress_forum_id = shub_update_insert('shub_bbpress_forum_id',false,'shub_bbpress_forum',array(
+            'forum_name' => ''
+        ));
 		$this->load($this->shub_bbpress_forum_id);
 	}
 

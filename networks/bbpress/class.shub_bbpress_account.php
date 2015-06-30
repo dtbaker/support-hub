@@ -34,7 +34,9 @@ class shub_bbpress_account{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_bbpress_id = shub_update_insert('shub_bbpress_id',false,'shub_bbpress',array());
+		$this->shub_bbpress_id = shub_update_insert('shub_bbpress_id',false,'shub_bbpress',array(
+            'bbpress_name' => '',
+        ));
 		$this->load($this->shub_bbpress_id);
 	}
 

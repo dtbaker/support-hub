@@ -40,7 +40,9 @@ class shub_envato_message{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_envato_message_id = shub_update_insert('shub_envato_message_id',false,'shub_envato_message',array());
+		$this->shub_envato_message_id = shub_update_insert('shub_envato_message_id',false,'shub_envato_message',array(
+            'title' => '',
+        ));
 		$this->load($this->shub_envato_message_id);
 	}
 

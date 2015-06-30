@@ -593,7 +593,7 @@ CREATE TABLE {$wpdb->prefix}shub_user (
 CREATE TABLE {$wpdb->prefix}shub_user_meta (
   shub_user_id int(11) NOT NULL,
   meta_key varchar(255) NOT NULL,
-  meta_val text NOT NULL,
+  meta_val varchar(255) NOT NULL,
   KEY shub_user_id (shub_user_id),
   KEY meta_key (meta_key),
   KEY meta_key_val (meta_key,meta_val)
@@ -787,7 +787,7 @@ EOT;
             <?php
             foreach($other_messages as $other_message){
                 ?>
-                <li><a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-network_message_id="<?php echo (int)$other_message['network_message_id'];?>"><?php echo shub_print_date($other_message['time']);?> - <?php echo esc_html($other_message['summary']);?></a></li>
+                <li><a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-network_message_id="<?php echo (int)$other_message['network_message_id'];?>" data-network_message_comment_id="<?php echo isset($other_message['network_message_comment_id']) ? (int)$other_message['network_message_comment_id'] : '';?>"><?php echo shub_print_date($other_message['time']);?> - <?php echo esc_html($other_message['summary']);?></a></li>
                 <?php
             }
             ?></ul><?php

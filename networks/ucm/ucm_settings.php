@@ -160,7 +160,7 @@ if($current_account !== false){
 												<td>
 													<?php
 													if ( $shub_ucm_account->is_product_active( $product_id ) ) {
-														echo '<a href="' . $ucm_products[ $product_id ]->link_refresh() . '" target="_blank">re-load product topics</a>';
+														echo '<a href="' . $ucm_products[ $product_id ]->link_refresh() . '" target="_blank">re-load product tickets</a>';
 													} ?>
 												</td>
 											</tr>
