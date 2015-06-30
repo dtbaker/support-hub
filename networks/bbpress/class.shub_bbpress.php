@@ -355,7 +355,7 @@ class shub_bbpress extends SupportHub_network {
 
 		ob_start();
 		?>
-		<a href="<?php echo $bbpress_message->link_open();?>" class="socialbbpress_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($title);?>" data-socialbbpressmessageid="<?php echo (int)$bbpress_message->get('shub_bbpress_message_id');?>"><?php _e( 'Open' );?></a>
+        <a href="<?php echo $bbpress_message->link_open();?>" class="socialbbpress_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($title);?>" data-network="bbpress" data-network_message_id="<?php echo (int)$bbpress_message->get('shub_ucm_message_id');?>"><?php _e( 'Open' );?></a>
 	    <?php if($bbpress_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 		    <a href="#" class="socialbbpress_message_action shub_message_action button"
 		       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
@@ -528,24 +528,6 @@ class shub_bbpress extends SupportHub_network {
 		return new shub_bbpress_message($bbpress_account, $bbpress_forum, $shub_bbpress_message_id);
 	}
 
-	public function handle_ajax($action, $support_hub_wp){
-		switch($action){
-			case 'modal':
-				if(isset($_REQUEST['socialbbpressmessageid']) && (int)$_REQUEST['socialbbpressmessageid'] > 0) {
-					$shub_bbpress_message = new shub_bbpress_message( false, false, $_REQUEST['socialbbpressmessageid'] );
-					if($shub_bbpress_message->get('shub_bbpress_message_id') == $_REQUEST['socialbbpressmessageid']){
-
-						$shub_bbpress_id = $shub_bbpress_message->get('bbpress_account')->get('shub_bbpress_id');
-						$shub_bbpress_message_id = $shub_bbpress_message->get('shub_bbpress_message_id');
-						include( trailingslashit( $support_hub_wp->dir ) . 'networks/bbpress/bbpress_message.php');
-					}
-
-				}
-				break;
-		}
-		return false;
-	}
-
 
 	public function run_cron( $debug = false ){
 		if($debug)echo "Starting bbpress Cron Job \n";
@@ -589,7 +571,8 @@ class shub_bbpress extends SupportHub_network {
 							'summary' => $comment['message_text'],
 							'time' => $comment['time'],
                             'network' => 'bbpress',
-                            'message_id' => $comment['shub_bbpress_message_id'],
+                            'network_message_id' => $comment['shub_bbpress_message_id'],
+                            'network_message_comment_id' => $comment['shub_bbpress_message_comment_id'],
 //							'message_status' => $other_message->get('status'),
 						);
 					}

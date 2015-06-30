@@ -91,6 +91,26 @@ class SupportHub {
 			$_REQUEST = stripslashes_deep( $_REQUEST );
 			$action = isset( $_REQUEST['action'] ) ? str_replace( 'support_hub_', '', $_REQUEST['action'] ) : false;
 			switch($action){
+                case 'modal':
+                    // open a modal popup with the message in it (similar to pages/message.php)
+                    if(isset($_REQUEST['network']) && isset($_REQUEST['network_message_id']) && (int)$_REQUEST['network_message_id'] > 0) {
+                        $network = isset($_GET['network']) ? $_GET['network'] : false;
+                        $network_message_id = isset($_GET['network_message_id']) ? (int)$_GET['network_message_id'] : false;
+                        $network_message_comment_id = isset($_GET['network_message_comment_id']) ? (int)$_GET['network_message_comment_id'] : false;
+                        if($network && isset($this->message_managers[$network]) && $network_message_id > 0){
+                            $shub_network_message = $this->message_managers[$network]->get_message( false, false, $network_message_id);
+                            if($shub_network_message->get('shub_'.$network.'_message_id') == $network_message_id){
+                                extract(array(
+                                    "shub_{$network}_id" => $shub_network_message->get($network.'_account')->get('shub_'.$network.'_id'),
+                                    "shub_{$network}_message_id" => $network_message_id,
+                                    "shub_{$network}_message_comment_id" => $network_message_comment_id,
+                                ));
+                                include( trailingslashit( SupportHub::getInstance()->dir ) . 'networks/'.$network.'/'.$network.'_message.php');
+                            }
+                        }
+
+                    }
+                    break;
                 case 'set-answered':
                     if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_'.$_REQUEST['network'].'_message_id'])) {
                         $shub_network_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']);
@@ -416,7 +436,11 @@ class SupportHub {
 	}
 	public function show_inbox(){
 		if($this->is_setup()){
-			include( trailingslashit( $this->dir ) . 'pages/inbox.php');
+            if(isset($_GET['network'])){
+                include( trailingslashit( $this->dir ) . 'pages/message.php');
+            }else{
+                include( trailingslashit( $this->dir ) . 'pages/inbox.php');
+            }
 		}else{
 			include( trailingslashit( $this->dir ) . 'pages/setup.php');
 		}
@@ -730,11 +754,28 @@ EOT;
 		?>
 		<strong><?php _e('User:');?></strong>
 		<?php
+        $user_bits = array();
+        if(!empty($user_hints['shub_user_id'])){
+            $user = new SupportHubUser($user_hints['shub_user_id']);
+            if(!empty($user->details['user_fname'])){
+                $user_bits[] =  esc_html($user->details['user_fname']);
+            }
+            if(!empty($user->details['user_lname'])){
+                $user_bits[] =  esc_html($user->details['user_lname']);
+            }
+            if(!empty($user->details['user_username'])){
+                $user_bits[] =  esc_html($user->details['user_username']);
+            }
+            if(!empty($user->details['user_email'])){
+                $user_bits[] =  esc_html($user->details['user_email']);
+            }
+        }
 		if(isset($user_details['url']) && isset($user_details['username'])){
-			echo '<a href="'.$user_details['url'].'" target="_blank">' . $user_details['username'] . '</a>';
+            $user_bits[] = '<a href="'.esc_url($user_details['url']).'" target="_blank">' . esc_html($user_details['username']) . '</a>';
 		}else if(isset($user_details['username'])){
-			echo $user_details['username'];
+            $user_bits[] =  esc_html($user_details['username']);
 		}
+        echo implode(' ',$user_bits);
 		foreach(array('codes','products') as $key){
 			if(isset($user_details[$key]))echo $user_details[$key] .' ';
 		}
@@ -746,7 +787,7 @@ EOT;
             <?php
             foreach($other_messages as $other_message){
                 ?>
-                <li><a href="#"><?php echo shub_print_date($other_message['time']);?> - <?php echo esc_html($other_message['summary']);?></a></li>
+                <li><a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-network_message_id="<?php echo (int)$other_message['network_message_id'];?>"><?php echo shub_print_date($other_message['time']);?> - <?php echo esc_html($other_message['summary']);?></a></li>
                 <?php
             }
             ?></ul><?php

@@ -595,7 +595,7 @@ class shub_bbpress_message{
 
 
 	public function link_open(){
-		return 'admin.php?page=support_hub_main&shub_bbpress_id='.$this->bbpress_account->get('shub_bbpress_id').'&shub_bbpress_message_id='.$this->shub_bbpress_message_id;
+        return 'admin.php?page=support_hub_main&network=bbpress&network_message_id='.$this->shub_bbpress_message_id;
 	}
 
 

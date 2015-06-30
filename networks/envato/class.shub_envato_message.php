@@ -621,7 +621,7 @@ class shub_envato_message{
 
 
 	public function link_open(){
-		return 'admin.php?page=support_hub_main&shub_envato_id='.$this->envato_account->get('shub_envato_id').'&shub_envato_message_id='.$this->shub_envato_message_id;
+		return 'admin.php?page=support_hub_main&network=envato&network_message_id='.$this->shub_envato_message_id;
 	}
 
 

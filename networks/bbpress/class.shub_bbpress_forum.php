@@ -86,6 +86,7 @@ class shub_bbpress_forum{
 			foreach($messages as $message){
 				if($message && isset($message['shub_bbpress_forum_id']) && $message['shub_bbpress_forum_id'] == $this->shub_bbpress_forum_id){
 					shub_delete_from_db( 'shub_bbpress_message', 'shub_bbpress_message_id', $message['shub_bbpress_message_id'] );
+					shub_delete_from_db( 'shub_bbpress_message_comment', 'shub_bbpress_message_id', $message['shub_bbpress_message_id'] );
 					shub_delete_from_db( 'shub_bbpress_message_link', 'shub_bbpress_message_id', $message['shub_bbpress_message_id'] );
 					shub_delete_from_db( 'shub_bbpress_message_read', 'shub_bbpress_message_id', $message['shub_bbpress_message_id'] );
 				}

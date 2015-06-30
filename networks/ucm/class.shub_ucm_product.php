@@ -86,6 +86,7 @@ class shub_ucm_product{
 			foreach($messages as $message){
 				if($message && isset($message['shub_ucm_product_id']) && $message['shub_ucm_product_id'] == $this->shub_ucm_product_id){
 					shub_delete_from_db( 'shub_ucm_message', 'shub_ucm_message_id', $message['shub_ucm_message_id'] );
+					shub_delete_from_db( 'shub_ucm_message_comment', 'shub_ucm_message_id', $message['shub_ucm_message_id'] );
 					shub_delete_from_db( 'shub_ucm_message_link', 'shub_ucm_message_id', $message['shub_ucm_message_id'] );
 					shub_delete_from_db( 'shub_ucm_message_read', 'shub_ucm_message_id', $message['shub_ucm_message_id'] );
 				}

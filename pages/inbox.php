@@ -1,7 +1,7 @@
 <div class="wrap">
 	<h2>
 		<?php _e('Support Hub Inbox','support_hub');?>
-		<a href="?page=support_hub_compose" class="add-new-h2"><?php _e('Compose','support_hub');?></a>
+		<!-- <a href="?page=support_hub_compose" class="add-new-h2"><?php _e('Compose','support_hub');?></a> -->
 	</h2>
     <?php
     // copy layout from UCM

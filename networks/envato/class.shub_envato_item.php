@@ -86,6 +86,7 @@ class shub_envato_item{
 			foreach($messages as $message){
 				if($message && isset($message['shub_envato_item_id']) && $message['shub_envato_item_id'] == $this->shub_envato_item_id){
 					shub_delete_from_db( 'shub_envato_message', 'shub_envato_message_id', $message['shub_envato_message_id'] );
+					shub_delete_from_db( 'shub_envato_message_comment', 'shub_envato_message_id', $message['shub_envato_message_id'] );
 					shub_delete_from_db( 'shub_envato_message_link', 'shub_envato_message_id', $message['shub_envato_message_id'] );
 					shub_delete_from_db( 'shub_envato_message_read', 'shub_envato_message_id', $message['shub_envato_message_id'] );
 				}

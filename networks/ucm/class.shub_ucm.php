@@ -355,7 +355,7 @@ class shub_ucm extends SupportHub_network {
 
 		ob_start();
 		?>
-		<a href="<?php echo $ucm_message->link_open();?>" class="socialucm_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($title);?>" data-socialucmmessageid="<?php echo (int)$ucm_message->get('shub_ucm_message_id');?>"><?php _e( 'Open' );?></a>
+		<a href="<?php echo $ucm_message->link_open();?>" class="socialucm_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($title);?>" data-network="ucm" data-network_message_id="<?php echo (int)$ucm_message->get('shub_ucm_message_id');?>"><?php _e( 'Open' );?></a>
 	    <?php if($ucm_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 		    <a href="#" class="socialucm_message_action shub_message_action button"
 		       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
@@ -527,25 +527,6 @@ class shub_ucm extends SupportHub_network {
 	public function get_message($ucm_account = false, $ucm_product = false, $shub_ucm_message_id = false){
 		return new shub_ucm_message($ucm_account, $ucm_product, $shub_ucm_message_id);
 	}
-
-	public function handle_ajax($action, $support_hub_wp){
-		switch($action){
-			case 'modal':
-				if(isset($_REQUEST['socialucmmessageid']) && (int)$_REQUEST['socialucmmessageid'] > 0) {
-					$shub_ucm_message = new shub_ucm_message( false, false, $_REQUEST['socialucmmessageid'] );
-					if($shub_ucm_message->get('shub_ucm_message_id') == $_REQUEST['socialucmmessageid']){
-
-						$shub_ucm_id = $shub_ucm_message->get('ucm_account')->get('shub_ucm_id');
-						$shub_ucm_message_id = $shub_ucm_message->get('shub_ucm_message_id');
-						include( trailingslashit( $support_hub_wp->dir ) . 'networks/ucm/ucm_message.php');
-					}
-
-				}
-				break;
-		}
-		return false;
-	}
-
 
 	public function run_cron( $debug = false ){
 		if($debug)echo "Starting ucm Cron Job \n";

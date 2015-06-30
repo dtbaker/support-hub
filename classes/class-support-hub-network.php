@@ -61,4 +61,6 @@ class SupportHub_network{
 	public function extra_send_message($message, $network, $network_account_id, $network_message_id){ return false; }
 	public function get_message($account, $item, $message_id){ return false; }
 
+    public function handle_ajax($action, $support_hub_wp){}
+
 }

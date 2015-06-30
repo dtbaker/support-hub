@@ -623,7 +623,7 @@ class shub_ucm_message{
 
 
 	public function link_open(){
-		return 'admin.php?page=support_hub_main&shub_ucm_id='.$this->ucm_account->get('shub_ucm_id').'&shub_ucm_message_id='.$this->shub_ucm_message_id;
+        return 'admin.php?page=support_hub_main&network=ucm&network_message_id='.$this->shub_ucm_message_id;
 	}
 
 
