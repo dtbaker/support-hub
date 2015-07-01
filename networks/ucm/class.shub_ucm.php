@@ -550,25 +550,33 @@ class shub_ucm extends SupportHub_network {
 		);
 
 		// find other ucm messages by this user.
-		if(isset($user_hints['shub_user_id']) && (int)$user_hints['shub_user_id']>0){
-			$messages = shub_get_multiple('shub_ucm_message',array(
-				'shub_user_id' => (int)$user_hints['shub_user_id']
-			),'shub_ucm_message_id', '`last_active` DESC');
-			if(is_array($messages)){
-				foreach($messages as $message){
-                    if($current_extension == 'ucm' && $message_object->get('shub_ucm_message_id') == $message['shub_ucm_message_id'])continue;
-					if(!isset($details['messages']['ucm'.$message['shub_ucm_message_id']])){
-//						$other_message = new shub_ucm_message();
-//						$other_message->load($message['shub_ucm_message_id']);
-						$details['messages']['ucm'.$message['shub_ucm_message_id']] = array(
-							'summary' => $message['title'],
-							'time' => $message['last_active'],
+        if(!empty($user_hints['shub_user_id'])) {
+            if (!is_array($user_hints['shub_user_id'])) $user_hints['shub_user_id'] = array($user_hints['shub_user_id']);
+            foreach ($user_hints['shub_user_id'] as $shub_user_id) {
+                if ((int)$shub_user_id > 0) {
+                    $messages = shub_get_multiple('shub_ucm_message', array(
+                        'shub_user_id' => $shub_user_id
+                    ), 'shub_ucm_message_id', '`last_active` DESC');
+                    if (is_array($messages)) {
+                        foreach ($messages as $message) {
+                            if ($current_extension == 'ucm' && $message_object->get('shub_ucm_message_id') == $message['shub_ucm_message_id']) continue;
+                            if (!isset($details['messages']['ucm' . $message['shub_ucm_message_id']])) {
+        //						$other_message = new shub_ucm_message();
+        //						$other_message->load($message['shub_ucm_message_id']);
+                                $details['messages']['ucm' . $message['shub_ucm_message_id']] = array(
+                                    'summary' => $message['title'],
+                                    'time' => $message['last_active'],
+                                    'network' => 'ucm',
+                                    'network_message_id' => $message['shub_ucm_message_id'],
+                                    'network_message_comment_id' => 0,
 //							'message_status' => $other_message->get('status'),
-						);
-					}
-				}
-			}
-		}
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
 		return $details;
 	}

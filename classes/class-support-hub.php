@@ -474,7 +474,6 @@ class SupportHub {
 		// running the cron job every 10 minutes.
 		// we get a list of accounts and refresh them all.
 		@set_time_limit(0);
-		//mail('dtbaker@gmail.com','cron job running','test');
 		//ob_start();
 		//echo 'Checking cron job...';
 		$cron_timeout = 5 * 60; // 5 mins
@@ -488,7 +487,7 @@ class SupportHub {
 		}
 		$cron_completed = true;
 		$this->log_data(0,'cron','Starting Cron Jobs',array(
-			'from' => $last_cron_task ? 'start' : $last_cron_task,
+			'from' => $last_cron_task ? $last_cron_task : 'start',
 		));
 
 		foreach($this->message_managers as $name => $message_manager) {
@@ -716,11 +715,33 @@ EOT;
 		$user_details = array();
 		$other_messages = array();
 
+        if(!empty($user_hints['shub_user_id']) && !is_array($user_hints['shub_user_id'])){
+            $user_hints['shub_user_id'] = array($user_hints['shub_user_id']);
+        }
+
 		// pull out the 'extra data' linked to this ticket
 		$extras = SupportHubExtra::get_all_extras();
 		$extra_datas = array();
 		foreach($extras as $extra_id => $extra){
-			$extra_datas = $extra_datas + $extra->get_data($current_extension, $message_object->get('shub_'.$current_extension.'_id'), $message_object->get('shub_'.$current_extension.'_message_id'), !empty($user_hints['shub_user_id']) ? $user_hints['shub_user_id'] : 0);
+            $shub_user_ids = !empty($user_hints['shub_user_id']) ? $user_hints['shub_user_id'] : array(0);
+            // stop duplicate values (if a user submits two support tickets with different email addresses and the same data, the extra data will be inserted into the database under his new user account, but it will show up here as a linked data info account, so we prevent duplicate data showing in this step)
+            // todo: highlight data related to this support message, fade out data related to other support messages
+            $this_data = array();
+            foreach($shub_user_ids as $shub_user_id) {
+                $this_extras = array();
+                foreach($extra->get_data($current_extension, $message_object->get('shub_' . $current_extension . '_id'), $message_object->get('shub_' . $current_extension . '_message_id'), $shub_user_id) as $this_extra){
+                    if(!in_array($this_extra->get('extra_value'),$this_data)){
+                        $this_extras[] = $this_extra;
+                        $this_data[] = $this_extra->get('extra_value');
+                    }
+                    // build up the list of linked user accounts based on user data.
+                    $extra_shub_user_id = $this_extra->get('shub_user_id');
+                    if(!empty($extra_shub_user_id) && !in_array($extra_shub_user_id,$user_hints['shub_user_id'])){
+                        $user_hints['shub_user_id'][] = $extra_shub_user_id;
+                    }
+                }
+                $extra_datas = $extra_datas + $this_extras;
+            }
 		}
 		foreach($extra_datas as $extra_data){
 			//echo $extra_data->get('shub_extra_data_id') . ' ';
@@ -752,42 +773,60 @@ EOT;
 		}
 
 		?>
-		<strong><?php _e('User:');?></strong>
+		<strong><?php _e('Linked User:');?></strong>
+
 		<?php
         $user_bits = array();
         if(!empty($user_hints['shub_user_id'])){
-            $user = new SupportHubUser($user_hints['shub_user_id']);
-            if(!empty($user->details['user_fname'])){
-                $user_bits[] =  esc_html($user->details['user_fname']);
-            }
-            if(!empty($user->details['user_lname'])){
-                $user_bits[] =  esc_html($user->details['user_lname']);
-            }
-            if(!empty($user->details['user_username'])){
-                $user_bits[] =  esc_html($user->details['user_username']);
-            }
-            if(!empty($user->details['user_email'])){
-                $user_bits[] =  esc_html($user->details['user_email']);
+            foreach($user_hints['shub_user_id'] as $shub_user_id) {
+                $user = new SupportHubUser($shub_user_id);
+                if (!empty($user->details['user_fname'])) {
+                    $user_bits[] = array('FName',esc_html($user->details['user_fname']));
+                }
+                if (!empty($user->details['user_lname'])) {
+                    $user_bits[] = array('LName',esc_html($user->details['user_lname']));
+                }
+                if (!empty($user->details['user_username'])) {
+                    // add this code in here ( as well as below ) so we don't duplicate up on the 'username' field display
+                    if(isset($user_details['url']) && isset($user_details['username']) && $user->details['user_username'] == $user_details['username']){
+                        $user_bits[] = array('Username','<a href="'.esc_url($user_details['url']).'" target="_blank">' . esc_html($user_details['username']) . '</a>');
+                        unset($user_details['username']); // stop it displaying again below
+                    }else if(isset($user_details['username']) && $user->details['user_username'] == $user_details['username']){
+                        $user_bits[] =  array('Username',esc_html($user_details['username']));
+                        unset($user_details['username']); // stop it displaying again below
+                    }else{
+                        $user_bits[] = array('Username',esc_html($user->details['user_username']));
+                    }
+                }
+                if (!empty($user->details['user_email'])) {
+                    $user_bits[] = array('Email','<a href="mailto:'.esc_html($user->details['user_email']).'">'.esc_html($user->details['user_email']).'</a>');
+                }
+                // todo - group user output together nicely (e.g. Name <email>) so it looks better when there are multiple linked user accounts
             }
         }
 		if(isset($user_details['url']) && isset($user_details['username'])){
-            $user_bits[] = '<a href="'.esc_url($user_details['url']).'" target="_blank">' . esc_html($user_details['username']) . '</a>';
+            $user_bits[] = array('Username','<a href="'.esc_url($user_details['url']).'" target="_blank">' . esc_html($user_details['username']) . '</a>');
 		}else if(isset($user_details['username'])){
-            $user_bits[] =  esc_html($user_details['username']);
+            $user_bits[] =  array('Username',esc_html($user_details['username']));
 		}
-        echo implode(' ',$user_bits);
+        ?> <ul class="linked_user_details"> <?php
+        foreach($user_bits as $user_bit){
+            ?>
+            <li><span><?php echo $user_bit[0];?>:</span> <?php echo $user_bit[1];?></li>
+            <?php
+        }
+        ?> </ul> <?php
 		foreach(array('codes','products') as $key){
 			if(isset($user_details[$key]))echo $user_details[$key] .' ';
 		}
         if(count($other_messages)){
             ?>
-            <br/>
             <strong><?php _e('Other Messages:');?></strong><br/>
             <ul>
             <?php
             foreach($other_messages as $other_message){
                 ?>
-                <li><a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-network_message_id="<?php echo (int)$other_message['network_message_id'];?>" data-network_message_comment_id="<?php echo isset($other_message['network_message_comment_id']) ? (int)$other_message['network_message_comment_id'] : '';?>"><?php echo shub_print_date($other_message['time']);?> - <?php echo esc_html($other_message['summary']);?></a></li>
+                <li><a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-network_message_id="<?php echo (int)$other_message['network_message_id'];?>" data-network_message_comment_id="<?php echo isset($other_message['network_message_comment_id']) ? (int)$other_message['network_message_comment_id'] : '';?>"><?php echo shub_print_date($other_message['time']);?> - <?php echo esc_html(substr($other_message['summary'],0,20));?> (<?php echo $other_message['network'];?>)</a></li>
                 <?php
             }
             ?></ul><?php

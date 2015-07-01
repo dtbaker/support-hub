@@ -615,43 +615,44 @@ class shub_envato extends SupportHub_network {
 		}
         // todo: find user meta for envato purchase code details.
 		if(!empty($user_hints['shub_user_id'])){
-			$shub_user = new SupportHubUser_Envato($user_hints['shub_user_id']);
-			$user_data = $shub_user->get('user_data');
-			if(isset($user_data['envato_codes'])){
-				// these come in from bbPress (and hopefully other places)
-				// array of purchase code info
-				$details['user']['codes'] = implode(', ',array_keys($user_data['envato_codes']));
-				$details['user']['products'] = array();
-				foreach($user_data['envato_codes'] as $code=>$purchase_data){
-					$details['user']['products'][] = $purchase_data['item_name'];
-				}
-				$details['user']['products'] = implode(', ',$details['user']['products']);
-			}
-		}
+            if(!is_array($user_hints['shub_user_id']))$user_hints['shub_user_id'] = array($user_hints['shub_user_id']);
+            foreach($user_hints['shub_user_id'] as $shub_user_id) {
+                if((int)$shub_user_id > 0) {
+                    $shub_user = new SupportHubUser_Envato($shub_user_id);
+                    $user_data = $shub_user->get('user_data');
+                    if (isset($user_data['envato_codes'])) {
+                        // these come in from bbPress (and hopefully other places)
+                        // array of purchase code info
+                        $details['user']['codes'] = implode(', ', array_keys($user_data['envato_codes']));
+                        $details['user']['products'] = array();
+                        foreach ($user_data['envato_codes'] as $code => $purchase_data) {
+                            $details['user']['products'][] = $purchase_data['item_name'];
+                        }
+                        $details['user']['products'] = implode(', ', $details['user']['products']);
+                    }
 
-
-		// find other envato messages by this user.
-		if(isset($user_hints['shub_user_id']) && (int)$user_hints['shub_user_id']>0){
-			$comments = shub_get_multiple('shub_envato_message_comment',array(
-				'shub_user_id' => (int)$user_hints['shub_user_id']
-			),'shub_envato_message_comment_id', '`time` DESC');
-			if(is_array($comments)){
-				foreach($comments as $comment){
-                    if($current_extension == 'envato' && $message_object->get('shub_envato_message_id') == $comment['shub_envato_message_id'])continue;
-					if(!isset($details['messages']['envato'.$comment['shub_envato_message_id']])){
+                    $comments = shub_get_multiple('shub_envato_message_comment', array(
+                        'shub_user_id' => $shub_user_id
+                    ), 'shub_envato_message_comment_id', '`time` DESC');
+                    if (is_array($comments)) {
+                        foreach ($comments as $comment) {
+                            if ($current_extension == 'envato' && $message_object->get('shub_envato_message_id') == $comment['shub_envato_message_id']) continue;
+                            if (!isset($details['messages']['envato' . $comment['shub_envato_message_id']])) {
 //						$other_message = new shub_envato_message();
 //						$other_message->load($comment['shub_envato_message_id']);
-						$details['messages']['envato'.$comment['shub_envato_message_id']] = array(
-							'summary' => $comment['message_text'],
-							'time' => $comment['time'],
-                            'network' => 'envato',
-                            'network_message_id' => $comment['shub_envato_message_id'],
-                            'network_message_comment_id' => $comment['shub_envato_message_comment_id'],
+                                $details['messages']['envato' . $comment['shub_envato_message_id']] = array(
+                                    'summary' => $comment['message_text'],
+                                    'time' => $comment['time'],
+                                    'network' => 'envato',
+                                    'network_message_id' => $comment['shub_envato_message_id'],
+                                    'network_message_comment_id' => $comment['shub_envato_message_comment_id'],
 //							'message_status' => $other_message->get('status'),
-						);
-					}
-				}
-			}
+                                );
+                            }
+                        }
+                    }
+                }
+            }
 		}
 
 		return $details;

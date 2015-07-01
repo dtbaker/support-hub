@@ -294,9 +294,13 @@ function shub_forum_text($original_text, $paragraph = true){
 	));
 
 	if($paragraph){
-		return wpautop(make_clickable($original_text));
+		$str = wpautop(make_clickable($original_text));
 	}else{
-		return make_clickable($original_text);
+		$str = make_clickable($original_text);
 	}
+
+    $str = str_replace('<a ','<a target="_blank" ',$str);
+
+    return $str;
 
 }

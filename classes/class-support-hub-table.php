@@ -466,10 +466,17 @@ class SupportHubLogList extends SupportHub_Account_Data_List_Table{
 			switch($column_name){
 				case 'log_data':
 					$data = maybe_unserialize($item[$column_name]);
+                    if(!is_array($data)){
+                        $data_test = @json_decode($data,true);
+                        if(is_array($data_test)){
+                            $data = $data_test;
+                        }
+                    }
 					if(is_array($data)){
-                        echo '<pre>';
-                        echo htmlspecialchars(var_export($data,true));
-                        echo '</pre>';
+                        echo '<div style="max-height:100px; overflow-y:auto;"><pre>';
+                        $lines = explode("\n",var_export($data,true));
+                        echo htmlspecialchars(implode("\n",array_merge(array_slice($lines,0,12), (count($lines)>11 ? array("etc...") : array()))));
+                        echo '</pre></div>';
                         return false;
                     }else{
                         return $data;
