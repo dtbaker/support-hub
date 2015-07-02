@@ -117,6 +117,7 @@ class shub_bbpress_forum{
 			}
 		}
 
+        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'bbpress','Starting bbPress Cron for Forum: '.$this->get('forum_name'));
 		$this->load_latest_forum_data($debug);
 	}
 
@@ -232,6 +233,7 @@ class shub_bbpress_forum{
 
 		$newest_message_received = 0;
 
+        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'bbpress','Found total of '.count($forum_topics)." forum topics from API calls");
 		$count = 0;
 		foreach($forum_topics as $forum_topic){
 			$message_time = $forum_topic['timestamp'];
@@ -241,6 +243,7 @@ class shub_bbpress_forum{
 			$bbpress_message = new shub_bbpress_message($this->bbpress_account, $this, false);
 			$bbpress_message -> load_by_bbpress_id($forum_topic['post_id'], $forum_topic, 'forum_topic', $debug);
 			$count++;
+            SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'bbpress','Imported forum topic ID '.$bbpress_message->get( 'bbpress_id' )." with ".count($forum_topic['replies']).' replies');
 			if($debug) {
 				?>
 				<div>
@@ -251,7 +254,7 @@ class shub_bbpress_forum{
 
 		}
 		// get user, return envato_codes in meta
-		SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'Imported  '.$count.' forum topics into database');
+		SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'Completed Cron Import: '.$count.' new forum topics');
 		if($debug)echo " imported $count new forum comments <br>";
 
 		$this->update('last_message',$newest_message_received);

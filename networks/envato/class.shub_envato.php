@@ -199,10 +199,10 @@ class shub_envato extends SupportHub_network {
 			$sql .= " AND `shub_product_id` = ".(int)$search['shub_product_id'];
 		}
 		if(isset($search['shub_message_id']) && $search['shub_message_id'] !== false){
-			$sql .= " AND `shub_message_id` = ".(int)$search['shub_message_id'];
+			$sql .= " AND m.`shub_message_id` = ".(int)$search['shub_message_id'];
 		}
 		if(isset($search['shub_envato_id']) && $search['shub_envato_id'] !== false){
-			$sql .= " AND `shub_envato_id` = ".(int)$search['shub_envato_id'];
+			$sql .= " AND m.`shub_envato_id` = ".(int)$search['shub_envato_id'];
 		}
 		if(isset($search['generic']) && !empty($search['generic'])){
 			// todo: search item comments too.. not just title (first comment) and summary (last comment)
@@ -589,18 +589,57 @@ class shub_envato extends SupportHub_network {
 	}
 
 
-	public function run_cron( $debug = false ){
+	public function run_cron( $debug = false, $cron_timeout = false, $cron_start = false){
 		if($debug)echo "Starting envato Cron Job \n";
 		$accounts = $this->get_accounts();
+
+        $last_cron_task = get_option('last_support_hub_cron_envato',false);
+        $cron_completed = true;
 		foreach($accounts as $account){
+            if($last_cron_task){
+                if($last_cron_task['shub_envato_id'] == $account['shub_envato_id']) {
+                    // we got here last time, continue off from where we left
+                    SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'envato','Cron resuming operation from account : '.$account['shub_envato_id']);
+                }else{
+                    // keep hunting for the cron job we were up to last time.
+                    continue;
+                }
+            }
 			$shub_envato_account = new shub_envato_account( $account['shub_envato_id'] );
 			$shub_envato_account->run_cron($debug);
 			$items = $shub_envato_account->get('items');
 			/* @var $items shub_envato_item[] */
 			foreach($items as $item){
+
+                if($last_cron_task){
+                    if($last_cron_task['shub_envato_item_id'] == $item->get('shub_envato_item_id')) {
+                        // we got here last time, continue on the next item.
+                        $last_cron_task = false;
+                        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'envato','Cron resuming operation from item : '.$item->get('shub_envato_item_id'));
+                    }
+                    continue;
+                }
+
+                // recording where we get up to in the (sometimes very long) cron tasks.
+                update_option('last_support_hub_cron_envato',array(
+                    'shub_envato_id' => $account['shub_envato_id'],
+                    'shub_envato_item_id' => $item->get('shub_envato_item_id'),
+                    'time' => time(),
+                ));
+
 				$item->run_cron($debug);
+
+                if($cron_start + $cron_timeout < time()){
+                    $cron_completed = false;
+                    break;
+                }
 			}
 		}
+        // finished everything successfully so we clear the last cache magiggy
+        if($cron_completed){
+            SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'envato','Cron completed successfully');
+            update_option('last_support_hub_cron_envato',false);
+        }
 		if($debug)echo "Finished envato Cron Job \n";
 	}
 

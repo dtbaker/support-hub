@@ -310,35 +310,40 @@ class shub_bbpress_account{
 			'number' => 100,
 		);
 		$api = $this->get_api();
-		//$api_user = $api->getUser($wp_user_id,array('username','basic','envato_codes')); print_r($api_user); exit;
-		$api_result_latest_users = $this->get_api_cache($filter_user);
-		if(!$api_result_latest_users){
-			$api_users = $api->getUsers($filter_user,array('basic','envato_codes'));
-			$api_result_latest_users = array();
-			foreach($api_users as $api_user){
-				$api_result_latest_users[$api_user['user_id']] = $api_user;
-			}
-			unset($api_users);
-		}
-		// if this user doesn't exist in the latest listing we grab it
-		if(!isset($api_result_latest_users[$wp_user_id])){
-			$api_user = $api->getUser($wp_user_id,array('basic','envato_codes'));
-			if($api_user && $api_user['user_id'] == $wp_user_id){
-				$api_result_latest_users[$api_user['user_id']] = $api_user;
-			}
-		}
-		$this->set_api_cache($filter_user, $api_result_latest_users);
+        try {
+            //$api_user = $api->getUser($wp_user_id,array('username','basic','envato_codes')); print_r($api_user); exit;
+            $api_result_latest_users = $this->get_api_cache($filter_user);
+            if (!$api_result_latest_users) {
+                $api_users = $api->getUsers($filter_user, array('basic', 'envato_codes'));
+                $api_result_latest_users = array();
+                foreach ($api_users as $api_user) {
+                    $api_result_latest_users[$api_user['user_id']] = $api_user;
+                }
+                unset($api_users);
+            }
+            $this->set_api_cache($filter_user, $api_result_latest_users);
+            // if this user doesn't exist in the latest listing we grab it
+            if (!isset($api_result_latest_users[$wp_user_id])) {
+                $api_user = $api->getUser($wp_user_id, array('basic', 'envato_codes'));
+                if ($api_user && $api_user['user_id'] == $wp_user_id) {
+                    $api_result_latest_users[$api_user['user_id']] = $api_user;
+                }
+            }
+            $this->set_api_cache($filter_user, $api_result_latest_users);
+        }catch(Exception $e){
+            SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'bbpress','API Error during get_api_user() : '.$e->getMessage());
+        }
 		return isset($api_result_latest_users[$wp_user_id]) ? $api_result_latest_users[$wp_user_id] : false;
 
 	}
 	private static $api_cache = array();
 	public function get_api_cache($filter){
-		$key = md5(serialize($filter));
+		$key = md5(serialize(array($this->details,$filter)));
 		if(isset(self::$api_cache[$key]))return self::$api_cache[$key];
 		return false;
 	}
 	public function set_api_cache($filter,$data){
-		$key = md5(serialize($filter));
+		$key = md5(serialize(array($this->details,$filter)));
 		self::$api_cache[$key] = $data;
 	}
 

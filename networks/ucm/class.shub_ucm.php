@@ -172,19 +172,20 @@ class shub_ucm extends SupportHub_network {
 		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_ucm_product` ei ON ( m.shub_ucm_product_id = ei.shub_ucm_product_id )";
 		$sql .= " WHERE 1 ";
 		if(isset($search['status']) && $search['status'] !== false){
-			$sql .= " AND `status` = ".(int)$search['status'];
+			$sql .= " AND m.`status` = ".(int)$search['status'];
 		}
 		if(isset($search['shub_ucm_product_id']) && $search['shub_ucm_product_id'] !== false){
 			$sql .= " AND m.`shub_ucm_product_id` = ".(int)$search['shub_ucm_product_id'];
 		}
 		if(isset($search['shub_product_id']) && (int)$search['shub_product_id']){
-			$sql .= " AND `shub_product_id` = ".(int)$search['shub_product_id'];
+			$sql .= " AND (m.`shub_product_id` = ".(int)$search['shub_product_id'];
+			$sql .= " OR ei.`shub_product_id` = ".(int)$search['shub_product_id'] . " )";
 		}
 		if(isset($search['shub_message_id']) && $search['shub_message_id'] !== false){
-			$sql .= " AND `shub_message_id` = ".(int)$search['shub_message_id'];
+			$sql .= " AND m.`shub_message_id` = ".(int)$search['shub_message_id'];
 		}
 		if(isset($search['shub_ucm_id']) && $search['shub_ucm_id'] !== false){
-			$sql .= " AND `shub_ucm_id` = ".(int)$search['shub_ucm_id'];
+			$sql .= " AND m.`shub_ucm_id` = ".(int)$search['shub_ucm_id'];
 		}
 		if(isset($search['generic']) && !empty($search['generic'])){
 			// todo: search product comments too.. not just title (first comment) and summary (last comment)

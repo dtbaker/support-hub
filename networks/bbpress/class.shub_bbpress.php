@@ -172,19 +172,20 @@ class shub_bbpress extends SupportHub_network {
 		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_bbpress_forum` ei ON ( m.shub_bbpress_forum_id = ei.shub_bbpress_forum_id )";
 		$sql .= " WHERE 1 ";
 		if(isset($search['status']) && $search['status'] !== false){
-			$sql .= " AND `status` = ".(int)$search['status'];
+			$sql .= " AND m.`status` = ".(int)$search['status'];
 		}
 		if(isset($search['shub_bbpress_forum_id']) && $search['shub_bbpress_forum_id'] !== false){
-			$sql .= " AND `shub_bbpress_forum_id` = ".(int)$search['shub_bbpress_forum_id'];
+			$sql .= " AND m.`shub_bbpress_forum_id` = ".(int)$search['shub_bbpress_forum_id'];
 		}
 		if(isset($search['shub_product_id']) && (int)$search['shub_product_id']){
-			$sql .= " AND `shub_product_id` = ".(int)$search['shub_product_id'];
+			$sql .= " AND (m.`shub_product_id` = ".(int)$search['shub_product_id'];
+			$sql .= " OR ei.`shub_product_id` = ".(int)$search['shub_product_id']." )";
 		}
 		if(isset($search['shub_message_id']) && $search['shub_message_id'] !== false){
-			$sql .= " AND `shub_message_id` = ".(int)$search['shub_message_id'];
+			$sql .= " AND m.`shub_message_id` = ".(int)$search['shub_message_id'];
 		}
 		if(isset($search['shub_bbpress_id']) && $search['shub_bbpress_id'] !== false){
-			$sql .= " AND `shub_bbpress_id` = ".(int)$search['shub_bbpress_id'];
+			$sql .= " AND m.`shub_bbpress_id` = ".(int)$search['shub_bbpress_id'];
 		}
 		if(isset($search['generic']) && !empty($search['generic'])){
 			// todo: search forum comments too.. not just title (first comment) and summary (last comment)

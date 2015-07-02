@@ -493,10 +493,12 @@ class SupportHub {
 		foreach($this->message_managers as $name => $message_manager) {
 			if($last_cron_task){
 				if($last_cron_task['name'] == $name) {
-					// we got here last time, start at the next cron task.
+					// we got here last time, continue off from where we left
 					$last_cron_task = false;
-				}
-				continue;
+				}else{
+                    // keep hunting for the cron job we were up to last time.
+                    continue;
+                }
 			}
 			// recording where we get up to in the (sometimes very long) cron tasks.
 			update_option('last_support_hub_cron',array(
@@ -504,7 +506,7 @@ class SupportHub {
 				'time' => time(),
 			));
 			$this->log_data(0,'cron','Starting Extension Cron: '.$name);
-			$message_manager->run_cron( $debug );
+			$message_manager->run_cron( $debug, $cron_timeout, $cron_start );
 			// this cron job has completed successfully.
 			// if we've been running more than timeout, quit.
 			if($cron_start + $cron_timeout < time()){
