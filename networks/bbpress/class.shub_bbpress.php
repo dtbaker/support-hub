@@ -356,7 +356,7 @@ class shub_bbpress extends SupportHub_network {
 
 		ob_start();
 		?>
-        <a href="<?php echo $bbpress_message->link_open();?>" class="socialbbpress_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($title);?>" data-network="bbpress" data-network_message_id="<?php echo (int)$bbpress_message->get('shub_ucm_message_id');?>"><?php _e( 'Open' );?></a>
+        <a href="<?php echo $bbpress_message->link_open();?>" class="socialbbpress_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($title);?>" data-network="bbpress" data-network_message_id="<?php echo (int)$bbpress_message->get('shub_bbpress_message_id');?>"><?php _e( 'Open' );?></a>
 	    <?php if($bbpress_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 		    <a href="#" class="socialbbpress_message_action shub_message_action button"
 		       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
