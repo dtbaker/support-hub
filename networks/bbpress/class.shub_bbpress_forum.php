@@ -145,8 +145,11 @@ class shub_bbpress_forum{
 			'post_status' => 'publish',
 			//'post_parent' =>
 		);
-		$api_result_latest_replies = $this->bbpress_account->get_api_cache($filter_replies);
+        echo "<hr>starting ".$this->get('forum_name')."<br>";
+        $api_result_latest_replies = $this->bbpress_account->get_api_cache($filter_replies);
+        echo "Cache contains ".count($api_result_latest_replies)." values <br>";
 		$api_result_latest_replies = $api_result_latest_replies ? $api_result_latest_replies : $api->getPosts($filter_replies);
+        echo "Full contains ".count($api_result_latest_replies)." values <br>";
 
 		$filter_topics = array(
 			'post_type' => 'topic',
@@ -155,7 +158,9 @@ class shub_bbpress_forum{
 			//'post_parent' =>
 		);
 		$api_result_latest_topics = $this->bbpress_account->get_api_cache($filter_topics);
+        echo "Cache contains ".count($api_result_latest_topics)." values <br>";
 		$api_result_latest_topics = $api_result_latest_topics ? $api_result_latest_topics : $api->getPosts($filter_topics);
+        echo "Full contains ".count($api_result_latest_topics)." values <br>";
 
 
 		// loop through our latest replies and see if any of them are from a thread that sits under this forum
@@ -216,15 +221,24 @@ class shub_bbpress_forum{
 				echo date('Y-m-d',$found_parent['post_date']->timestamp);
 				echo " <a href='".$found_parent['link']."'>'".$found_parent['link'].'</a> ';
 				echo '<hr>';*/
-			}
+			}else{
+
+            }
 		}
 		uasort($forum_topics,function($a,$b){
 			return $a['timestamp'] < $b['timestamp'];
 		});
-
+        if($this->get('shub_bbpress_id') == 2){
+            echo "Couldn't find a parent post for this reply ( $bbpress_forum_id ) ";
+            print_r($api_result_latest_replies);
+            print_r($api_result_latest_topics);
+            exit;
+        }
 		// cache them for any other bbpress forum calls that are run during the same cron job process.
 		$this->bbpress_account->set_api_cache($filter_replies,$api_result_latest_replies);
 		$this->bbpress_account->set_api_cache($filter_topics,$api_result_latest_topics);
+
+        echo "topics contains ".count($forum_topics)." values <br>";
 
 
 		// we keep a record of the last message received so we know where to stop checking the feed

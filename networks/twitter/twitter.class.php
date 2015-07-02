@@ -745,14 +745,14 @@ class shub_twitter_account{
 		return false;
 	}
 
-	private static $api = false;
+	private $api = false;
 	public function get_api(){
-		if(!self::$api){
+		if(!$this->api){
 
 			require_once trailingslashit( __DIR__ ) . 'tmhOAuth.php';
 			$shub_twitter = new shub_twitter();
 
-			self::$api = new tmhOAuth( array(
+            $this->api = new tmhOAuth( array(
 			    // change the values below to ones for your application
 			    'consumer_key'    => $shub_twitter->get('api_key'),
 			    'consumer_secret' => $shub_twitter->get('api_secret'),
@@ -762,7 +762,7 @@ class shub_twitter_account{
 			  ));
 
 		}
-		return self::$api;
+		return $this->api;
 	}
 
 	public function run_cron($debug = false){

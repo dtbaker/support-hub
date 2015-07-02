@@ -247,21 +247,21 @@ class shub_envato_account{
 
 	}
 
-	private static $api = false;
+	private $api = false;
 	public function get_api(){
-		if(!self::$api){
+		if(!$this->api){
 
 			require_once trailingslashit(dirname(_DTBAKER_SUPPORT_HUB_CORE_FILE_)) . 'networks/envato/class.envato-api.php';
 
-			self::$api = envato_api_basic::getInstance();
-			self::$api->set_personal_token($this->get( 'envato_token' ));
-			self::$api->set_client_id($this->get( 'envato_app_id' ));
-			self::$api->set_client_secret($this->get( 'envato_app_secret' ));
-			self::$api->set_redirect_url($this->generate_oauth_redirect_url());
-			self::$api->set_cookie($this->get( 'envato_cookie' ));
+            $this->api = envato_api_basic::getInstance();
+            $this->api->set_personal_token($this->get( 'envato_token' ));
+            $this->api->set_client_id($this->get( 'envato_app_id' ));
+            $this->api->set_client_secret($this->get( 'envato_app_secret' ));
+            $this->api->set_redirect_url($this->generate_oauth_redirect_url());
+            $this->api->set_cookie($this->get( 'envato_cookie' ));
 
 		}
-		return self::$api;
+		return $this->api;
 	}
 	public function generate_oauth_redirect_url(){
 		return add_query_arg(_SHUB_ENVATO_OAUTH_DOING_FLAG,'ok',home_url());

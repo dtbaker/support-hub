@@ -251,18 +251,18 @@ class shub_ucm_account{
 
 	}
 
-	private static $api = false;
+	private $api = false;
 	public function get_api($use_db_code = true){
-		if(!self::$api){
+		if(!$this->api){
 
 			require_once trailingslashit(dirname(_DTBAKER_SUPPORT_HUB_CORE_FILE_)) . 'networks/ucm/class.ucm-api.php';
 
-			self::$api = ucm_api_basic::getInstance();
-			self::$api->set_api_url($this->get( 'ucm_api_url' ));
-			self::$api->set_api_key($this->get( 'ucm_api_key' ));
+            $this->api = ucm_api_basic::getInstance();
+            $this->api->set_api_url($this->get( 'ucm_api_url' ));
+            $this->api->set_api_key($this->get( 'ucm_api_key' ));
 
 		}
-		return self::$api;
+		return $this->api;
 	}
 	public function get_api_user_to_id($ucm_user_data){
 		//print_r($ucm_user_data);exit;

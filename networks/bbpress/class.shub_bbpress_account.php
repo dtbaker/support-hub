@@ -245,13 +245,13 @@ class shub_bbpress_account{
 
 	}
 
-	private static $api = false;
+	private $api = false;
 	public function get_api($use_db_code = true){
-		if(!self::$api){
+		if(!$this->api){
 
 			//$wpLog = new Monolog\Logger('wp-xmlrpc');
-			self::$api = new \HieuLe\WordpressXmlrpcClient\WordpressClient($this->get( 'bbpress_wordpress_xmlrpc' ), $this->get( 'bbpress_username' ), $this->get( 'bbpress_password' ));
-			self::$api->onSending(function($event){
+            $this->api = new \HieuLe\WordpressXmlrpcClient\WordpressClient($this->get( 'bbpress_wordpress_xmlrpc' ), $this->get( 'bbpress_username' ), $this->get( 'bbpress_password' ));
+            $this->api->onSending(function($event){
 			    SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Call: '.$event['endpoint'], array(
 				    'method' => $event['method'],
 				    'params' => $event['params'],
@@ -259,7 +259,7 @@ class shub_bbpress_account{
 			    ));
 			});
 
-			self::$api->onError(function($error, $event){
+            $this->api->onError(function($error, $event){
 			    SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'bbpress', 'API Error: '.$event['endpoint']. ' ('.$error.')', $event);
 			});
 
@@ -267,7 +267,7 @@ class shub_bbpress_account{
 			//$wpClient->setCredentials($this->get( 'bbpress_wordpress_xmlrpc' ), 'username', 'password');
 
 		}
-		return self::$api;
+		return $this->api;
 	}
 	public function get_api_user_to_id($wp_user_id){
 		if((int)$wp_user_id > 0) {
