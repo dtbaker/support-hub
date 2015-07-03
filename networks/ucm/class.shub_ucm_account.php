@@ -109,7 +109,7 @@ class shub_ucm_account{
 							$product->create_new();
 							$product->update('shub_ucm_id', $this->shub_ucm_id);
 							//$product->update('ucm_token', 'same'); // $available_products[$ucm_product_id]['access_token']
-							$product->update('product_name', $available_products[$ucm_product_id]['post_title']);
+							$product->update('product_name', $available_products[$ucm_product_id]['name']);
 							$product->update('product_id', $ucm_product_id);
 							$product->update('ucm_data', $available_products[$ucm_product_id]);
 							$product->update('shub_product_id', isset($post_data['ucm_product_product'][$ucm_product_id]) ? $post_data['ucm_product_product'][$ucm_product_id] : 0);
@@ -316,6 +316,9 @@ class shub_ucm_account{
             $first = current($ucm_user_data['envato']['user']);
             if($first && !empty($first['envato_username']) && !$comment_user->get_meta('envato_username',strtolower($first['envato_username']))){
                 $comment_user->add_meta('envato_username', strtolower($first['envato_username']));
+                if(!$comment_user->get('user_username')){
+                    $comment_user->update('user_username',strtolower($first['envato_username']));
+                }
             }
         }
         if(isset($ucm_user_data['envato']['purchases'])) {

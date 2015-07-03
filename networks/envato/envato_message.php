@@ -63,15 +63,22 @@ if($shub_envato_id && $shub_envato_message_id){
 					<?php
 					}
 					// find out the user details, purchases and if they have any other open messages.
-				    $user_hints = array();
+				    $user_hints = array(
+                        'shub_user_id' => array()
+                    );
 				    $first_comment = current($comments);
 				    if(isset($first_comment['shub_user_id']) && $first_comment['shub_user_id']){
-					    $user_hints['shub_user_id'] = $first_comment['shub_user_id'];
+					    $user_hints['shub_user_id'][] = $first_comment['shub_user_id'];
 				    }
 				    $message_from = @json_decode($first_comment['message_from'],true);
 				    if($message_from && isset($message_from['username'])){ //} && $message_from['username'] != $envato_message->get('envato_account')->get( 'envato_name' )){
 					    // this wont work if user changes their username, oh well.
-					    $user_hints['envato_username'] = $message_from['username'];
+                        $other_users = new SupportHubUser_Envato();
+                        $other_users->load_by_meta('envato_username',$message_from['username']);
+                        if($other_users->get('shub_user_id') && !in_array($other_users->get('shub_user_id'),$user_hints['shub_user_id'])){
+                            // pass these back to the calling method so we can get the correct values.
+                            $user_hints['shub_user_id'][] = $other_users->get('shub_user_id');
+                        }
 				    }
 					SupportHub::getInstance()->message_user_summary($user_hints, 'envato', $envato_message);
 					do_action('supporthub_message_header', 'envato', $envato_message);

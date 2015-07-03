@@ -72,7 +72,7 @@ class shub_bbpress_message{
 					$this->update('data',json_encode($topic_data));
 					$this->update('link',$topic_data['link'].'#post-'.(isset($comments[0]) ? $comments[0]['post_id'] : $topic_data['post_id']));
 					$this->update('bbpress_id', $bbpress_id);
-					$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+                    if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
 					$this->update('comments',json_encode($comments));
 					// create/update a user entry for this comments.
 				    $shub_user_id = $this->bbpress_account->get_api_user_to_id($topic_data['post_author']);

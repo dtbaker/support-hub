@@ -69,7 +69,7 @@ class shub_envato_message{
 					$this->update('data',json_encode($message_data));
 					$this->update('link',$message_data['url'] . '/' . $message_data['id']);
 					$this->update('envato_id', $envato_id);
-					$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+                    if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
 					$this->update('comments',json_encode($comments));
 
 					// create/update a user entry for this comments.

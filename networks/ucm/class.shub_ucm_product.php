@@ -135,11 +135,21 @@ class shub_ucm_product{
 			return;
 		}
 
-		// find any messages from this particular UCM product.
-        $tickets = $api->api('ticket','list',array('search'=>array('faq_product_id'=>$ucm_product_id)));
+        // we keep a record of the last message received so we know where to stop checking the feed
+        $last_message_received = (int)$this->get('last_message');
 
-		// we keep a record of the last message received so we know where to stop checking the feed
-		$last_message_received = (int)$this->get('last_message');
+        // dont want to import ALL tickets, so we pick a 20 day limit if we haven't done this yet
+        if(!$last_message_received){
+            $last_message_received = strtotime('-20 days');
+        }
+
+        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'ucm','Loading latest tickets for product ('.$ucm_product_id.') "'.$this->get('product_name').'" modified since '.shub_print_date($last_message_received,true));
+		// find any messages from this particular UCM product that have been updated since our last scrape time.
+        $tickets = $api->api('ticket','list',array('search'=>array('faq_product_id'=>$ucm_product_id,'time_from'=>$last_message_received,'status_id'=>0)));
+        if($ucm_product_id==20){
+
+            print_r($tickets);
+        }
 		if($debug)echo "Getting the latest tickets for product: ".$ucm_product_id." (last message in database is from ".shub_print_date($last_message_received,true).")<br>\n";
 
 		$newest_message_received = 0;
@@ -148,7 +158,7 @@ class shub_ucm_product{
 		foreach($tickets['tickets'] as $ticket){
 			$message_time = $ticket['last_message_timestamp'];
 			$newest_message_received = max($newest_message_received,$message_time);
-			if($message_time <= $last_message_received)break; // all done here.
+			//if($message_time <= $last_message_received)break; // all done here.
 
 			$ucm_message = new shub_ucm_message($this->ucm_account, $this, false);
 			$ucm_message -> load_by_ucm_id($ticket['ticket_id'], $ticket, 'ticket', $debug);
@@ -163,7 +173,7 @@ class shub_ucm_product{
 
 		}
 		// get user, return envato_codes in meta
-		SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'ucm', 'Imported  '.$count.' product tickets into database');
+		SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'ucm', 'Imported  '.$count.' product tickets into database (from a total of '.count($tickets['tickets']).' returned by the api)');
 		if($debug)echo " imported $count new product tickets <br>";
 
 		$this->update('last_message',$newest_message_received);

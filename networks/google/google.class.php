@@ -1370,7 +1370,9 @@ class shub_google_message{
 							$new_comment = $comment;
 							$this->message_time = $comment_time;
 							$this->update('message_time',$comment_time);
-							$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);// move back to inbox as well if archived.
+
+                            if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);// move back to inbox as well if archived.
+
 							$this->mark_as_unread();
 						}
 					}
@@ -1386,7 +1388,8 @@ class shub_google_message{
 			$this->google_account->api_login($debug);
 			$worked = $this->google_account->api_post_comment_reply($this->google_message_id, $message, $debug);
 			$this->load_by_google_id($this->google_message_id, false, $debug, true );
-			$this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+
+            if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN)$this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
 			return $worked;
 		}
 		return false;

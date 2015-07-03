@@ -647,32 +647,53 @@ class shub_envato extends SupportHub_network {
 		$details = array(
 			'messages' => array(),
 			'user' => array(),
+            'user_ids' => array(),
 		);
-		if(isset($user_hints['envato_username'])){
-			$details['user']['username'] = $user_hints['envato_username'];
-			$details['user']['url'] = 'http://themeforest.net/user/'.$user_hints['envato_username'];
-		}
         // todo: find user meta for envato purchase code details.
 		if(!empty($user_hints['shub_user_id'])){
             if(!is_array($user_hints['shub_user_id']))$user_hints['shub_user_id'] = array($user_hints['shub_user_id']);
             foreach($user_hints['shub_user_id'] as $shub_user_id) {
                 if((int)$shub_user_id > 0) {
+                    $details['user_ids'][$shub_user_id] = $shub_user_id;
                     $shub_user = new SupportHubUser_Envato($shub_user_id);
-                    $user_data = $shub_user->get('user_data');
+                    $envato_username = $shub_user->get_meta('envato_username');
+                    if($envato_username){
+                        foreach($envato_username as $envato_username1) {
+                            if (!empty($envato_username1)) {
+                                // todo - display multiple.
+                                $details['user']['username'] = $envato_username1;
+                                $details['user']['url'] = 'http://themeforest.net/user/' . $envato_username1;
+                                // see if we can find any other matching user accounts for this username
+                                $other_users = new SupportHubUser_Envato();
+                                $other_users->load_by('user_username',$envato_username1);
+                                if($other_users->get('shub_user_id') && !in_array($other_users->get('shub_user_id'),$user_hints['shub_user_id'])){
+                                    // pass these back to the calling method so we can get the correct values.
+                                    $details['user_ids'][$other_users->get('shub_user_id')] = $other_users->get('shub_user_id');
+                                }
+                            }
+                        }
+                    }
+
+                    $envato_codes = $shub_user->get_meta('envato_license_code');
+                    if(is_array($envato_codes)){
+                        $details['user']['codes'] = $envato_codes;
+                    }
+                    /*$user_data = $shub_user->get('user_data');
                     if (isset($user_data['envato_codes'])) {
                         // these come in from bbPress (and hopefully other places)
                         // array of purchase code info
                         $details['user']['codes'] = implode(', ', array_keys($user_data['envato_codes']));
                         $details['user']['products'] = array();
                         foreach ($user_data['envato_codes'] as $code => $purchase_data) {
+                            print_r($purchase_data);
                             $details['user']['products'][] = $purchase_data['item_name'];
                         }
                         $details['user']['products'] = implode(', ', $details['user']['products']);
-                    }
+                    }*/
 
                     $comments = shub_get_multiple('shub_envato_message_comment', array(
                         'shub_user_id' => $shub_user_id
-                    ), 'shub_envato_message_comment_id', '`time` DESC');
+                    ), 'shub_envato_message_comment_id');
                     if (is_array($comments)) {
                         foreach ($comments as $comment) {
                             if ($current_extension == 'envato' && $message_object->get('shub_envato_message_id') == $comment['shub_envato_message_id']) continue;

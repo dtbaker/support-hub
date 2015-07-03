@@ -721,6 +721,39 @@ EOT;
             $user_hints['shub_user_id'] = array($user_hints['shub_user_id']);
         }
 
+        $possible_new_user_ids = array();
+        do {
+            $this_user_hints = $user_hints;
+            if(count($possible_new_user_ids)) {
+                $this_user_hints['shub_user_id'] = array();
+                foreach($possible_new_user_ids as $possible_new_user_id){
+                    if(!in_array($possible_new_user_id, $user_hints['shub_user_id'])){
+                        $user_hints['shub_user_id'][] = $possible_new_user_id;
+                        $this_user_hints['shub_user_id'][] = $possible_new_user_id;
+                    }
+                }
+                $possible_new_user_ids = array();
+            }
+            foreach ($this->message_managers as $name => $message_manager) {
+                $details = $message_manager->find_other_user_details($this_user_hints, $current_extension, $message_object);
+                if ($details && isset($details['messages']) && is_array($details['messages'])) {
+                    $other_messages = array_merge_recursive($other_messages, $details['messages']);
+                }
+                if ($details && isset($details['user']) && is_array($details['user'])) {
+                    $user_details = array_merge_recursive($user_details, $details['user']);
+                }
+                if ($details && isset($details['user_ids']) && is_array($details['user_ids'])) {
+                    foreach ($details['user_ids'] as $possible_new_user_id) {
+                        if((int)$possible_new_user_id > 0 && !in_array($possible_new_user_id, $user_hints['shub_user_id'])){
+                            //echo "GOT A NEW USER ID BACK $possible_new_user_id <br><br>";
+                            // re-run the search loop with this new user id t oget even more data.
+                            $possible_new_user_ids[] = $possible_new_user_id;
+                        }
+                    }
+                }
+            }
+        }while(count($possible_new_user_ids));
+
 		// pull out the 'extra data' linked to this ticket
 		$extras = SupportHubExtra::get_all_extras();
 		$extra_datas = array();
@@ -737,8 +770,11 @@ EOT;
                         $this_data[] = $this_extra->get('extra_value');
                     }
                     // build up the list of linked user accounts based on user data.
+                    // example: if two users submit
                     $extra_shub_user_id = $this_extra->get('shub_user_id');
                     if(!empty($extra_shub_user_id) && !in_array($extra_shub_user_id,$user_hints['shub_user_id'])){
+                        echo " <br><br><Br>ADDING $extra_shub_user_id TO THE LIST IN DATA!! PLEASE REPORT THIS ERROR SO DTBAKER CAN INVESTIGATE <br><br><br> ";
+                        // moved the user_hints loop to the top to build up the user id list first.
                         $user_hints['shub_user_id'][] = $extra_shub_user_id;
                     }
                 }
@@ -764,15 +800,6 @@ EOT;
 		}
 
 
-		foreach($this->message_managers as $name => $message_manager){
-			$details = $message_manager->find_other_user_details($user_hints, $current_extension, $message_object);
-			if($details && isset($details['messages']) && is_array($details['messages'])){
-				$other_messages = array_merge($other_messages,$details['messages']);
-			}
-			if($details && isset($details['user']) && is_array($details['user'])){
-				$user_details = array_merge($user_details,$details['user']);
-			}
-		}
 
 		?>
 		<strong><?php _e('Linked User:');?></strong>
@@ -811,16 +838,19 @@ EOT;
 		}else if(isset($user_details['username'])){
             $user_bits[] =  array('Username',esc_html($user_details['username']));
 		}
+        if(isset($user_details['codes'])){
+            // todo: pull in information about this purchase code via ajax after the page has loaded.
+            // cache and re-validate the purchase code from time to time.
+            $user_bits[] = array('Purchase Codes',(is_array($user_details['codes']) ? implode(', ',$user_details['codes']) : $user_details['codes']) .' ');
+        }
         ?> <ul class="linked_user_details"> <?php
         foreach($user_bits as $user_bit){
             ?>
             <li><span><?php echo $user_bit[0];?>:</span> <?php echo $user_bit[1];?></li>
             <?php
         }
-        ?> </ul> <?php
-		foreach(array('codes','products') as $key){
-			if(isset($user_details[$key]))echo $user_details[$key] .' ';
-		}
+        ?> </ul>
+        <?php
         if(count($other_messages)){
             ?>
             <strong><?php _e('Other Messages:');?></strong><br/>

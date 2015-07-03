@@ -150,7 +150,8 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 	public function get_bulk_actions(){
 		return array(
 	        'archive'    => __('Archive'),
-	        'un-archive'  => __('Move to Inbox')
+	        'un-archive'  => __('Move to Inbox'),
+	        'hide'  => __('Hide')
 	    );
 	}
 	public function process_bulk_action() {
@@ -188,6 +189,21 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                                 $network_message = $shub->message_managers[$network]->get_message(false, false, $network_message_id);
                                 if($network_message && $network_message->get('shub_'.$network.'_message_id') == $network_message_id){
                                     $network_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+                                    $change_count++;
+                                }
+                            }
+                        }
+                    }
+	                break;
+	            case 'hide':
+					$messages = isset($_POST['shub_message']) && is_array($_POST['shub_message']) ? $_POST['shub_message'] : array();
+                    $shub = SupportHub::getInstance();
+                    foreach($messages as $network => $network_message_ids){
+                        if(isset($shub->message_managers[$network])){
+                            foreach($network_message_ids as $network_message_id){
+                                $network_message = $shub->message_managers[$network]->get_message(false, false, $network_message_id);
+                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $network_message_id){
+                                    $network_message->update('status',_shub_MESSAGE_STATUS_HIDDEN);
                                     $change_count++;
                                 }
                             }

@@ -100,12 +100,14 @@ class shub_facebook_message{
 			$this->update('facebook_id', $message_data['id']);
 			$this->update('summary', $message_data['snippet']);
 			$this->update('comments', isset($message_data['messages']) ? json_encode( $message_data['messages'] ) : '');
-			if(isset($message_data['messages']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $this->facebook_page_or_group->get('page_id')){
-				// was the last comment from us?
-				$this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
-			}else{
-				$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
-			}
+            if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) {
+                if (isset($message_data['messages']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $this->facebook_page_or_group->get('page_id')) {
+                    // was the last comment from us?
+                    $this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+                } else {
+                    $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                }
+            }
 			$this->update('data',json_encode($message_data));
 			$this->update('type',isset($message_data['type']) ? $message_data['type'] : $type);
 			if($this->facebook_page_or_group){
@@ -130,39 +132,41 @@ class shub_facebook_message{
 			));
 			$comments = isset($data) ? $data : (isset($message_data['comments']) ? $message_data['comments'] : false);
 			$this->update('comments', json_encode($comments));
-			if($message_type == 'page') {
-				if ( isset( $message_data['comments']['data'][0]['from']['id'] ) && $this->facebook_page_or_group && $message_data['comments']['data'][0]['from']['id'] == $this->facebook_page_or_group->get( 'page_id' ) ) {
-					// was the last comment from us?
-					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
-				} else {
-					$this->update( 'status', _shub_MESSAGE_STATUS_UNANSWERED );
-				}
-				if ( isset( $message_data['messages']['data'][0]['from']['id'] ) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $this->facebook_page_or_group->get( 'page_id' ) ) {
-					// was the last comment from us?
-					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
-				} else {
-					$this->update( 'status', _shub_MESSAGE_STATUS_UNANSWERED );
-				}
-			}else{
-				$me = @json_decode($this->facebook_account->get('facebook_data'),true);
-				if(is_array($me) && isset($me['me']['id'])) {
-					if ( isset( $message_data['comments']['data'][0]['from']['id'] ) && $this->facebook_page_or_group && $message_data['comments']['data'][0]['from']['id'] == $me['me']['id'] ) {
-						// was the last comment from us?
-						$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
-					} else {
-						$this->update( 'status', _shub_MESSAGE_STATUS_UNANSWERED );
-					}
-					if ( isset( $message_data['messages']['data'][0]['from']['id'] ) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $me['me']['id'] ) {
-						// was the last comment from us?
-						$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
-					} else {
-						$this->update( 'status', _shub_MESSAGE_STATUS_UNANSWERED );
-					}
-				}else{
-					$this->update( 'status', _shub_MESSAGE_STATUS_UNANSWERED );
-				}
+            if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) {
+                if ($message_type == 'page') {
+                    if (isset($message_data['comments']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['comments']['data'][0]['from']['id'] == $this->facebook_page_or_group->get('page_id')) {
+                        // was the last comment from us?
+                        $this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+                    } else {
+                        $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                    }
+                    if (isset($message_data['messages']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $this->facebook_page_or_group->get('page_id')) {
+                        // was the last comment from us?
+                        $this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+                    } else {
+                        $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                    }
+                } else {
+                    $me = @json_decode($this->facebook_account->get('facebook_data'), true);
+                    if (is_array($me) && isset($me['me']['id'])) {
+                        if (isset($message_data['comments']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['comments']['data'][0]['from']['id'] == $me['me']['id']) {
+                            // was the last comment from us?
+                            $this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+                        } else {
+                            $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                        }
+                        if (isset($message_data['messages']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $me['me']['id']) {
+                            // was the last comment from us?
+                            $this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+                        } else {
+                            $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                        }
+                    } else {
+                        $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                    }
 
-			}
+                }
+            }
 			$this->update('data',json_encode($message_data));
 			$this->update('type',isset($message_data['type']) ? $message_data['type'] : $type);
 			if($this->facebook_page_or_group){

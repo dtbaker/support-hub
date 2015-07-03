@@ -550,34 +550,45 @@ class shub_bbpress extends SupportHub_network {
 			'messages' => array(),
 			'user' => array(),
 		);
-		if(isset($user_hints['bbpress_username'])){
+		/*if(isset($user_hints['bbpress_username'])){
 			$details['user']['username'] = $user_hints['bbpress_username'];
-			$details['user']['url'] = 'http://themeforest.net/user/'.$user_hints['bbpress_username'];
-		}
-		// todo: find any purchases here. display those in the details
-		$details['user']['purchases'] = '1 purchases';
+		}*/
 
 		// find other bbpress messages by this user.
         if(!empty($user_hints['shub_user_id'])) {
             if (!is_array($user_hints['shub_user_id'])) $user_hints['shub_user_id'] = array($user_hints['shub_user_id']);
             foreach ($user_hints['shub_user_id'] as $shub_user_id) {
                 if ((int)$shub_user_id > 0) {
+                    $messages = shub_get_multiple('shub_bbpress_message', array(
+                        'shub_user_id' => $shub_user_id
+                    ), 'shub_bbpress_message_id');
+                    if (is_array($messages)) {
+                        foreach ($messages as $message) {
+                            if ($current_extension == 'bbpress' && $message_object->get('shub_bbpress_message_id') == $message['shub_bbpress_message_id']) continue;
+                            if (!isset($details['messages']['bbpress' . $message['shub_bbpress_message_id']])) {
+                                $details['messages']['bbpress' . $message['shub_bbpress_message_id']] = array(
+                                    'summary' => $message['summary'],
+                                    'time' => $message['last_active'],
+                                    'network' => 'bbpress',
+                                    'network_message_id' => $message['shub_bbpress_message_id'],
+                                    'network_message_comment_id' => 0,
+                                );
+                            }
+                        }
+                    }
                     $comments = shub_get_multiple('shub_bbpress_message_comment', array(
                         'shub_user_id' => $shub_user_id
-                    ), 'shub_bbpress_message_comment_id', '`time` DESC');
+                    ), 'shub_bbpress_message_comment_id');
                     if (is_array($comments)) {
                         foreach ($comments as $comment) {
                             if ($current_extension == 'bbpress' && $message_object->get('shub_bbpress_message_id') == $comment['shub_bbpress_message_id']) continue;
                             if (!isset($details['messages']['bbpress' . $comment['shub_bbpress_message_id']])) {
-//						$other_message = new shub_bbpress_message();
-//						$other_message->load($comment['shub_bbpress_message_id']);
                                 $details['messages']['bbpress' . $comment['shub_bbpress_message_id']] = array(
                                     'summary' => $comment['message_text'],
                                     'time' => $comment['time'],
                                     'network' => 'bbpress',
                                     'network_message_id' => $comment['shub_bbpress_message_id'],
                                     'network_message_comment_id' => $comment['shub_bbpress_message_comment_id'],
-//							'message_status' => $other_message->get('status'),
                                 );
                             }
                         }

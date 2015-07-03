@@ -194,4 +194,5 @@ class SupportHubUser{
 		return $this->get('user_username');
 	}
 
+
 }

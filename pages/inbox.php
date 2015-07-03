@@ -124,6 +124,7 @@
 			<option value="-1"<?php echo isset($search['status']) && $search['status'] == -1 ? ' selected' : '';?>><?php _e('All','support_hub');?></option>
 			<option value="<?php echo _shub_MESSAGE_STATUS_UNANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_UNANSWERED ? ' selected' : '';?>><?php _e('Inbox','support_hub');?></option>
 			<option value="<?php echo _shub_MESSAGE_STATUS_ANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_ANSWERED ? ' selected' : '';?>><?php _e('Archived','support_hub');?></option>
+			<option value="<?php echo _shub_MESSAGE_STATUS_HIDDEN;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_HIDDEN ? ' selected' : '';?>><?php _e('Hidden','support_hub');?></option>
 		</select>
 
 		<input type="submit" name="" id="search-submit" class="button" value="<?php _e('Search','support_hub');?>"></p>

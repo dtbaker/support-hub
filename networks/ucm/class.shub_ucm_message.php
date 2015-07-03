@@ -65,7 +65,9 @@ class shub_ucm_message{
 						$all_comments = $api_result['tickets'][$ucm_ticket_id];
 						$comments = array();
 						foreach($all_comments as $comment_id => $comment){
-							if(isset($comment['cache']) && $comment['cache'] != 'autoreply'){
+							if( (isset($comment['cache']) && $comment['cache'] == 'autoreply') || (isset($comment['message_type_id']) && $comment['message_type_id'] == 3)) {
+                                // this is an auto reply, don't bother importing it into the system here
+                            }else{
 								$comments[] = $comment;
 							}
 						}
@@ -87,7 +89,7 @@ class shub_ucm_message{
                         $this->update('data', json_encode($ticket));
                         $this->update('link', $ticket['url']);
                         $this->update('ucm_ticket_id', $ucm_ticket_id);
-                        $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                        if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
                         $this->update('comments', json_encode($comments));
 
                         // add the extra fields from UCM into the ticket.
