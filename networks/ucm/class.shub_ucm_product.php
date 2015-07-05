@@ -146,10 +146,6 @@ class shub_ucm_product{
         SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'ucm','Loading latest tickets for product ('.$ucm_product_id.') "'.$this->get('product_name').'" modified since '.shub_print_date($last_message_received,true));
 		// find any messages from this particular UCM product that have been updated since our last scrape time.
         $tickets = $api->api('ticket','list',array('search'=>array('faq_product_id'=>$ucm_product_id,'time_from'=>$last_message_received,'status_id'=>0)));
-        if($ucm_product_id==20){
-
-            print_r($tickets);
-        }
 		if($debug)echo "Getting the latest tickets for product: ".$ucm_product_id." (last message in database is from ".shub_print_date($last_message_received,true).")<br>\n";
 
 		$newest_message_received = 0;

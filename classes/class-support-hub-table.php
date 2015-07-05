@@ -11,6 +11,7 @@ class SupportHub_Account_Data_List_Table extends WP_List_Table {
 	public $action_key = 'ID';
 	public $table_data = array();
 	public $columns = array();
+	public $_sortable_columns = array();
 	public $found_data = array();
 
 	public $items_per_page = 20;
@@ -57,6 +58,9 @@ class SupportHub_Account_Data_List_Table extends WP_List_Table {
 	function set_callback($function){
 		$this->row_callback = $function;
 	}
+	function set_sortable_columns($columns){
+		$this->_sortable_columns = $columns;
+	}
 	function set_columns($columns){
 		$this->columns = $columns;
 	}
@@ -93,7 +97,7 @@ class SupportHub_Account_Data_List_Table extends WP_List_Table {
 
 		$columns               = $this->get_columns();
 		$hidden                = array();
-		$sortable              = array(); //
+		$sortable              = $this->_sortable_columns; //
 		$this->_column_headers = array( $columns, $hidden, $sortable );
 		//usort( $this->example_data, array( $this, 'usort_reorder' ) );
 

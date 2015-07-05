@@ -261,7 +261,16 @@ class shub_facebook extends SupportHub_network {
 		if(isset($search['generic']) && !empty($search['generic'])){
 			$sql .= " AND `summary` LIKE '%".esc_sql($search['generic'])."%'";
 		}
-		$sql .= " ORDER BY `last_active` DESC ";
+        if(empty($order)){
+            $sql .= " ORDER BY `last_active` ASC ";
+        }else{
+            switch($order['orderby']){
+                case 'shub_column_time':
+                    $sql .= " ORDER BY `last_active` ";
+                    $sql .= $order['order'] == 'asc' ? 'ASC' : 'DESC';
+                    break;
+            }
+        }
 		if($limit_batch){
 			$sql .= " LIMIT ".$this->limit_start.', '.$limit_batch;
 			$this->limit_start += $limit_batch;

@@ -10,7 +10,13 @@
 	if(!isset($search['status'])){
 		$search['status'] = _shub_MESSAGE_STATUS_UNANSWERED;
 	}
-	$order = array();
+    $order = array();
+    if(!empty($_REQUEST['orderby']) && !empty($_REQUEST['order'])) {
+        $order = array(
+            'orderby' => $_REQUEST['orderby'],
+            'order' => $_REQUEST['order'],
+        );
+    }
 
 	// retuin a combined copy of all available messages, based on search, as a MySQL resource
 	// so we can loop through them on the global messages combined page.
@@ -19,7 +25,7 @@
 
     $myListTable = new SupportHubMessageList();
     $myListTable->set_columns( array(
-		'cb' => '',
+		'cb' => 'Select All',
 		'shub_column_account' => __( 'Account', 'support_hub' ),
 		'shub_column_product' => __( 'Product', 'support_hub' ),
 		'shub_column_time'    => __( 'Date/Time', 'support_hub' ),
@@ -27,8 +33,13 @@
 		'shub_column_summary'    => __( 'Summary', 'support_hub' ),
 		'shub_column_action'    => __( 'Action', 'support_hub' ),
 	) );
+    $myListTable->set_sortable_columns( array(
+		'shub_column_time'    => array(
+            'shub_column_time',
+            1
+        ),
+	) );
     $myListTable->process_bulk_action(); // before we do the search on messages.
-
 
 	/* @var $message_manager shub_facebook */
     $limit_each = 40;
@@ -41,6 +52,7 @@
         }
 		$message_manager->load_all_messages($this_search, $order, $limit_each);
 	}
+
 
 	// filter through each mysql resource so we get the date views. output each row using their individual classes.
 	$all_messages = array();
@@ -71,6 +83,32 @@
 		// pick the lowest one and replenish its spot
 		$next_type = false;
 		foreach($loop_messages as $type => $message){
+
+            if(empty($order)){
+                if(!$next_type || $message['message_time'] < $last_timestamp){
+                    $next_type = $type;
+                    $last_timestamp = $message['message_time'];
+                }
+            }else{
+                switch($order['orderby']){
+                    case 'shub_column_time':
+                        switch($order['order']){
+                            case 'asc':
+                                if(!$next_type || $message['message_time'] < $last_timestamp){
+                                    $next_type = $type;
+                                    $last_timestamp = $message['message_time'];
+                                }
+                                break;
+                            default:
+                                if(!$next_type || $message['message_time'] > $last_timestamp){
+                                    $next_type = $type;
+                                    $last_timestamp = $message['message_time'];
+                                }
+                                break;
+                        }
+                        break;
+                }
+            }
 			if(!$next_type || $message['message_time'] > $last_timestamp){
 				$next_type = $type;
 				$last_timestamp = $message['message_time'];

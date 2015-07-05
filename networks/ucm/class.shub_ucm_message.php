@@ -582,7 +582,7 @@ class shub_ucm_message{
 		$type = $this->get('type');
 		switch($type){
 			case 'ticket':
-				return 'product Topic';
+				return 'Support Ticket';
 				break;
 			default:
 				return ucwords($type);

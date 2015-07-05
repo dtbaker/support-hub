@@ -169,7 +169,16 @@ class shub_twitter extends SupportHub_network {
 		}else{
 			$sql .= " AND `type` != "._TWITTER_MESSAGE_TYPE_OTHERTWEET;
 		}
-		$sql .= " ORDER BY `message_time` DESC ";
+        if(empty($order)){
+            $sql .= " ORDER BY `message_time` ASC ";
+        }else{
+            switch($order['orderby']){
+                case 'shub_column_time':
+                    $sql .= " ORDER BY `message_time` ";
+                    $sql .= $order['order'] == 'asc' ? 'ASC' : 'DESC';
+                    break;
+            }
+        }
 		if($limit_batch){
 			$sql .= " LIMIT ".$this->limit_start.', '.$limit_batch;
 			$this->limit_start += $limit_batch;
