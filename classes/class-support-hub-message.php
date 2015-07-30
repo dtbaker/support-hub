@@ -7,6 +7,7 @@ class SupportHub_message{
     public function get($key){return '';}
     public function get_link(){ return '';} // link to external support system
     public function message_sidebar_data(){ echo '';}
+    public function reply_actions(){ echo '';}
 
     public function output_message_page(){
         $network_message_id = $this->get('shub_'.$this->network.'_message_id');
@@ -16,8 +17,12 @@ class SupportHub_message{
 
             ?>
 
-            <form action="" method="post" id="message_edit_form" data-network="<?php echo $this->network;?>">
+            <div class="message_edit_form" data-network="<?php echo $this->network;?>">
                 <section class="message_sidebar">
+                    <nav>
+                        <a href="<?php echo $this->get_link(); ?>" class="social_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
+                        <a href="#" class="shub_view_full_message_sudebar btn btn-default btn-xs button alignright"><?php _e( 'Show More Details' ); ?></a>
+                    </nav>
                     <header>
                         <a href="<?php echo $this->get_link(); ?>" class="social_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
                         <?php if($this->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
@@ -34,21 +39,22 @@ class SupportHub_message{
                             )));?>"><?php _e( 'Archive' ); ?></a>
                         <?php } ?>
                     </header>
+                    <aside>
 
-                    <?php $this->message_sidebar_data(); ?>
+                        <?php $this->message_sidebar_data(); ?>
 
-                    <?php
-                    // find out the user details, purchases and if they have any other open messages.
-                    $user_hints = array(
-                        'shub_user_id' => array()
-                    );
-                    $user_hints = $this->get_user_hints($user_hints);
-                    SupportHub::getInstance()->message_user_summary($user_hints, $this->network, $this);
-                    do_action('supporthub_message_header', $this->network, $this);
-                    ?>
+                        <?php
+                        // find out the user details, purchases and if they have any other open messages.
+                        $user_hints = array(
+                            'shub_user_id' => array()
+                        );
+                        $user_hints = $this->get_user_hints($user_hints);
+                        SupportHub::getInstance()->message_user_summary($user_hints, $this->network, $this);
+                        do_action('supporthub_message_header', $this->network, $this);
+                        ?>
 
-                    <a href="#" class="shub_request_extra btn btn-default btn-xs button" data-modaltitle="<?php _e( 'Request Extra Details' ); ?>" data-action="request_extra_details" data-network="<?php echo $this->network;?>" data-<?php echo $this->network;?>-message-id="<?php echo $network_message_id;?>"><?php _e( 'Request Extra Details' ); ?></a>
-
+                        <a href="#" class="shub_request_extra btn btn-default btn-xs button" data-modaltitle="<?php _e( 'Request Extra Details' ); ?>" data-action="request_extra_details" data-network="<?php echo $this->network;?>" data-<?php echo $this->network;?>-message-id="<?php echo $network_message_id;?>"><?php _e( 'Request Extra Details' ); ?></a>
+                    </aside>
                 </section>
                 <section class="message_content">
                     <?php
@@ -92,27 +98,28 @@ class SupportHub_message{
                             </div>
                         </div>
                     <?php } ?>
-                </section>
-                <section class="message_reply">
-                    <?php
-                    $reply_shub_user = $this->get_reply_user();
-                    ?>
-                    <div class="shub_message_picture">
-                        <img src="<?php echo isset($user_data['user'],$user_data['user']['image']) ? $user_data['user']['image'] : '#';?>">
-                    </div>
-                    <div class="shub_message_header">
-                        <?php echo isset($user_data['user']) ? shub_envato::format_person( $user_data['user'], $this->envato_account ) : 'Error'; ?>
-                    </div>
-                    <div class="shub_message_reply envato_message_reply">
-                        <textarea placeholder="Write a reply..."></textarea>
-                        <button data-envato-id="<?php echo htmlspecialchars($envato_id);?>" data-post="<?php echo esc_attr(json_encode(array(
-                            'id' => (int)$this->shub_envato_message_id,
-                            'network' => 'envato',
-                            'envato_id' => htmlspecialchars($envato_id),
-                        )));?>"><?php _e('Send');?></button>
-                    </div>
-                    <div class="shub_message_actions">
-                        (debug) <input type="checkbox" name="debug" data-reply="yes" value="1"> <br/>
+                    <div class="shub_message shub_message_reply shub_message_reply_box">
+                        <?php
+                        $reply_shub_user = $this->get_reply_user();
+                        ?>
+                        <div class="shub_message_picture">
+                           <!--  <img src="<?php echo $reply_shub_user->get_image();?>" /> -->
+                        </div>
+                        <div class="shub_message_header">
+                            <!-- <?php echo $reply_shub_user->get_full_link(); ?> -->
+                        </div>
+                        <div class="shub_message_body">
+                            <textarea placeholder="Write a reply..."></textarea>
+                            <button data-post="<?php echo esc_attr(json_encode(array(
+                                'network-account-id' => $this->get('shub_'.$this->network.'_id'),
+                                'network-message-id' => $network_message_id,
+                                'network' => $this->network,
+                            )));?>" class="btn button"><?php _e('Send');?></button>
+                        </div>
+                        <div class="shub_message_actions">
+                            <input id="message_reply_debug_<?php echo $network_message_id;?>" type="checkbox" name="debug" data-reply="yes" value="1"> <label for="message_reply_debug_<?php echo $network_message_id;?>"><?php _e('enable debug mode','shub');?></label>
+                            <?php $this->reply_actions();?>
+                        </div>
                     </div>
                 </section>
                 <section class="message_request_extra">
@@ -124,7 +131,7 @@ class SupportHub_message{
                     ));
                     ?>
                 </section>
-            </form>
+            </div>
 
         <?php }
     }

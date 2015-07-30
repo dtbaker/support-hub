@@ -116,34 +116,47 @@
     float:left;
     width:190px;
     padding: 10px 10px 0 0;
-    position: absolute;
+}
+.message_sidebar nav{
+    display: none;
 }
 .message_sidebar header{
     padding: 0 0 10px 0;
 }
-.message_request_extra,
 .message_content{
     margin-left: 200px;
+    padding: 10px 0;
 }
 .message_request_extra{
     display: none;
-    border-left: 1px solid #d0d4e4;
-    min-height: 500px;
+    border: 1px solid #d0d4e4;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
     padding: 20px;
+    background: #FFF;
+    position: absolute;
+    top:20px;
+    left: 370px;
 }
-.shub_message{
-    border-bottom: 1px solid #d0d4e4;
-    border-left: 1px solid #d0d4e4;
-    border-top: 1px solid #d0d4e4;
-    border-right: 1px solid #d0d4e4;
-    padding: 5px 0 0 5px;
-    margin-top: -1px;
+.shub_message_primary{
+    background-color: #f5f5f5;
+    border-radius: 4px 4px 0 0;
+    padding: 10px;
+    margin-bottom: 1px;
+}
+.shub_message_reply{
+    background-color: #e5e5e5;
+    margin-bottom: 1px;
+    padding: 10px;
+}
+.shub_message_reply_box {
+    border-radius: 0 0 4px 4px;
 }
 .shub_message_private{
     background: #fffbc6;
 }
 .shub_message_replies{
-    margin-left: 40px;
 }
 .shub_message_account_icon{
     height:27px;
@@ -151,15 +164,9 @@
     margin: 5px 5px 0 0;
 }
 
-.shub_message_reply_box{
-    display: none;
-}
-.shub_message_reply_box_level1{
-    display: block;
-}
-
 .shub_message_body{
     margin-left: 40px;
+    overflow: auto;
 }
 .shub_message_title{
     font-weight: bold;
@@ -179,34 +186,32 @@
     float: left;*/
     padding: 0 5px 0 0;
     font-weight: bold;
+    margin-left: 40px;
 }
 .shub_message_header span{
     font-weight: normal;
     color:#999;
 }
 .shub_message_actions{
-    clear: both;
     font-size: 0.9em;
     margin-left: 40px;
     padding: 0 0 5px 0;
 }
-.shub_message_reply{
-    margin-left: 40px;
-}
-.shub_message_reply button{
-    float: left;
+.shub_message_reply_box button{
+    float: right;
+    clear:right;
     height:2em;
     border:1px solid #bdc7d8;
-    margin:0 0 0 5px;
+    margin:5px 0 0 0;
 }
 
-.shub_message_reply textarea{
+.shub_message_reply_box textarea{
     float: left;
     background: #FFF;
     border:1px solid #bdc7d8;
-    width:88%;
+    width:100%;
     min-height:2em;
-    resize: none;
+    resize: vertical;
 }
 #TB_ajaxContent{
     padding-top:0;
@@ -215,14 +220,86 @@
 tr.log_error{
     background: #FBFF66 !important;
 }
-
-@media (min-width: 1025px) {
+.shub_table_inline {
+    margin: 20px 0;
+    padding: 20px;
+    background: #FFF;
+    border-radius: 10px;
+}
+@media (min-width: 961px) {
+    .shub_table_inline {
+        width: 80%;
+        margin-left: 10%;
+        margin-right: 10%;
+    }
+}
+@media (min-width: 1300px) {
     .shub_table_inline {
         width: 66%;
-        float: left;
-        margin-left: 17%;
-        margin-right: 17%;
+        margin-left: 15%;
+        margin-right: 15%;
     }
+}
+@media screen and (max-width: 782px){
+
+    .message_sidebar{
+        float: none;
+        width: auto;
+        padding: 10px;
+        background-color: #e5e5e5;
+        margin: 10px 10px 0;
+        border-radius: 4px 4px 0 0;
+    }
+    .shub_message_primary{
+        border-radius: 0;
+    }
+    .message_content{
+        margin-left: 0;
+    }
+    .message_request_extra{
+        left:40px;
+    }
+    .message_sidebar nav{
+        display: block;
+    }
+    .message_sidebar nav:after{
+        content: "";
+        display: block;
+        clear: both;
+    }
+    #shub_search_form .tablenav.top{
+        display: none;
+    }
+    .message_sidebar header,
+    .message_sidebar aside{
+        display: none;
+    }
+    .message_content{
+        padding: 0 10px 10px;
+    }
+    .shub_message_actions,
+    .shub_message_body{
+        clear: left;
+        margin-left: 0px;
+    }
+}
+.shub_network_message_action{
+    display: none;
+}
+.shub_network_message_action .action_content{
+    padding: 5px;
+    text-align: center;
+    background: #FFFBCD;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+.shub_table_inline .shub_network_message_action:after{
+    content: "";
+    display: block;
+    margin-bottom: 5px;
+    padding-top: 5px;
+    clear: both;
 }
 .shub_table_inline .shub_network_message:after{
     border-bottom: 1px solid #d4d4d4;
@@ -230,16 +307,27 @@ tr.log_error{
     display: block;
     margin-bottom: 20px;
     padding-top: 20px;
+    clear: both;
 }
 .shub_table_inline .primary_comment {
     background-color: #f5f5f5;
 }
 
-
-#message_edit_form a{
+.message_edit_form{
+    position: relative;
+}
+.message_edit_form a{
     text-decoration: none;
 }
-#message_edit_form > .message_replies{
+.message_edit_form > .message_replies{
     margin-left: 0;
     border-left: none;
+}
+.tablenav_display_type{
+    padding: 3px !important;
+
+}
+.shub_other_messages{
+    max-height: 300px;
+    overflow-y: auto;
 }

@@ -37,7 +37,7 @@ class SupportHub_Account_Data_List_Table extends WP_List_Table {
 	}
 
 	function no_items() {
-		_e( 'Nothing found.' );
+		_e( 'No messages found.' );
 	}
 
 	function column_default( $item, $column_name ) {
@@ -154,11 +154,15 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 	    return '';
 	}
 	public function get_bulk_actions(){
-		return array(
-	        'archive'    => __('Archive'),
-	        'un-archive'  => __('Move to Inbox'),
-	        'hide'  => __('Hide')
-	    );
+        if($this->layout_type == 'table') {
+            return array(
+                'archive' => __('Archive'),
+                'un-archive' => __('Move to Inbox'),
+                'hide' => __('Hide')
+            );
+        }else{
+            return array();
+        }
 	}
 	public function process_bulk_action() {
 		$action = $this->current_action();
@@ -362,9 +366,17 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
     public function extra_tablenav( $which ){
         if($which == 'top') {
             ?>
-            <div class="tablenav_display_type">
-                View: <a href="#" class="swap_layout_type" data-layout-type="table">Table</a> |
-                <a href="#" class="swap_layout_type" data-layout-type="inline">Inline</a>
+            <div class="tablenav_display_type alignright actions">
+                <?php switch($this->layout_type){
+                    case 'inline':
+                    ?>
+                        <input type="button" class="swap_layout_type button" data-layout-type="table" value="Swap to Table View">
+                    <?php
+                    break;
+                default:
+                    ?>
+                    <input type="button" class="swap_layout_type button" data-layout-type="inline" value="Swap to Inline View">
+                <?php } ?>
             </div>
             <?php
         }
@@ -377,8 +389,14 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
         switch($this->layout_type){
             case 'inline':
                 ?>
-                <div class="shub_table_inline <?php echo implode( ' ', $this->get_table_classes() ); ?>">
-                    <?php $this->display_rows_or_placeholder(); ?>
+                <div class="shub_table_inline">
+                    <?php if ( $this->has_items() ) {
+                        $this->display_rows();
+                    } else {
+                        echo '<div class="no-items" style="text-align:center">';
+                        $this->no_items();
+                        echo '</div>';
+                    } ?>
                 </div>
                 <?php
                 break;
@@ -414,17 +432,23 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
     public function single_row( $item ) {
         switch($this->layout_type) {
             case 'inline':
-                echo '<div';
                 if (is_array($item) && isset($item['message_manager']) && $item['message_manager']->id) {
+                    echo '<div class="shub_network_message_action"><div class="action_content"></div></div>';
+                    echo '<div';
                     echo ' class="shub_network_message"';
                     echo ' data-network="' . $item['message_manager']->id . '"';
                     echo ' data-network-message-id="' . $item['shub_' . $item['message_manager']->id . '_message_id'] . '"';
+                    echo '>';
+                    // show the same content from output_message_page() page from the modal popup, but give it a minimal view so it doesn't look too cluttered on the page
+                    $message = $item['message_manager']->get_message(false, false, $item['shub_' . $item['message_manager']->id . '_message_id']);
+                    $message->output_message_page();
+                    echo '</div>';
+                }else{
+                    echo 'Invalid item. Please remove bug to dtbaker.';
                 }
-                echo '>';
-                $this->single_row_columns($item);
-                echo '</div>';
                 break;
             default:
+                echo '<tr class="shub_network_message_action"><td class="action_content" colspan="'.$this->get_column_count().'"></td></tr>';
                 echo '<tr';
                 if (is_array($item) && isset($item['message_manager']) && $item['message_manager']->id) {
                     echo ' class="shub_network_message"';

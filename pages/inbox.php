@@ -5,7 +5,7 @@
 	</h2>
     <?php
 
-    $layout_type = isset($_REQUEST['layout_type']) ? $_REQUEST['layout_type'] : (!empty($_SESSION['shub_layout_type']) ? $_SESSION['shub_layout_type'] : 'table');
+    $layout_type = isset($_REQUEST['layout_type']) ? $_REQUEST['layout_type'] : (!empty($_SESSION['shub_layout_type']) ? $_SESSION['shub_layout_type'] : 'inline');
     $_SESSION['shub_layout_type'] = $layout_type;
 
 	// grab a mysql resource from all available social plugins (hardcoded for now - todo: hook)

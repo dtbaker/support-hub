@@ -240,7 +240,7 @@ class SupportHubExtra{
 		$extras = self::get_all_extras();
 		?>
 		<div>
-			Request Extra Details:
+			<?php _e('Request Extra Details:','shub'); ?>
 		</div>
 		<ul>
 			<?php foreach($extras as $extra){ ?>

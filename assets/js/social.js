@@ -9,19 +9,24 @@ ucm.social = {
             ucm.social.open_modal(jQuery(this).attr('href'), jQuery(this).data('modaltitle'), jQuery(this).data());
             return false;
         }).delegate('.shub_request_extra', 'click', function(){
-            var $f = jQuery(this).parents('form').first();
+            var $f = jQuery(this).parents('.message_edit_form').first();
+            // find out how far away this button is from the parent form
+            // move our 'request extra' popover this far down as well so it kinda lines up nicely for long messages.
             if($f.data('requesting_extra')){
                 $f.data('requesting_extra',false);
-                $f.find('.message_content').show();
+                $f.find('.message_content').css('opacity',1);
                 $f.find('.message_request_extra').hide();
             }else{
                 $f.data('requesting_extra',true);
-                $f.find('.message_content').hide();
-                $f.find('.message_request_extra').show();
+                $f.find('.message_content').css('opacity',0.4);
+                var pos = jQuery(this).position();
+                var $e = $f.find('.message_request_extra');
+                $e.show().css('top',Math.max(20, pos.top - jQuery($e).height() - (jQuery($e).height()/2)));
+
             }
             return false;
         }).delegate('.shub_request_extra_generate', 'click', function(){
-            var $f = jQuery(this).parents('form').first();
+            var $f = jQuery(this).parents('.message_edit_form').first();
             $f.find('.extra_details_message').text('');
             // send a message with these extra details.
             var postdata = jQuery(this).data();
@@ -42,9 +47,9 @@ ucm.social = {
                         window.location = r.redirect;
                     }else if(r && typeof r.message != 'undefined'){
                         // got a successful message response, paste that into the next available 'reply' box on the window.
-                        jQuery('.shub_message_reply textarea').val(r.message);
-                        setTimeout(function(){jQuery('.shub_message_reply textarea').keyup();},100);
-                        jQuery('.shub_request_extra').first().click(); // swap back to message screen.
+                        $f.find('.shub_message_reply textarea').val(r.message);
+                        setTimeout(function(){$f.find('.shub_message_reply textarea').keyup();},100);
+                        $f.find('.shub_request_extra').first().click(); // swap back to message screen.
                     }else{
                         $f.find('.extra_details_message').text("Unknown error, please try again: "+r);
                     }
@@ -135,6 +140,11 @@ ucm.social = {
             return false;
         }).delegate('.swap_layout_type','click',function(){
             jQuery('#layout_type').val(jQuery(this).data('layout-type')).parents('form').get(0).submit();
+            return false;
+        }).delegate('.shub_view_full_message_sudebar','click',function(){
+            var $s = jQuery(this).parents('section').first();
+            $s.find('nav').hide();
+            $s.find('header,aside').show();
             return false;
         });
     },

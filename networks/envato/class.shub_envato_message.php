@@ -664,12 +664,12 @@ class shub_envato_message extends SupportHub_message{
 
         <strong><?php _e('Account:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('envato_account') ? $this->get('envato_account')->get( 'envato_name' ) : 'N/A' ); ?></a> <br/>
 
-        <strong><?php _e('Date:');?></strong> <?php echo shub_print_date( $this->get('last_active'), false ); ?>  <br/>
+        <strong><?php _e('Time:');?></strong> <?php echo shub_print_date( $this->get('last_active'), true ); ?>  <br/>
 
         <?php
         if($envato_item_data){
             ?>
-            <strong><?php _e('Envato Item:');?></strong>
+            <strong><?php _e('Item:');?></strong>
             <a href="<?php echo isset( $envato_item_data['url'] ) ? $envato_item_data['url'] : $this->get_link(); ?>"
                target="_blank"><?php
                 echo htmlspecialchars( $envato_item_data['item'] ); ?></a>
@@ -679,9 +679,10 @@ class shub_envato_message extends SupportHub_message{
 
         $data = $this->get('data');
         if(!empty($data['buyer_and_author']) && $data['buyer_and_author'] && $data['buyer_and_author'] !== 'false'){
-            ?>
+            // hmm - this doesn't seem to be a "purchased" flag.
+            /*?>
             <strong>PURCHASED</strong><br/>
-            <?php
+            <?php*/
         }
     }
 

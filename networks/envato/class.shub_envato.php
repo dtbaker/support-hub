@@ -378,7 +378,7 @@ class shub_envato extends SupportHub_network {
 
 		ob_start();
 		?>
-        <a href="<?php echo $envato_message->link_open();?>" class="socialenvato_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($title);?>" data-network="envato" data-network_message_id="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Open' );?></a>
+        <a href="<?php echo $envato_message->link_open();?>" class="socialenvato_message_open shub_modal button" data-modaltitle="<?php echo esc_attr($title);?>" data-network="envato" data-network_message_id="<?php echo (int)$envato_message->get('shub_envato_message_id');?>"><?php _e( 'Open' );?></a>
 	    <?php if($envato_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 		    <a href="#" class="socialenvato_message_action shub_message_action button"
 		       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
@@ -707,15 +707,15 @@ class shub_envato extends SupportHub_network {
                         foreach ($comments as $comment) {
                             if ($current_extension == 'envato' && $message_object->get('shub_envato_message_id') == $comment['shub_envato_message_id']) continue;
                             if (!isset($details['messages']['envato' . $comment['shub_envato_message_id']])) {
-//						$other_message = new shub_envato_message();
-//						$other_message->load($comment['shub_envato_message_id']);
+						$other_message = new shub_envato_message();
+						$other_message->load($comment['shub_envato_message_id']);
                                 $details['messages']['envato' . $comment['shub_envato_message_id']] = array(
                                     'summary' => $comment['message_text'],
                                     'time' => $comment['time'],
                                     'network' => 'envato',
                                     'network_message_id' => $comment['shub_envato_message_id'],
                                     'network_message_comment_id' => $comment['shub_envato_message_comment_id'],
-//							'message_status' => $other_message->get('status'),
+							'message_status' => $other_message->get('status'),
                                 );
                             }
                         }

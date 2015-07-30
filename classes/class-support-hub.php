@@ -122,8 +122,23 @@ class SupportHub {
                         if ($shub_network_message->get('shub_' . $_REQUEST['network'] . '_message_id') == $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']) {
                             $shub_network_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
                             if (!headers_sent())header('Content-type: text/javascript');
+                            // we hide the element and provide an 'undo' placeholder in its place.
+                            // if it's a row we just hide it, if it's a div we slide it up nicely.
                             ?>
-                            jQuery('tr.shub_network_message[data-network=<?php echo $_REQUEST['network']; ?>][data-network-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]').hide();
+                            var element = jQuery('.shub_network_message[data-network=<?php echo $_REQUEST['network']; ?>][data-network-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]');
+                            var element_action = element.prev('.shub_network_message_action').first();
+                            element_action.find('.action_content').html('Message Archived. <a href="#" class="shub_message_action" data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
+                                'network' => $_REQUEST['network'],
+                                'shub_'.$_REQUEST['network'].'_message_id' => $_REQUEST['shub_'.$_REQUEST['network'].'_message_id'],
+                            )));?>">Undo</a>');
+                            if(element.is('div')){
+                            element.slideUp();
+                            element_action.slideDown();
+                            }else{
+                            element.hide();
+                            element_action.show();
+                            }
+                            element_action.data('undo-type','answered');
                             <?php
                         }
                     }
@@ -134,8 +149,23 @@ class SupportHub {
                         if ($shub_network_message->get('shub_' . $_REQUEST['network'] . '_message_id') == $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']) {
                             $shub_network_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
                             if (!headers_sent())header('Content-type: text/javascript');
+                            // we hide the element and provide an 'undo' placeholder in its place.
+                            // if it's a row we just hide it, if it's a div we slide it up nicely.
                             ?>
-                            jQuery('tr.shub_network_message[data-network=<?php echo $_REQUEST['network']; ?>][data-network-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]').hide();
+                            var element = jQuery('.shub_network_message[data-network=<?php echo $_REQUEST['network']; ?>][data-network-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]');
+                            var element_action = element.prev('.shub_network_message_action').first();
+                            element_action.find('.action_content').html('Message Moved to Inbox. <a href="#" class="shub_message_action" data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
+                                'network' => $_REQUEST['network'],
+                                'shub_'.$_REQUEST['network'].'_message_id' => $_REQUEST['shub_'.$_REQUEST['network'].'_message_id'],
+                            )));?>">Undo</a>');
+                            if(element.is('div')){
+                            element.slideUp();
+                            element_action.slideDown();
+                            }else{
+                            element.hide();
+                            element_action.show();
+                            }
+                            element_action.data('undo-type','unanswered');
                             <?php
                         }
                     }
@@ -804,12 +834,6 @@ EOT;
 			<?php
 		}
 
-
-
-		?>
-		<strong><?php _e('Linked User:');?></strong>
-
-		<?php
         $user_bits = array();
         if(!empty($user_hints['shub_user_id'])){
             foreach($user_hints['shub_user_id'] as $shub_user_id) {
@@ -846,27 +870,47 @@ EOT;
         if(isset($user_details['codes'])){
             // todo: pull in information about this purchase code via ajax after the page has loaded.
             // cache and re-validate the purchase code from time to time.
-            $user_bits[] = array('Purchase Codes',(is_array($user_details['codes']) ? implode(', ',$user_details['codes']) : $user_details['codes']) .' ');
+            $purchase_codes = (is_array($user_details['codes']) ? implode(', ',$user_details['codes']) : $user_details['codes']);
+            if(!empty($purchase_codes)){
+                $user_bits[] = array('Purchase Codes',$purchase_codes);
+            }
         }
         ?> <ul class="linked_user_details"> <?php
         foreach($user_bits as $user_bit){
             ?>
-            <li><span><?php echo $user_bit[0];?>:</span> <?php echo $user_bit[1];?></li>
+            <li><strong><?php echo $user_bit[0];?>:</strong> <?php echo $user_bit[1];?></li>
             <?php
         }
         ?> </ul>
         <?php
         if(count($other_messages)){
             ?>
-            <strong><?php _e('Other Messages:');?></strong><br/>
+            <div class="shub_other_messages">
+            <strong><?php echo sprintf(__('%d Other Messages:','shub'),count($other_messages));?></strong><br/>
             <ul>
             <?php
             foreach($other_messages as $other_message){
                 ?>
-                <li><a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-network_message_id="<?php echo (int)$other_message['network_message_id'];?>" data-network_message_comment_id="<?php echo isset($other_message['network_message_comment_id']) ? (int)$other_message['network_message_comment_id'] : '';?>"><?php echo shub_print_date($other_message['time']);?> - <?php echo esc_html(substr($other_message['summary'],0,20));?> (<?php echo $other_message['network'];?>)</a></li>
+                <li>
+                    <?php echo shub_print_date($other_message['time']);?> - <?php switch($other_message['message_status']){
+                        case _shub_MESSAGE_STATUS_ANSWERED:
+                            echo 'Archived';
+                            break;
+                        case _shub_MESSAGE_STATUS_UNANSWERED:
+                            echo 'Inbox';
+                            break;
+                        case _shub_MESSAGE_STATUS_HIDDEN:
+                            echo 'Hidden';
+                            break;
+                        default:
+                            echo 'Other?';
+                    } ?><br/>
+                    <a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-network_message_id="<?php echo (int)$other_message['network_message_id'];?>" data-network_message_comment_id="<?php echo isset($other_message['network_message_comment_id']) ? (int)$other_message['network_message_comment_id'] : '';?>" data-modaltitle="<?php echo esc_attr($other_message['summary']);?>"><?php echo esc_html($other_message['summary']);?></a>
+                </li>
                 <?php
             }
-            ?></ul><?php
+            ?></ul>
+            </div><?php
         }
 
 	}
