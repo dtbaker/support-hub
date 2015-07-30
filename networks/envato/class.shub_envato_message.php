@@ -1,6 +1,8 @@
 <?php
 
-class shub_envato_message{
+class shub_envato_message extends SupportHub_message{
+
+    protected $network = 'envato';
 
 	public function __construct($envato_account = false, $envato_item = false, $shub_envato_message_id = false){
 		$this->envato_account = $envato_account;
@@ -14,6 +16,8 @@ class shub_envato_message{
 	private $envato_account = false;
 	private $shub_envato_message_id = false; // the current user id in our system.
     private $details = array();
+
+    public $json_fields = array('data','comments');
 
 	private function reset(){
 		$this->shub_envato_message_id = false;
@@ -66,11 +70,11 @@ class shub_envato_message{
 					$this->update('summary',$comments[count($comments)-1]['content']);
 					$this->update('last_active',strtotime($message_data['last_comment_at']));
 					$this->update('type',$type);
-					$this->update('data',json_encode($message_data));
+					$this->update('data',$message_data);
 					$this->update('link',$message_data['url'] . '/' . $message_data['id']);
 					$this->update('envato_id', $envato_id);
                     if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
-					$this->update('comments',json_encode($comments));
+					$this->update('comments',$comments);
 
 					// create/update a user entry for this comments.
 				    $shub_user_id = 0;
@@ -107,6 +111,10 @@ class shub_envato_message{
 	        $data = shub_get_single('shub_envato_message','shub_envato_message_id',$this->shub_envato_message_id);
 	        foreach($this->details as $key=>$val){
 		        $this->details[$key] = $data && isset($data[$key]) ? $data[$key] : $val;
+                if(in_array($key,$this->json_fields)){
+                    $this->details[$key] = @json_decode($this->details[$key],true);
+                    if(!is_array($this->details[$key]))$this->details[$key] = array();
+                }
 	        }
 	        if(!is_array($this->details) || !isset($this->details['shub_envato_message_id']) || $this->details['shub_envato_message_id'] != $this->shub_envato_message_id){
 		        $this->reset();
@@ -135,6 +143,9 @@ class shub_envato_message{
 	    if(in_array($field,array('shub_envato_message_id')))return;
         if($this->shub_envato_message_id){
             $this->{$field} = $value;
+            if(in_array($field,$this->json_fields)){
+                $value = json_encode($value);
+            }
             shub_update_insert('shub_envato_message_id',$this->shub_envato_message_id,'shub_envato_message',array(
 	            $field => $value,
             ));
@@ -142,7 +153,7 @@ class shub_envato_message{
 		    if($field == 'comments'){
 			    // we push all thsee messages into a shub_envato_message_comment database table
 			    // this is so we can do quick lookups on message ids so we dont import duplicate items from graph (ie: a reply on a message comes in as a separate item sometimes)
-			    $data = @json_decode($value,true);
+			    $data = is_array($value) ? $value : @json_decode($value,true);
 			    if(is_array($data)) {
 				    // clear previous message history.
 				    $existing_messages = $this->get_comments(); //shub_get_multiple('shub_envato_message_comment',array('shub_envato_message_id'=>$this->shub_envato_message_id),'shub_envato_message_comment_id');
@@ -406,7 +417,16 @@ class shub_envato_message{
 	}
 
 	public function get_link() {
-		return '//themeforest.net/';
+        $envato_item = $this->get('envato_item');
+        if($envato_item){
+            $shub_product_id = $envato_item->get('shub_product_id');
+            $envato_item_data = $envato_item->get('envato_data');
+            if(!is_array($envato_item_data))$envato_item_data = array();
+            if(!empty($envato_item_data['url'])) {
+                return $envato_item_data['url'] .'/comments/'. $this->get('envato_id');
+            }
+        }
+        return '#';
 	}
 
 	private $attachment_name = '';
@@ -621,6 +641,75 @@ class shub_envato_message{
 		return array();
 	}
 
+    public function message_sidebar_data(){
+
+        // find if there is a product here
+        $shub_product_id = false;
+        $product_data = array();
+        $envato_item_data = array();
+        $envato_item = $this->get('envato_item');
+        if($envato_item){
+            $shub_product_id = $envato_item->get('shub_product_id');
+            $envato_item_data = $envato_item->get('envato_data');
+            if(!is_array($envato_item_data))$envato_item_data = array();
+        }
+        if($shub_product_id) {
+            $shub_product = new SupportHubProduct();
+            $shub_product->load( $shub_product_id );
+            $product_data = $shub_product->get( 'product_data' );
+        }
+        ?>
+        <img src="<?php echo plugins_url('networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon"> <br/>
+
+
+        <strong><?php _e('Account:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('envato_account') ? $this->get('envato_account')->get( 'envato_name' ) : 'N/A' ); ?></a> <br/>
+
+        <strong><?php _e('Date:');?></strong> <?php echo shub_print_date( $this->get('last_active'), false ); ?>  <br/>
+
+        <?php
+        if($envato_item_data){
+            ?>
+            <strong><?php _e('Envato Item:');?></strong>
+            <a href="<?php echo isset( $envato_item_data['url'] ) ? $envato_item_data['url'] : $this->get_link(); ?>"
+               target="_blank"><?php
+                echo htmlspecialchars( $envato_item_data['item'] ); ?></a>
+            <br/>
+            <?php
+        }
+
+        $data = $this->get('data');
+        if(!empty($data['buyer_and_author']) && $data['buyer_and_author'] && $data['buyer_and_author'] !== 'false'){
+            ?>
+            <strong>PURCHASED</strong><br/>
+            <?php
+        }
+    }
+
+    public function get_user_hints($user_hints = array()){
+        $comments         = $this->get_comments();
+        $first_comment = current($comments);
+        if(isset($first_comment['shub_user_id']) && $first_comment['shub_user_id']){
+            $user_hints['shub_user_id'][] = $first_comment['shub_user_id'];
+        }
+        $message_from = @json_decode($first_comment['message_from'],true);
+        if($message_from && isset($message_from['username'])){ //} && $message_from['username'] != $envato_message->get('envato_account')->get( 'envato_name' )){
+            // this wont work if user changes their username, oh well.
+            $other_users = new SupportHubUser_Envato();
+            $other_users->load_by_meta('envato_username',$message_from['username']);
+            if($other_users->get('shub_user_id') && !in_array($other_users->get('shub_user_id'),$user_hints['shub_user_id'])){
+                // pass these back to the calling method so we can get the correct values.
+                $user_hints['shub_user_id'][] = $other_users->get('shub_user_id');
+            }
+        }
+        return $user_hints;
+    }
+    public function get_user($shub_user_id){
+        return new SupportHubUser_Envato($shub_user_id);
+    }
+    public function get_reply_user(){
+
+        return new SupportHubUser_Envato($this->envato_account->get('shub_user_id'));
+    }
 
 	public function link_open(){
 		return 'admin.php?page=support_hub_main&network=envato&network_message_id='.$this->shub_envato_message_id;

@@ -19,6 +19,7 @@ class shub_envato_account{
 		$this->shub_envato_id = false;
 		$this->details = array(
 			'shub_envato_id' => false,
+			'shub_user_id' => 0,
 			'envato_name' => false,
 			'last_checked' => false,
 			'envato_data' => array(),

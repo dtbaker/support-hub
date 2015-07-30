@@ -546,6 +546,7 @@ class shub_twitter extends SupportHub_network {
 
 CREATE TABLE {$wpdb->prefix}shub_twitter (
   shub_twitter_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   twitter_id varchar(255) NOT NULL,
   twitter_name varchar(50) NOT NULL,
   twitter_data text NOT NULL,
@@ -634,9 +635,9 @@ class shub_twitter_account{
 
 	private function reset(){
 		$this->shub_twitter_id = false;
-		self::$api = false;
 		$this->details = array(
 			'shub_twitter_id' => false,
+			'shub_user_id' => 0,
 			'twitter_id' => false,
 			'twitter_name' => false,
 			'twitter_data' => false,

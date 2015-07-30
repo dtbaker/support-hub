@@ -34,6 +34,7 @@ define('_SUPPORT_HUB_LINK_REQUEST_EXTRA','shrequestextra');
 require_once( 'classes/class-support-hub.php' );
 require_once( 'classes/class-support-hub-table.php' );
 require_once( 'classes/class-support-hub-network.php' );
+require_once( 'classes/class-support-hub-message.php' );
 require_once( 'classes/class-support-hub-product.php' );
 require_once( 'classes/class-support-hub-user.php' );
 require_once( 'classes/class-support-hub-extra.php' );

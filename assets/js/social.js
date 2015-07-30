@@ -133,6 +133,9 @@ ucm.social = {
                 }
             });
             return false;
+        }).delegate('.swap_layout_type','click',function(){
+            jQuery('#layout_type').val(jQuery(this).data('layout-type')).parents('form').get(0).submit();
+            return false;
         });
     },
     close_modal: function(){

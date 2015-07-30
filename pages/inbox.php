@@ -4,7 +4,10 @@
 		<!-- <a href="?page=support_hub_compose" class="add-new-h2"><?php _e('Compose','support_hub');?></a> -->
 	</h2>
     <?php
-    // copy layout from UCM
+
+    $layout_type = isset($_REQUEST['layout_type']) ? $_REQUEST['layout_type'] : (!empty($_SESSION['shub_layout_type']) ? $_SESSION['shub_layout_type'] : 'table');
+    $_SESSION['shub_layout_type'] = $layout_type;
+
 	// grab a mysql resource from all available social plugins (hardcoded for now - todo: hook)
 	$search = isset($_REQUEST['search']) && is_array($_REQUEST['search']) ? $_REQUEST['search'] : array();
 	if(!isset($search['status'])){
@@ -28,7 +31,7 @@
 		'cb' => 'Select All',
 		'shub_column_account' => __( 'Account', 'support_hub' ),
 		'shub_column_product' => __( 'Product', 'support_hub' ),
-		'shub_column_time'    => __( 'Date/Time', 'support_hub' ),
+		'shub_column_time'    => __( 'Time', 'support_hub' ),
 		'shub_column_from'    => __( 'From', 'support_hub' ),
 		'shub_column_summary'    => __( 'Summary', 'support_hub' ),
 		'shub_column_action'    => __( 'Action', 'support_hub' ),
@@ -132,44 +135,47 @@
 	// todo - hack in here some sort of cache so pagination works nicer ?
 	//module_debug::log(array( 'title' => 'Finished social messages', 'data' => '', ));
 
-	$myListTable->set_data($all_messages);
-	$myListTable->prepare_items();
-    $myListTable->pagination_has_more = $has_more;
-    ?>
-	<form method="post" id="shub_search_form">
-	    <input type="hidden" name="paged" value="<?php echo isset($_REQUEST['paged']) ? (int)$_REQUEST['paged'] : 0; ?>" />
-	    <?php //$myListTable->search_box(__('Search','support_hub'), 'search_id'); ?>
-		<p class="search-box">
-		<label for="simple_inbox-search-type"><?php _e('Network:','support_hub');?></label>
-		<select id="simple_inbox-search-type" name="search[type]">
-			<option value=""><?php _e('All','support_hub');?></option>
-			<?php foreach($this->message_managers as $message_manager_id => $message_manager){ ?>
-			<option value="<?php echo $message_manager_id;?>"<?php echo isset($search['type']) && $search['type'] == $message_manager_id ? ' selected' : '';?>><?php echo $message_manager->friendly_name;?></option>
-			<?php } ?>
-		</select>
-		<label for="simple_inbox-search-product"><?php _e('Product:','support_hub');?></label>
-		<select id="simple_inbox-search-product" name="search[shub_product_id]">
-			<option value=""><?php _e('All','support_hub');?></option>
-			<?php foreach(SupportHub::getInstance()->get_products() as $product){ ?>
-			<option value="<?php echo $product['shub_product_id'];?>"<?php echo isset($search['shub_product_id']) && $search['shub_product_id'] == $product['shub_product_id'] ? ' selected' : '';?>><?php echo esc_attr( $product['product_name'] );?></option>
-			<?php } ?>
-		</select>
-		<label for="simple_inbox-search-input"><?php _e('Message Content:','support_hub');?></label>
-		<input type="search" id="simple_inbox-search-input" name="search[generic]" value="<?php echo isset($search['generic']) ? esc_attr($search['generic']) : '';?>">
+            $myListTable->set_layout_type($layout_type);
+            $myListTable->set_data($all_messages);
+            $myListTable->prepare_items();
+            $myListTable->pagination_has_more = $has_more;
+            ?>
+            <form method="post" id="shub_search_form">
+                <input type="hidden" name="paged" value="<?php echo isset($_REQUEST['paged']) ? (int)$_REQUEST['paged'] : 0; ?>" />
+                <input type="hidden" name="layout_type" id="layout_type" value="<?php echo esc_attr($layout_type); ?>" />
+                <?php //$myListTable->search_box(__('Search','support_hub'), 'search_id'); ?>
+                <p class="search-box">
+                    <label for="simple_inbox-search-type"><?php _e('Network:','support_hub');?></label>
+                    <select id="simple_inbox-search-type" name="search[type]">
+                        <option value=""><?php _e('All','support_hub');?></option>
+                        <?php foreach($this->message_managers as $message_manager_id => $message_manager){ ?>
+                            <option value="<?php echo $message_manager_id;?>"<?php echo isset($search['type']) && $search['type'] == $message_manager_id ? ' selected' : '';?>><?php echo $message_manager->friendly_name;?></option>
+                        <?php } ?>
+                    </select>
+                    <label for="simple_inbox-search-product"><?php _e('Product:','support_hub');?></label>
+                    <select id="simple_inbox-search-product" name="search[shub_product_id]">
+                        <option value=""><?php _e('All','support_hub');?></option>
+                        <?php foreach(SupportHub::getInstance()->get_products() as $product){ ?>
+                            <option value="<?php echo $product['shub_product_id'];?>"<?php echo isset($search['shub_product_id']) && $search['shub_product_id'] == $product['shub_product_id'] ? ' selected' : '';?>><?php echo esc_attr( $product['product_name'] );?></option>
+                        <?php } ?>
+                    </select>
+                    <label for="simple_inbox-search-input"><?php _e('Message Content:','support_hub');?></label>
+                    <input type="search" id="simple_inbox-search-input" name="search[generic]" value="<?php echo isset($search['generic']) ? esc_attr($search['generic']) : '';?>">
 
-		<label for="simple_inbox-search-status"><?php _e('Status:','support_hub');?></label>
-		<select id="simple_inbox-search-status" name="search[status]">
-			<option value="-1"<?php echo isset($search['status']) && $search['status'] == -1 ? ' selected' : '';?>><?php _e('All','support_hub');?></option>
-			<option value="<?php echo _shub_MESSAGE_STATUS_UNANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_UNANSWERED ? ' selected' : '';?>><?php _e('Inbox','support_hub');?></option>
-			<option value="<?php echo _shub_MESSAGE_STATUS_ANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_ANSWERED ? ' selected' : '';?>><?php _e('Archived','support_hub');?></option>
-			<option value="<?php echo _shub_MESSAGE_STATUS_HIDDEN;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_HIDDEN ? ' selected' : '';?>><?php _e('Hidden','support_hub');?></option>
-		</select>
+                    <label for="simple_inbox-search-status"><?php _e('Status:','support_hub');?></label>
+                    <select id="simple_inbox-search-status" name="search[status]">
+                        <option value="-1"<?php echo isset($search['status']) && $search['status'] == -1 ? ' selected' : '';?>><?php _e('All','support_hub');?></option>
+                        <option value="<?php echo _shub_MESSAGE_STATUS_UNANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_UNANSWERED ? ' selected' : '';?>><?php _e('Inbox','support_hub');?></option>
+                        <option value="<?php echo _shub_MESSAGE_STATUS_ANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_ANSWERED ? ' selected' : '';?>><?php _e('Archived','support_hub');?></option>
+                        <option value="<?php echo _shub_MESSAGE_STATUS_HIDDEN;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_HIDDEN ? ' selected' : '';?>><?php _e('Hidden','support_hub');?></option>
+                    </select>
 
-		<input type="submit" name="" id="search-submit" class="button" value="<?php _e('Search','support_hub');?>"></p>
-		<?php
-	    $myListTable->display();
-		?>
-	</form>
+                    <input type="submit" name="" id="search-submit" class="button" value="<?php _e('Search','support_hub');?>"></p>
+                <?php
+                $myListTable->display();
+                ?>
+            </form>
+
 
 	<script type="text/javascript">
 	    jQuery(function () {

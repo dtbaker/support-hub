@@ -130,6 +130,8 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 
 	public $available_networks = array();
 
+    public $layout_type = 'table';
+
 	function __construct($args = array()) {
 		$args = wp_parse_args( $args, array(
 			'plural'   => __( 'messages', 'support_hub' ),
@@ -228,7 +230,6 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 	    foreach($this->available_networks as $network => $mm){
 			if(isset($item['shub_'.$network.'_message_id'])){
 				// pass this row rendering off to the facebook plugin
-			    // todo - don't hack the <td> outputfrom the existing plugin, move that back into this table class
 			    if(!isset($this->row_output[$network][$item['shub_'.$network.'_message_id']])){
 				    if(!isset($this->row_output[$network]))$this->row_output[$network] = array();
 				    $this->row_output[$network][$item['shub_'.$network.'_message_id']] = $item['message_manager']->output_row($item);
@@ -355,18 +356,150 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 		<?php
 	}
 
-    public function single_row( $item ) {
-        echo '<tr';
-        if(is_array($item) && isset($item['message_manager']) && $item['message_manager']->id){
-            echo ' class="shub_network_message"';
-            echo ' data-network="'.$item['message_manager']->id.'"';
-            echo ' data-network-message-id="'.$item['shub_' . $item['message_manager']->id . '_message_id'].'"';
+    public function set_layout_type($layout_type){
+        $this->layout_type = $layout_type;
+    }
+    public function extra_tablenav( $which ){
+        if($which == 'top') {
+            ?>
+            <div class="tablenav_display_type">
+                View: <a href="#" class="swap_layout_type" data-layout-type="table">Table</a> |
+                <a href="#" class="swap_layout_type" data-layout-type="inline">Inline</a>
+            </div>
+            <?php
         }
-        echo '>';
-        $this->single_row_columns( $item );
-        echo '</tr>';
+    }
+    public function display() {
+        $singular = $this->_args['singular'];
+
+        $this->display_tablenav( 'top' );
+
+        switch($this->layout_type){
+            case 'inline':
+                ?>
+                <div class="shub_table_inline <?php echo implode( ' ', $this->get_table_classes() ); ?>">
+                    <?php $this->display_rows_or_placeholder(); ?>
+                </div>
+                <?php
+                break;
+            default:
+                ?>
+                <table class="wp-list-table <?php echo implode( ' ', $this->get_table_classes() ); ?>">
+                    <thead>
+                    <tr>
+                        <?php $this->print_column_headers(); ?>
+                    </tr>
+                    </thead>
+
+                    <tbody id="the-list"<?php
+                    if ( $singular ) {
+                        echo " data-wp-lists='list:$singular'";
+                    } ?>>
+                    <?php $this->display_rows_or_placeholder(); ?>
+                    </tbody>
+
+                    <tfoot>
+                    <tr>
+                        <?php $this->print_column_headers( false ); ?>
+                    </tr>
+                    </tfoot>
+
+                </table>
+                <?php
+                break;
+        }
+        $this->display_tablenav( 'bottom' );
+    }
+
+    public function single_row( $item ) {
+        switch($this->layout_type) {
+            case 'inline':
+                echo '<div';
+                if (is_array($item) && isset($item['message_manager']) && $item['message_manager']->id) {
+                    echo ' class="shub_network_message"';
+                    echo ' data-network="' . $item['message_manager']->id . '"';
+                    echo ' data-network-message-id="' . $item['shub_' . $item['message_manager']->id . '_message_id'] . '"';
+                }
+                echo '>';
+                $this->single_row_columns($item);
+                echo '</div>';
+                break;
+            default:
+                echo '<tr';
+                if (is_array($item) && isset($item['message_manager']) && $item['message_manager']->id) {
+                    echo ' class="shub_network_message"';
+                    echo ' data-network="' . $item['message_manager']->id . '"';
+                    echo ' data-network-message-id="' . $item['shub_' . $item['message_manager']->id . '_message_id'] . '"';
+                }
+                echo '>';
+                $this->single_row_columns($item);
+                echo '</tr>';
+                break;
+        }
+    }
+
+    protected function single_row_columns( $item ) {
+        list( $columns, $hidden ) = $this->get_column_info();
+
+        switch($this->layout_type) {
+            case 'inline':
+                ?>
+                <div class="shub_message"
+                <?php
+                foreach ($columns as $column_name => $column_display_name) {
+                    $class = "class='$column_name column-$column_name'";
+
+                    $style = '';
+                    if (in_array($column_name, $hidden))
+                        $style = ' style="display:none;"';
+
+                    $attributes = "$class$style";
+
+                    if ('cb' == $column_name) {
+                        echo '<div scope="row" class="check-column">';
+                        echo $this->column_cb($item);
+                        echo '</div>';
+                    } elseif (method_exists($this, 'column_' . $column_name)) {
+                        echo "<div $attributes>";
+                        echo call_user_func(array($this, 'column_' . $column_name), $item);
+                        echo "</div>";
+                    } else {
+                        echo "<div $attributes>";
+                        echo $this->column_default($item, $column_name);
+                        echo "</div>";
+                    }
+                }
+                break;
+            default:
+                foreach ($columns as $column_name => $column_display_name) {
+                    $class = "class='$column_name column-$column_name'";
+
+                    $style = '';
+                    if (in_array($column_name, $hidden))
+                        $style = ' style="display:none;"';
+
+                    $attributes = "$class$style";
+
+
+                    if ('cb' == $column_name) {
+                        echo '<th scope="row" class="check-column">';
+                        echo $this->column_cb($item);
+                        echo '</th>';
+                    } elseif (method_exists($this, 'column_' . $column_name)) {
+                        echo "<td $attributes>";
+                        echo call_user_func(array($this, 'column_' . $column_name), $item);
+                        echo "</td>";
+                    } else {
+                        echo "<td $attributes>";
+                        echo $this->column_default($item, $column_name);
+                        echo "</td>";
+                    }
+                }
+                break;
+        }
     }
 }
+
 
 
 class SupportHubSentList extends SupportHub_Account_Data_List_Table{

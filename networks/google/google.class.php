@@ -486,6 +486,7 @@ class shub_google extends SupportHub_network {
 
 CREATE TABLE {$wpdb->prefix}shub_google (
   shub_google_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   username varchar(255) NOT NULL,
   password varchar(255) NOT NULL,
   google_id varchar(255) NOT NULL,
@@ -582,6 +583,7 @@ class shub_google_account{
 		self::$cookie_file = false;
 		$this->details = array(
 			'shub_google_id' => false,
+			'shub_user_id' => 0,
 			'username' => false,
 			'password' => false,
 			'api_cookies' => false,

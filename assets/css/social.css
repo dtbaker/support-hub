@@ -182,7 +182,7 @@
 }
 .shub_message_header span{
     font-weight: normal;
-    color:#CCC;
+    color:#999;
 }
 .shub_message_actions{
     clear: both;
@@ -214,4 +214,32 @@
 
 tr.log_error{
     background: #FBFF66 !important;
+}
+
+@media (min-width: 1025px) {
+    .shub_table_inline {
+        width: 66%;
+        float: left;
+        margin-left: 17%;
+        margin-right: 17%;
+    }
+}
+.shub_table_inline .shub_network_message:after{
+    border-bottom: 1px solid #d4d4d4;
+    content: "";
+    display: block;
+    margin-bottom: 20px;
+    padding-top: 20px;
+}
+.shub_table_inline .primary_comment {
+    background-color: #f5f5f5;
+}
+
+
+#message_edit_form a{
+    text-decoration: none;
+}
+#message_edit_form > .message_replies{
+    margin-left: 0;
+    border-left: none;
 }

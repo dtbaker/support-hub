@@ -106,9 +106,14 @@ class SupportHub {
                                     "shub_{$network}_message_comment_id" => $network_message_comment_id,
                                 ));
                                 include( trailingslashit( SupportHub::getInstance()->dir ) . 'networks/'.$network.'/'.$network.'_message.php');
+                            }else{
+                                echo 'Failed to load message from database';
                             }
+                        }else{
+                            echo 'Failed network message ID';
                         }
-
+                    }else{
+                        echo 'Failed network params';
                     }
                     break;
                 case 'set-answered':

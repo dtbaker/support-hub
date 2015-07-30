@@ -183,6 +183,9 @@ class SupportHubUser{
 	public function get_link(){
 		return '#';
 	}
+	public function get_full_link(){
+		return '';
+	}
 	public function get_image(){
 		if($this->get('user_email')){
 			$hash = md5(trim($this->get('user_email')));

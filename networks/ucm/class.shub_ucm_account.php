@@ -19,6 +19,7 @@ class shub_ucm_account{
 		$this->shub_ucm_id = false;
 		$this->details = array(
 			'shub_ucm_id' => false,
+			'shub_user_id' => 0,
 			'ucm_name' => false,
 			'last_checked' => false,
 			'ucm_data' => array(),

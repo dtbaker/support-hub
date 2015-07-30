@@ -18,6 +18,7 @@ class shub_facebook_account{
 		$this->shub_facebook_id = false;
 		$this->details = array(
 			'shub_facebook_id' => false,
+			'shub_user_id' => 0,
 			'facebook_name' => false,
 			'last_checked' => false,
 			'facebook_data' => false,

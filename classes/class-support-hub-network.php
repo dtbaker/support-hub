@@ -62,5 +62,6 @@ class SupportHub_network{
 	public function get_message($account, $item, $message_id){ return false; }
 
     public function handle_ajax($action, $support_hub_wp){}
+    public function init_js(){}
 
 }

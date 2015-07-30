@@ -727,6 +727,7 @@ class shub_facebook extends SupportHub_network {
 CREATE TABLE {$wpdb->prefix}shub_facebook (
   shub_facebook_id int(11) NOT NULL AUTO_INCREMENT,
   facebook_name varchar(50) NOT NULL,
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   last_checked int(11) NOT NULL DEFAULT '0',
   last_message int(11) NOT NULL DEFAULT '0',
   facebook_data text NOT NULL,

@@ -1,6 +1,4 @@
-#envato_edit_form a{
-    text-decoration: none;
-}
+
 .envato_message_full{
     display: none;
     background: #edeff4;
@@ -18,10 +16,6 @@
 .envato_message{
     border-bottom: 1px solid #d0d4e4;
     padding: 5px 0 0 5px;
-}
-#envato_edit_form > .envato_message_replies{
-    margin-left: 0;
-    border-left: none;
 }
 .envato_message_replies{
     margin-left: 40px;

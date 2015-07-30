@@ -304,3 +304,35 @@ function shub_forum_text($original_text, $paragraph = true){
     return $str;
 
 }
+
+
+// copied from stackoverflow somewhere.
+function shub_pretty_date($time,$suffix=' ago'){
+    $now = time();
+    $ago = $now - $time;
+    if($ago < 60){
+        $when = round($ago);
+        $s = ($when == 1)?"second":"seconds";
+        return "$when $s".$suffix;
+    }elseif($ago < 3600){
+        $when = round($ago / 60);
+        $m = ($when == 1)?"minute":"minutes";
+        return "$when $m".$suffix;
+    }elseif($ago >= 3600 && $ago < 86400){
+        $when = round($ago / 60 / 60);
+        $h = ($when == 1)?"hour":"hours";
+        return "$when $h".$suffix;
+    }elseif($ago >= 86400 && $ago < 2629743.83){
+        $when = round($ago / 60 / 60 / 24);
+        $d = ($when == 1)?"day":"days";
+        return "$when $d".$suffix;
+    }elseif($ago >= 2629743.83 && $ago < 31556926){
+        $when = round($ago / 60 / 60 / 24 / 30.4375);
+        $m = ($when == 1)?"month":"months";
+        return "$when $m".$suffix;
+    }else{
+        $when = round($ago / 60 / 60 / 24 / 365);
+        $y = ($when == 1)?"year":"years";
+        return "$when $y".$suffix;
+    }
+}

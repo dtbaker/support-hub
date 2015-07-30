@@ -602,6 +602,7 @@ class shub_ucm extends SupportHub_network {
 
 CREATE TABLE {$wpdb->prefix}shub_ucm (
   shub_ucm_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   ucm_name varchar(50) NOT NULL,
   last_checked int(11) NOT NULL DEFAULT '0',
   import_stream int(11) NOT NULL DEFAULT '0',

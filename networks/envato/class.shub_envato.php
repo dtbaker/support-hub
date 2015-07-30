@@ -328,7 +328,7 @@ class shub_envato extends SupportHub_network {
 		}
 		$return['shub_column_product'] = ob_get_clean();
 
-		$return['shub_column_time'] = shub_print_date( $message['message_time'], true );
+		$return['shub_column_time'] = '<span class="shub_time" data-time="'.esc_attr($message['message_time']).'" data-date="'.esc_attr(shub_print_date( $message['message_time'], true )).'">'.shub_pretty_date( $message['message_time']).'</span>';
 
 		ob_start();
         // work out who this is from.
@@ -956,6 +956,7 @@ class shub_envato extends SupportHub_network {
 CREATE TABLE {$wpdb->prefix}shub_envato (
   shub_envato_id int(11) NOT NULL AUTO_INCREMENT,
   envato_name varchar(50) NOT NULL,
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   last_checked int(11) NOT NULL DEFAULT '0',
   import_stream int(11) NOT NULL DEFAULT '0',
   post_stream int(11) NOT NULL DEFAULT '0',
