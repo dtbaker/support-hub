@@ -680,6 +680,7 @@ CREATE TABLE {$wpdb->prefix}shub_bbpress_message_comment (
   data text NOT NULL,
   user_id int(11) NOT NULL DEFAULT '0',
   shub_user_id int(11) NOT NULL DEFAULT '0',
+  shub_outbox_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_bbpress_message_comment_id (shub_bbpress_message_comment_id),
   KEY shub_bbpress_message_id (shub_bbpress_message_id),
   KEY shub_user_id (shub_user_id),

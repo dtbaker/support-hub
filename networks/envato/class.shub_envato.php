@@ -780,14 +780,14 @@ class shub_envato extends SupportHub_network {
 							$first_comment = current($envato_comments);
 							if(!empty($first_comment)){
 								$comment_data = @json_decode($first_comment['data'],true);
-								$api_result = $api->api('market/private/user/username.json', array(), false);
+								$api_result = $api->api('v1/market/private/user/username.json', array(), false);
 
                                 $account_data = $shub_envato_account->get('envato_data');
 
 								if($comment_data && $api_result && !empty($api_result['username']) && !empty($comment_data['username']) && (($account_data && isset($account_data['user']['username']) && $api_result['username'] == $account_data['user']['username']) || $comment_data['username'] == $api_result['username'])){ // the dtbaker is here for debugging..
 									SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','OAuth Login Success - request extra','User '.$api_result['username'] .' has logged in to provide extra details');
 									// todo: load this api result into a shub user, pull in their email address as well so we can find any links to other social networks.
-									$api_result_email = $api->api('market/private/user/email.json', array(), false);
+									$api_result_email = $api->api('v1/market/private/user/email.json', array(), false);
 									$comment_user = new SupportHubUser_Envato();
 									if($api_result_email && !empty($api_result_email['email'])){
 										$email = trim(strtolower($api_result_email['email']));
@@ -866,7 +866,7 @@ class shub_envato extends SupportHub_network {
 	        $shub_envato_message = new shub_envato_message( false, false, $network_message_id );
 	        if(strlen($possible_purchase_code)==36) {
 		        $api    = $shub_envato_message->get( 'envato_account' )->get_api();
-		        $result = $api->api( 'market/private/user/verify-purchase:' . $possible_purchase_code . '.json' );
+		        $result = $api->api( 'v1/market/private/user/verify-purchase:' . $possible_purchase_code . '.json' );
 	        }else{
 		        $result = false;
 	        }
@@ -1017,6 +1017,7 @@ CREATE TABLE {$wpdb->prefix}shub_envato_message_comment (
   user_id int(11) NOT NULL DEFAULT '0',
   private tinyint(1) NOT NULL DEFAULT '0',
   shub_user_id int(11) NOT NULL DEFAULT '0',
+  shub_outbox_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_envato_message_comment_id (shub_envato_message_comment_id),
   KEY shub_envato_message_id (shub_envato_message_id),
   KEY shub_user_id (shub_user_id),

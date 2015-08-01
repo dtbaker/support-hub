@@ -363,7 +363,7 @@ class shub_bbpress_message{
 					)));?>"><?php _e('Send');?></button>
 				</div>
 				<div class="shub_message_actions">
-					(debug) <input type="checkbox" name="debug" data-reply="yes" value="1"> <br/>
+					<!-- (debug) <input type="checkbox" name="debug" data-reply="yes" value="1"> <br/> -->
 					<?php
 					if(isset($user_data['reply_options']) && is_array($user_data['reply_options'])){
 						foreach($user_data['reply_options'] as $reply_option){

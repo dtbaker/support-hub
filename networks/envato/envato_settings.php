@@ -34,6 +34,7 @@ if($current_account !== false){
 
             // now we load in a list of envato items to manage and redirect the user back to the 'edit' screen where they can continue managing the account.
             $shub_envato_account->load_available_items();
+            $shub_envato_account->confirm_token();
             $url = $shub_envato_account->link_edit();
             ?>
             <p>You have successfully connected Envato with the Support Hub plugin. Please click the button below:</p>

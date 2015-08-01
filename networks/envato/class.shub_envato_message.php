@@ -548,11 +548,10 @@ class shub_envato_message extends SupportHub_message{
 		}
 		return false;
 	}
-	public function send_reply($envato_id, $message, $debug = false){
+	public function queue_reply($envato_id, $message, $debug = false, $extra_data = array(), $shub_outbox_id = false){
 		if($this->envato_account && $this->shub_envato_message_id) {
 
 
-			$api = $this->envato_account->get_api();
 			if($debug)echo "Type: ".$this->get('type')." <br>\n";
 			switch($this->get('type')) {
 				case 'item_comment':
@@ -564,13 +563,33 @@ class shub_envato_message extends SupportHub_message{
 					// send via api
 					$envato_item_data = $this->get('envato_item')->get('envato_data');
 					if($envato_item_data && $envato_item_data['url']){
+
+                        $reply_user = $this->get_reply_user();
+                        // add a placeholder in the comments table, next time the cron runs it should pick this up and fill in all the details correctly from the API
+                        $shub_envato_message_comment_id = shub_update_insert('shub_envato_message_comment_id',false,'shub_envato_message_comment',array(
+                            'shub_envato_message_id' => $this->shub_envato_message_id,
+                            'shub_user_id' => $reply_user->get('shub_user_id'), // we get the main shub user id for sending messages from this account.
+                            'shub_outbox_id' => $shub_outbox_id,
+                            'envato_id' => '',
+                            'time' => time(),
+                            'message_text' => $message,
+                            'user_id' => get_current_user_id(),
+                        ));
+                        //$this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                        if($debug){
+                            echo "Successfully added comment with id $shub_envato_message_comment_id <br>\n";
+                        }
+                        return $shub_envato_message_comment_id;
+
+						/*
+						$api = $this->envato_account->get_api();
 						$api_result = $api->post_comment($envato_item_data['url'].'/comments', $envato_id, $message);
 						if($api_result){
 							if($debug){
 								echo "Successfully posted comment! Refreshing database...";
 							}
 							// add a placeholder in the comments table, next time the cron runs it should pick this up and fill in all the details correctly from the API
-						    shub_update_insert('shub_envato_message_comment_id',false,'shub_envato_message_comment',array(
+						    $shub_envato_message_comment_id = shub_update_insert('shub_envato_message_comment_id',false,'shub_envato_message_comment',array(
 							    'shub_envato_message_id' => $this->shub_envato_message_id,
 							    'envato_id' => $api_result,
 							    'time' => time(),
@@ -582,7 +601,7 @@ class shub_envato_message extends SupportHub_message{
 							if($debug){
 								echo "Failed to send comment, check debug log.";
 							}
-						}
+						}*/
 
 					}
 
@@ -592,6 +611,7 @@ class shub_envato_message extends SupportHub_message{
 
 
 		}
+        return false;
 	}
 	public function get_comments($message_data = false) {
 		if($message_data){
@@ -644,11 +664,11 @@ class shub_envato_message extends SupportHub_message{
     public function message_sidebar_data(){
 
         // find if there is a product here
-        $shub_product_id = false;
+        $shub_product_id = $this->get_product_id();
         $product_data = array();
         $envato_item_data = array();
         $envato_item = $this->get('envato_item');
-        if($envato_item){
+        if(!$shub_product_id && $envato_item){
             $shub_product_id = $envato_item->get('shub_product_id');
             $envato_item_data = $envato_item->get('envato_data');
             if(!is_array($envato_item_data))$envato_item_data = array();
@@ -659,7 +679,15 @@ class shub_envato_message extends SupportHub_message{
             $product_data = $shub_product->get( 'product_data' );
         }
         ?>
-        <img src="<?php echo plugins_url('networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon"> <br/>
+        <img src="<?php echo plugins_url('networks/envato/envato-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon">
+        <?php
+        if($shub_product_id && !empty($product_data['image'])) {
+            ?>
+            <img src="<?php echo $product_data['image'];?>" class="shub_message_account_icon">
+            <?php
+        }
+        ?>
+        <br/>
 
 
         <strong><?php _e('Account:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('envato_account') ? $this->get('envato_account')->get( 'envato_name' ) : 'N/A' ); ?></a> <br/>
@@ -708,7 +736,6 @@ class shub_envato_message extends SupportHub_message{
         return new SupportHubUser_Envato($shub_user_id);
     }
     public function get_reply_user(){
-
         return new SupportHubUser_Envato($this->envato_account->get('shub_user_id'));
     }
 

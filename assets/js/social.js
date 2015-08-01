@@ -3,6 +3,11 @@ ucm.social = {
 
     modal_url: '',
     init: function(){
+        var t = this;
+        var menu_count = jQuery('#shub_menu_outbox_count');
+        if(menu_count.get(0) && !menu_count.data('count')){
+            menu_count.parents('li').first().hide();
+        }
         jQuery('.support_hub_date_field').datepicker({ dateFormat: 'yy-mm-dd' });
         jQuery('.support_hub_time_field').timepicker();
         jQuery('body').delegate('.shub_modal','click',function() {
@@ -102,9 +107,23 @@ ucm.social = {
                     data: post_data,
                     dataType: 'json',
                     success: function(r){
-                        if(r && typeof r.redirect != 'undefined'){
+                        if(r && typeof r.redirect != 'undefined') {
                             window.location = r.redirect;
-                        }else if(r && typeof r.message != 'undefined'){
+                        }else if(typeof r.shub_outbox_id != 'undefined' && r.shub_outbox_id){
+                            // successfully queued the message reply for sending.
+                            // slide up this window and show a "queued" message, similar to archiving a message.
+                            var element = jQuery(pt).parents('.shub_network_message').first();
+                            var element_action = element.prev('.shub_network_message_action').first();
+                            element_action.find('.action_content').html('Sending message...');
+                            t.queue_watch.add(r.shub_outbox_id, element_action);
+                            if(element.is('div')){
+                                element.slideUp();
+                                element_action.slideDown();
+                            }else{
+                                element.hide();
+                                element_action.show();
+                            }
+                        }else if(r && typeof r.message != 'undefined' && r.message.length > 0){
                             pt.html("Info: "+ r.message);
                         }else{
                             pt.html("Unknown error, please check logs or try reconnecting in settings. "+r);
@@ -161,6 +180,48 @@ ucm.social = {
         url += '&width=' + Math.min(800,(jQuery(window).width()-400));
         url += '&height=' + (jQuery(window).height()-200);
         tb_show(title, url );
+    },
+
+    queue_watch: {
+        queue: [],
+        add: function(shub_outbox_id, element){
+            this.queue.push(
+                {
+                    shub_outbox_id: shub_outbox_id,
+                    element: element
+                }
+            );
+            this.watch();
+        },
+        watching: false,
+        watch: function(){
+            var t = this;
+            if(t.watching)return;
+            t.watching = true;
+            // update the menu UI
+            jQuery('#shub_menu_outbox_count').text(t.queue.length).parents('li').first().show();
+            var post_data = {
+                action: 'support_hub_queue-watch',
+                wp_nonce: support_hub.wp_nonce,
+                form_auth_key: ucm.form_auth_key
+            };
+            jQuery.ajax({
+                url: ajaxurl,
+                method: 'POST',
+                data: post_data,
+                dataType: 'json',
+                success: function(r){
+                    t.watching = false;
+                    setTimeout(function(){
+                        t.watch();
+                    }, 2000);
+                },
+                error: function(){
+                    t.watching = false;
+                }
+            });
+
+        }
     }
 
 };

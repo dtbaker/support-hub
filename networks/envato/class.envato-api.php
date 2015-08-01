@@ -15,7 +15,7 @@ class envato_api_basic{
         return self::$instance;
     }
 
-	private $_api_url = 'https://api.envato.com/v1/';
+	private $_api_url = 'https://api.envato.com/';
 
 	private $_client_id = false;
 	private $_client_secret = false;
@@ -65,6 +65,29 @@ class envato_api_basic{
 		}
 		return false;
 	}
+
+    public function get_token_account(){
+        $url = 'https://account.envato.com/account/edit';
+        $response = $this->get_url($url);
+        if($response && preg_match_all('#<input[^>]+name="user\[([^\]]*)\]"[^>]+value="([^"]*)"[^>]*>#imsU',$response,$matches)){
+            if(count($matches[1]) == 4){
+                // first_name last_name email username
+                $data = array();
+                foreach($matches[1] as $key=>$val){
+                    $data[$val] = $matches[2][$key];
+                }
+                if(!empty($data['username'])){
+                    // grab image from API
+                    $api_result = $this->api('v1/market/user:'.$data['username'].'.json');
+                    if(!empty($api_result['user']['image'])){
+                        $data['image'] = $api_result['user']['image'];
+                    }
+                }
+                return $data;
+            }
+        }
+        return false;
+    }
 
 	public function post_comment($comment_url, $parent_comment_id, $comment_text){
 

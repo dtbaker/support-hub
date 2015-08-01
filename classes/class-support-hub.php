@@ -171,30 +171,61 @@ class SupportHub {
                     }
                     break;
                 case 'send-message-reply':
-                    // handle this for bbpress and envato,
-                    // todo: move the other modules into this 'generic' format here.
-                    if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST[$_REQUEST['network'].'_id']) && isset($_REQUEST['id']) && (int)$_REQUEST['id'] > 0) {
-                        $shub_network_message = $this->message_managers[$_REQUEST['network']]->get_message( false, false, $_REQUEST['id']);
-                        if($shub_network_message->get('shub_'.$_REQUEST['network'].'_message_id') == $_REQUEST['id']){
-                            $return  = array();
+                    /*
+                    sample post data:
+                        action:support_hub_send-message-reply
+                        wp_nonce:dfd377374d
+                        message:test
+                        network-account-id:1
+                        network-message-id:246
+                        network:envato
+                        debug:1
+                    */
+                    if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['network-account-id']) && !empty($_REQUEST['network-message-id'])) {
+                        $shub_network_message = $this->message_managers[$_REQUEST['network']]->get_message( false, false, $_REQUEST['network-message-id']);
+                        if($shub_network_message->get('shub_'.$_REQUEST['network'].'_message_id') == $_REQUEST['network-message-id']){
+                            $return  = array(
+                                'message' => '',
+                                'error' => false,
+                                'shub_outbox_id' => false,
+                            );
                             $message = isset( $_POST['message'] ) && $_POST['message'] ? $_POST['message'] : '';
-                            $network_id = $_REQUEST[$_REQUEST['network'].'_id'];
+                            $network_account_id = $_REQUEST['network-account-id'];
                             $debug = isset( $_POST['debug'] ) && (int)$_POST['debug'] > 0 ? $_POST['debug'] : false;
                             if ( $message ) {
-                                if($debug)ob_start();
-                                $extra_data = array();
-                                foreach($_POST as $key=>$val){
-                                    if(strpos($key,'extra-') !== false){
-                                        $extra_data[substr($key,6)] = $val;
-                                    }
-                                }
-                                $shub_network_message->send_reply( $network_id, $message, $debug, $extra_data );
-                                if($debug){
-                                    $return['message'] = ob_get_clean();
-                                }else {
-                                    //set_message( _l( 'message sent and conversation archived.' ) );
-                                    $return['redirect'] = 'admin.php?page=support_hub_main';
 
+                                // we have a message and a message manager.
+                                // time to queue this baby into the outbox and send it swimming
+                                // what the hell did I just write? I need sleep!
+
+                                $outbox = new SupportHubOutbox();
+                                $outbox->create_new();
+                                if($outbox->get('shub_outbox_id')) {
+                                    if ($debug) ob_start();
+                                    $extra_data = array();
+                                    foreach ($_POST as $key => $val) {
+                                        if (strpos($key, 'extra-') !== false) {
+                                            $extra_data[substr($key, 6)] = $val;
+                                        }
+                                    }
+                                    $network_message_comment_id = $shub_network_message->queue_reply($network_account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
+                                    if(!$network_message_comment_id){
+                                        $return['message'] .= 'Failed to queue comment reply in database.';
+                                        $return['error'] = true;
+                                    }
+                                    if ($debug) {
+                                        $return['message'] .= ob_get_clean();
+                                    } else {
+                                        //set_message( _l( 'message sent and conversation archived.' ) );
+                                    }
+
+                                    $outbox->update(array(
+                                        'shub_network' => $_REQUEST['network'],
+                                        'shub_network_account_id' => $network_account_id,
+                                        'shub_network_message_id' => $_REQUEST['network-message-id'],
+                                        'shub_network_message_comment_id' => $network_message_comment_id,
+                                    ));
+                                    $return['shub_outbox_id'] = $outbox->get('shub_outbox_id');
                                 }
                             }
                             if (!headers_sent())header('Content-type: text/javascript');
@@ -425,7 +456,7 @@ class SupportHub {
 		foreach($this->message_managers as $name => $message_manager) {
 			$message_count += $message_manager->get_unread_count();
 		}
-		$menu_label = sprintf( __( 'Support Hub %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . number_format_i18n( $message_count ) . "</span></span>" : '');
+		$menu_label = sprintf( __( 'Support Hub %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . (int)$message_count . "</span></span>" : '');
 
         add_menu_page( __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages', 'support_hub_main', array($this, 'show_inbox'), 'dashicons-format-chat', "21.1" );
 
@@ -443,7 +474,14 @@ class SupportHub {
 		//$page = add_submenu_page('support_hub_main', __( 'Sent', 'support_hub' ), __('Sent' ,'support_hub'), 'edit_pages',  'support_hub_sent' , array($this, 'show_sent'));
 		//add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
-		$page = add_submenu_page('support_hub_main', __( 'Settings', 'support_hub' ), __('Settings' ,'support_hub'), 'edit_pages',  'support_hub_settings' , array($this, 'show_settings'));
+        $pending_messages = SupportHubOutbox::get_pending();
+        $failed_messages = SupportHubOutbox::get_failed();
+        $outbox_message_count = count($pending_messages) + count($failed_messages);
+        $menu_label = sprintf( __( 'Outbox %s', 'support_hub' ), "<span class='update-plugins' title='$outbox_message_count'><span class='update-count' id='shub_menu_outbox_count' data-count='$outbox_message_count'>" . $outbox_message_count . "</span></span>" );
+		$page = add_submenu_page('support_hub_main', __( 'Outbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_outbox' , array($this, 'show_outbox'));
+		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
+
+		$page = add_submenu_page('support_hub_main', __( 'Settings', 'support_hub' ), __( 'Settings', 'support_hub' ), 'edit_pages',  'support_hub_settings' , array($this, 'show_settings'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
 		foreach($this->message_managers as $name => $message_manager) {
@@ -475,6 +513,17 @@ class SupportHub {
                 include( trailingslashit( $this->dir ) . 'pages/message.php');
             }else{
                 include( trailingslashit( $this->dir ) . 'pages/inbox.php');
+            }
+		}else{
+			include( trailingslashit( $this->dir ) . 'pages/setup.php');
+		}
+	}
+	public function show_outbox(){
+		if($this->is_setup()){
+            if(isset($_GET['network'])){
+                include( trailingslashit( $this->dir ) . 'pages/message.php');
+            }else{
+                include( trailingslashit( $this->dir ) . 'pages/outbox.php');
             }
 		}else{
 			include( trailingslashit( $this->dir ) . 'pages/setup.php');
@@ -569,150 +618,6 @@ class SupportHub {
 		}
 		return $products;
 	}
-
-	public function db_upgrade_check(){
-		// hash the SQL used for install.
-		// if it has changed at all then we run the activation again.
-		$sql = '';
-		foreach($this->message_managers as $name => $message_manager) {
-			$sql .= $message_manager->get_install_sql();
-		}
-		// add our core stuff:
-		global $wpdb;
-		$sql .= <<< EOT
-
-CREATE TABLE {$wpdb->prefix}shub_message (
-  shub_message_id int(11) NOT NULL AUTO_INCREMENT,
-  post_id int(11) NOT NULL,
-  sent_time int(11) NOT NULL DEFAULT '0',
-  message_data text NOT NULL,
-  message_count int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_message_id (shub_message_id),
-  KEY post_id (post_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_log (
-  shub_log_id int(11) NOT NULL AUTO_INCREMENT,
-  log_error_level int(11) NOT NULL DEFAULT '0',
-  log_extension varchar(50) NOT NULL,
-  log_subject varchar(255) NOT NULL DEFAULT '',
-  log_time int(11) NOT NULL DEFAULT '0',
-  log_data mediumtext NOT NULL,
-  PRIMARY KEY  shub_log_id (shub_log_id),
-  KEY log_time (log_time)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_product (
-  shub_product_id int(11) NOT NULL AUTO_INCREMENT,
-  product_name varchar(100) NOT NULL DEFAULT '',
-  product_data text NOT NULL,
-  PRIMARY KEY  shub_product_id (shub_product_id),
-  KEY product_name (product_name)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_user (
-  shub_user_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_linked_user_id int(11) NOT NULL DEFAULT '0',
-  user_fname varchar(255) NOT NULL,
-  user_lname varchar(255) NOT NULL,
-  user_username varchar(255) NOT NULL,
-  user_email varchar(255) NOT NULL,
-  user_data mediumtext NOT NULL,
-  user_id_key1 int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_user_id (shub_user_id),
-  KEY user_email (user_email),
-  KEY user_username (user_username),
-  KEY user_id_key1 (user_id_key1),
-  KEY shub_linked_user_id (shub_linked_user_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_user_meta (
-  shub_user_id int(11) NOT NULL,
-  meta_key varchar(255) NOT NULL,
-  meta_val varchar(255) NOT NULL,
-  KEY shub_user_id (shub_user_id),
-  KEY meta_key (meta_key),
-  KEY meta_key_val (meta_key,meta_val)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_timer (
-  shub_timer_id int(11) NOT NULL AUTO_INCREMENT,
-  wp_user_id int(11) NOT NULL DEFAULT '0',
-  how_long int(11) NOT NULL DEFAULT '0',
-  timer_comment text NOT NULL,
-  PRIMARY KEY  shub_timer_id (shub_timer_id),
-  KEY wp_user_id (wp_user_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE {$wpdb->prefix}shub_extra (
-  shub_extra_id int(11) NOT NULL AUTO_INCREMENT,
-  extra_name varchar(255) NOT NULL DEFAULT '',
-  extra_description text NOT NULL,
-  extra_order int(11) NOT NULL DEFAULT '0',
-  extra_required int(11) NOT NULL DEFAULT '0',
-  field_type varchar(50) NOT NULL DEFAULT '',
-  field_settings text NOT NULL,
-  PRIMARY KEY  shub_extra_id (shub_extra_id),
-  KEY extra_order (extra_order)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_extra_data (
-  shub_extra_data_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_extra_id int(11) NOT NULL DEFAULT '0',
-  extra_value mediumtext NOT NULL,
-  extra_data mediumtext NOT NULL,
-  extra_time int(11) NOT NULL DEFAULT '0',
-  shub_user_id int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY  shub_extra_data_id (shub_extra_data_id),
-  KEY shub_user_id (shub_user_id),
-  KEY shub_extra_id (shub_extra_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-CREATE TABLE {$wpdb->prefix}shub_extra_data_rel (
-  shub_extra_data_id int(11) NOT NULL DEFAULT '0',
-  shub_extra_id int(11) NOT NULL DEFAULT '0',
-  shub_network varchar(40) NOT NULL DEFAULT '',
-  shub_network_account_id int(11) NOT NULL DEFAULT '0',
-  shub_network_message_id int(11) NOT NULL DEFAULT '0',
-  shub_network_user_id int(11) NOT NULL DEFAULT '0',
-  KEY shub_extra_data_id (shub_extra_data_id),
-  KEY shub_network (shub_network),
-  KEY shub_network_account_id (shub_network_account_id),
-  KEY shub_network_message_id (shub_network_message_id),
-  KEY shub_network_user_id (shub_network_user_id),
-  KEY shub_extra_id (shub_extra_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-
-
-EOT;
-		$hash = md5($sql);
-        if(get_option("support_hub_db_hash") != $hash){
-	        $this->activation($sql);
-	        $this->log_data(0,'core','Ran SQL Update');
-	        update_option( "support_hub_db_hash", $hash );
-        }
-	}
-	public function deactivation(){
-		wp_clear_scheduled_hook( 'support_hub_cron_job' );
-	}
-	public function activation($sql) {
-		global $wpdb;
-
-		$bits = explode( ';', $sql );
-
-		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-		foreach ( $bits as $sql ) {
-			if ( trim( $sql ) ) {
-				dbDelta( trim( $sql ) . ';' );
-			}
-		}
-
-		$wpdb->hide_errors();
-	}
-
 	public function log_data($error_level, $extension, $subject, $data = array()){
         if(get_option('shub_logging_enabled',0) > time() || $error_level>0) {
             shub_update_insert('shub_log_id', false, 'shub_log', array(
@@ -926,6 +831,165 @@ EOT;
 	    }
 	    return false;
 	}
+
+
+
+    public function db_upgrade_check(){
+        // hash the SQL used for install.
+        // if it has changed at all then we run the activation again.
+        $sql = '';
+        foreach($this->message_managers as $name => $message_manager) {
+            $sql .= $message_manager->get_install_sql();
+        }
+        // add our core stuff:
+        global $wpdb;
+        $sql .= <<< EOT
+
+CREATE TABLE {$wpdb->prefix}shub_message (
+  shub_message_id int(11) NOT NULL AUTO_INCREMENT,
+  post_id int(11) NOT NULL,
+  sent_time int(11) NOT NULL DEFAULT '0',
+  message_data text NOT NULL,
+  message_count int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_message_id (shub_message_id),
+  KEY post_id (post_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_outbox(
+  shub_outbox_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_network varchar(40) NOT NULL DEFAULT '',
+  shub_network_account_id int(11) NOT NULL DEFAULT '0',
+  shub_network_message_id int(11) NOT NULL DEFAULT '0',
+  shub_network_message_comment_id int(11) NOT NULL DEFAULT '0',
+  queue_time int(11) NOT NULL DEFAULT '0',
+  status int(11) NOT NULL DEFAULT '0',
+  message_data text NOT NULL,
+  PRIMARY KEY  shub_outbox_id (shub_outbox_id),
+  KEY status (status)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_log (
+  shub_log_id int(11) NOT NULL AUTO_INCREMENT,
+  log_error_level int(11) NOT NULL DEFAULT '0',
+  log_extension varchar(50) NOT NULL,
+  log_subject varchar(255) NOT NULL DEFAULT '',
+  log_time int(11) NOT NULL DEFAULT '0',
+  log_data mediumtext NOT NULL,
+  PRIMARY KEY  shub_log_id (shub_log_id),
+  KEY log_time (log_time)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_product (
+  shub_product_id int(11) NOT NULL AUTO_INCREMENT,
+  product_name varchar(100) NOT NULL DEFAULT '',
+  product_data text NOT NULL,
+  PRIMARY KEY  shub_product_id (shub_product_id),
+  KEY product_name (product_name)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_user (
+  shub_user_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_linked_user_id int(11) NOT NULL DEFAULT '0',
+  user_fname varchar(255) NOT NULL,
+  user_lname varchar(255) NOT NULL,
+  user_username varchar(255) NOT NULL,
+  user_email varchar(255) NOT NULL,
+  user_data mediumtext NOT NULL,
+  user_id_key1 int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_user_id (shub_user_id),
+  KEY user_email (user_email),
+  KEY user_username (user_username),
+  KEY user_id_key1 (user_id_key1),
+  KEY shub_linked_user_id (shub_linked_user_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_user_meta (
+  shub_user_id int(11) NOT NULL,
+  meta_key varchar(255) NOT NULL,
+  meta_val varchar(255) NOT NULL,
+  KEY shub_user_id (shub_user_id),
+  KEY meta_key (meta_key),
+  KEY meta_key_val (meta_key,meta_val)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_timer (
+  shub_timer_id int(11) NOT NULL AUTO_INCREMENT,
+  wp_user_id int(11) NOT NULL DEFAULT '0',
+  how_long int(11) NOT NULL DEFAULT '0',
+  timer_comment text NOT NULL,
+  PRIMARY KEY  shub_timer_id (shub_timer_id),
+  KEY wp_user_id (wp_user_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_extra (
+  shub_extra_id int(11) NOT NULL AUTO_INCREMENT,
+  extra_name varchar(255) NOT NULL DEFAULT '',
+  extra_description text NOT NULL,
+  extra_order int(11) NOT NULL DEFAULT '0',
+  extra_required int(11) NOT NULL DEFAULT '0',
+  field_type varchar(50) NOT NULL DEFAULT '',
+  field_settings text NOT NULL,
+  PRIMARY KEY  shub_extra_id (shub_extra_id),
+  KEY extra_order (extra_order)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_extra_data (
+  shub_extra_data_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_extra_id int(11) NOT NULL DEFAULT '0',
+  extra_value mediumtext NOT NULL,
+  extra_data mediumtext NOT NULL,
+  extra_time int(11) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_extra_data_id (shub_extra_data_id),
+  KEY shub_user_id (shub_user_id),
+  KEY shub_extra_id (shub_extra_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_extra_data_rel (
+  shub_extra_data_id int(11) NOT NULL DEFAULT '0',
+  shub_extra_id int(11) NOT NULL DEFAULT '0',
+  shub_network varchar(40) NOT NULL DEFAULT '',
+  shub_network_account_id int(11) NOT NULL DEFAULT '0',
+  shub_network_message_id int(11) NOT NULL DEFAULT '0',
+  shub_network_user_id int(11) NOT NULL DEFAULT '0',
+  KEY shub_extra_data_id (shub_extra_data_id),
+  KEY shub_network (shub_network),
+  KEY shub_network_account_id (shub_network_account_id),
+  KEY shub_network_message_id (shub_network_message_id),
+  KEY shub_network_user_id (shub_network_user_id),
+  KEY shub_extra_id (shub_extra_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+
+EOT;
+        $hash = md5($sql);
+        if(get_option("support_hub_db_hash") != $hash){
+            $this->activation($sql);
+            $this->log_data(0,'core','Ran SQL Update');
+            update_option( "support_hub_db_hash", $hash );
+        }
+    }
+    public function deactivation(){
+        wp_clear_scheduled_hook( 'support_hub_cron_job' );
+    }
+    public function activation($sql) {
+        global $wpdb;
+
+        $bits = explode( ';', $sql );
+
+        require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+        foreach ( $bits as $sql ) {
+            if ( trim( $sql ) ) {
+                dbDelta( trim( $sql ) . ';' );
+            }
+        }
+
+        $wpdb->hide_errors();
+    }
+
 
 
 }

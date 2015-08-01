@@ -8,6 +8,11 @@ class SupportHub_message{
     public function get_link(){ return '';} // link to external support system
     public function message_sidebar_data(){ echo '';}
     public function reply_actions(){ echo '';}
+    public function queue_reply($envato_id, $message, $debug = false, $extra_data = array(), $shub_outbox_id = false){return false;}
+
+    public function get_product_id(){
+        return $this->get('shub_product_id');
+    }
 
     public function output_message_page(){
         $network_message_id = $this->get('shub_'.$this->network.'_message_id');
@@ -66,12 +71,32 @@ class SupportHub_message{
                         $x++;
                         $from_user = $this->get_user($comment['shub_user_id']);
                         $time = isset($comment['time']) ? $comment['time'] : false;
+                        // is this a queued-to-send message?
+                        $extra_class = '';
+                        $comment_status = '';
+                        if(!empty($comment['shub_outbox_id'])){
+                            $shub_outbox = new SupportHubOutbox($comment['shub_outbox_id']);
+                            switch($shub_outbox->get('status')){
+                                case _SHUB_OUTBOX_STATUS_QUEUED:
+                                case _SHUB_OUTBOX_STATUS_SENDING:
+                                    $extra_class .= ' outbox_queued';
+                                    $comment_status = 'Currently Sending....';
+                                    break;
+                                case _SHUB_OUTBOX_STATUS_FAILED:
+                                    $extra_class .= ' outbox_failed';
+                                    $comment_status = 'Failed to send message! Please check logs.';
+                                    break;
+                            }
+                        }
                         ?>
-                        <div class="shub_message shub_message_<?php echo $x==1 ? 'primary' : 'reply';?>">
+                        <div class="shub_message shub_message_<?php echo $x==1 ? 'primary' : 'reply'; echo $extra_class;?>">
                             <div class="shub_message_picture">
                                 <img src="<?php echo $from_user->get_image();?>" />
                             </div>
                             <div class="shub_message_header">
+                                <?php if($comment_status){ ?>
+                                    <div class="shub_comment_status"><?php echo $comment_status;?></div>
+                                <?php } ?>
                                 <?php echo $from_user->get_full_link(); ?>
                                 <span>
                                     <?php if($time){ ?>
