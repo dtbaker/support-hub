@@ -429,12 +429,7 @@ class shub_envato_message extends SupportHub_message{
         return '#';
 	}
 
-	private $attachment_name = '';
-	public function add_attachment($local_filename){
-		if(is_file($local_filename)){
-			$this->attachment_name = $local_filename;
-		}
-	}
+
 	public function send_queued($debug = false){
 		if($this->envato_account && $this->shub_envato_message_id) {
 			// send this message out to envato.
@@ -481,66 +476,6 @@ class shub_envato_message extends SupportHub_message{
 					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
 					return true;
 
-					break;
-				case 'share':
-
-					$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
-					$api = $this->envato_account->get_api();
-					if($debug)echo "Sending a new share update to envato account: " . $this->envato_account->get('envato_name') ."<br>\n";
-					$result = false;
-					/*
-					 *
-					 *  {
-						  "message": "Check out developer.envato.com!",
-						  "content": {
-						    "title": "envato Developers Resources",
-						    "description": "Leverage envato's APIs to maximize engagement",
-						    "submitted-url": "https://developer.envato.com",
-						    "submitted-image-url": "https://example.com/logo.png"
-						  },
-						  "visibility": {
-						    "code": "anyone"
-						  }
-						}
-					 */
-					$user_post_data = @json_decode($this->get('data'),true);
-					if(isset($user_post_data['link_picture']) && !empty($user_post_data['link_picture'])){
-						$post_data['picture'] = $user_post_data['link_picture'];
-					}
-					$post_data = array();
-					$post_data['message'] = $this->get('summary');
-
-					if($this->get('link')){
-						$post_data['content'] = array(
-							'title' => $this->get('title'),
-							//'description' => $this->get('summary'),
-							'submitted-url' => $this->get('link'),
-							'submitted-image-url' => isset($user_post_data['envato_picture_url']) && !empty($user_post_data['envato_picture_url']) ? $user_post_data['envato_picture_url'] : '',
-						);
-					}
-					$post_data['visibility'] = array(
-						'code' => 'anyone',
-					);
-					$now = time();
-					$send_time = $this->get('last_active');
-					$result = $api->api('v1/people/~/shares',array(),'POST',$post_data);
-					if($debug)echo "API Post Result: <br>\n".var_export($result,true)." <br>\n";
-					if(is_array($result) && isset($result['updateKey']) && !empty($result['updateKey'])){
-						$this->update('envato_id',$result['updateKey']);
-						// reload this message and messages from the graph api.
-						$this->load_by_envato_id($this->get('envato_id'),false,$this->get('type'),$debug, true);
-					}else{
-						echo 'Failed to send message. Error was: '.var_export($result,true);
-						// remove from database.
-						$this->delete();
-						return false;
-					}
-
-					// successfully sent, mark is as answered.
-					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
-					return true;
-
-					break;
 				default:
 					if($debug)echo "Unknown post type: ".$this->get('type');
 			}
@@ -548,6 +483,28 @@ class shub_envato_message extends SupportHub_message{
 		}
 		return false;
 	}
+	public function send_queued_comment_reply($envato_message_comment_id){
+        $comments = $this->get_comments();
+        if(isset($comments[$envato_message_comment_id]) && !empty($comments[$envato_message_comment_id]['message_text'])){
+            $api = $this->envato_account->get_api();
+            $envato_item_data = $this->get('envato_item')->get('envato_data');
+            if($envato_item_data && $envato_item_data['url']) {
+                $api_result = $api->post_comment($envato_item_data['url'] . '/comments', $this->get('envato_id'), $comments[$envato_message_comment_id]['message_text']);
+                if ($api_result) {
+                    // add a placeholder in the comments table, next time the cron runs it should pick this up and fill in all the details correctly from the API
+                    shub_update_insert('shub_envato_message_comment_id', $envato_message_comment_id, 'shub_envato_message_comment', array(
+                        'envato_id' => $api_result,
+                        'time' => time(),
+                    ));
+                    return true;
+                } else {
+                    echo "Failed to send comment, check debug log.";
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
 	public function queue_reply($envato_id, $message, $debug = false, $extra_data = array(), $shub_outbox_id = false){
 		if($this->envato_account && $this->shub_envato_message_id) {
 
@@ -575,41 +532,17 @@ class shub_envato_message extends SupportHub_message{
                             'message_text' => $message,
                             'user_id' => get_current_user_id(),
                         ));
-                        //$this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                        $this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
                         if($debug){
                             echo "Successfully added comment with id $shub_envato_message_comment_id <br>\n";
                         }
                         return $shub_envato_message_comment_id;
 
-						/*
-						$api = $this->envato_account->get_api();
-						$api_result = $api->post_comment($envato_item_data['url'].'/comments', $envato_id, $message);
-						if($api_result){
-							if($debug){
-								echo "Successfully posted comment! Refreshing database...";
-							}
-							// add a placeholder in the comments table, next time the cron runs it should pick this up and fill in all the details correctly from the API
-						    $shub_envato_message_comment_id = shub_update_insert('shub_envato_message_comment_id',false,'shub_envato_message_comment',array(
-							    'shub_envato_message_id' => $this->shub_envato_message_id,
-							    'envato_id' => $api_result,
-							    'time' => time(),
-							    'message_text' => $message,
-							    'user_id' => get_current_user_id(),
-						    ));
-							$this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
-						}else{
-							if($debug){
-								echo "Failed to send comment, check debug log.";
-							}
-						}*/
 
 					}
 
 					break;
 			}
-
-
-
 		}
         return false;
 	}
