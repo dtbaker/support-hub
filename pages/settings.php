@@ -51,7 +51,7 @@
 						<?php foreach($SupportHub->message_managers as $id => $message_manager){ ?>
 							<div>
 								<input type="hidden" name="possible_shub_manager_enabled[<?php echo $id;?>]" value="1">
-								<input type="checkbox" name="shub_manager_enabled[<?php echo $id;?>]" value="1" <?php echo get_option('shub_manager_enabled_'.$id,0) ? ' checked' : '';?>>
+								<input type="checkbox" name="shub_manager_enabled[<?php echo $id;?>]" value="1" <?php echo $message_manager->is_enabled() ? ' checked' : '';?>>
 								<strong><?php echo $message_manager->friendly_name;?></strong>  - <?php echo $message_manager->desc;?>
 							</div>
 						<?php } ?>

@@ -59,12 +59,14 @@
     $limit_each = 40;
     $limit_pages = 2; // get about 10 pages of data to display in WordPress.
 	foreach($this->message_managers as $message_manager_id => $message_manager){
-		if(isset($search['type']) && !empty($search['type']) && $search['type'] != $message_manager_id)continue;
-        $this_search = $search;
-        if(isset($this_search['status']) && $this_search['status'] == -1){
-            unset($this_search['status']);
+        if($message_manager->is_enabled()) {
+            if (isset($search['type']) && !empty($search['type']) && $search['type'] != $message_manager_id) continue;
+            $this_search = $search;
+            if (isset($this_search['status']) && $this_search['status'] == -1) {
+                unset($this_search['status']);
+            }
+            $message_manager->load_all_messages($this_search, $order, $limit_each);
         }
-		$message_manager->load_all_messages($this_search, $order, $limit_each);
 	}
 
 
@@ -163,9 +165,12 @@
                     <label for="simple_inbox-search-type"><?php _e('Network:','support_hub');?></label>
                     <select id="simple_inbox-search-type" name="search[type]">
                         <option value=""><?php _e('All','support_hub');?></option>
-                        <?php foreach($this->message_managers as $message_manager_id => $message_manager){ ?>
-                            <option value="<?php echo $message_manager_id;?>"<?php echo isset($search['type']) && $search['type'] == $message_manager_id ? ' selected' : '';?>><?php echo $message_manager->friendly_name;?></option>
-                        <?php } ?>
+                        <?php foreach($this->message_managers as $message_manager_id => $message_manager) {
+                            if ($message_manager->is_enabled()) { ?>
+                                <option
+                                    value="<?php echo $message_manager_id; ?>"<?php echo isset($search['type']) && $search['type'] == $message_manager_id ? ' selected' : ''; ?>><?php echo $message_manager->friendly_name; ?></option>
+                            <?php }
+                        }?>
                     </select>
                     </span>
                     <span>
