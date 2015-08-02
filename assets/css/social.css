@@ -107,9 +107,10 @@
     min-width: 150px;
 }
 
+#simple_inbox-search-input,
 #simple_inbox-search-product,
 .shub_product_dropdown{
-    max-width: 180px;
+    max-width: 100px;
 }
 
 .message_sidebar{
@@ -334,6 +335,39 @@ tr.log_error{
 
 }
 .shub_other_messages{
-    max-height: 300px;
+    max-height: 200px;
     overflow-y: auto;
+}
+.shub_header_box{
+    background: #FFF;
+    padding: 10px;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin-bottom: 5px;
+
+}
+.shub_header_box:after{
+    content:'';
+    display: table;
+    clear: both;
+
+}
+@media screen and (max-width: 782px){
+    .shub_header_box{
+        background: none;
+        border:0;
+        box-shadow: none;
+        height:0;
+        padding:0;
+        margin:0;
+    }
+}
+p.shub_search_box{
+    float: none;
+}
+p.shub_search_box span{
+    display: inline-block;
+}
+p.shub_search_box #search-submit{
+    float: right;
 }

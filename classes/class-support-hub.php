@@ -51,6 +51,8 @@ class SupportHub {
 		add_action( 'wp_ajax_support_hub_fb_url_info' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_request_extra_details' , array( $this, 'admin_ajax' ) );
 
+        add_filter('set-screen-option', array( $this, 'set_screen_options' ), 10, 3);
+
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_box' ) );
 
 		//ini_set('display_errors',true);
@@ -272,6 +274,23 @@ class SupportHub {
 	}
 
 
+	public function screen_options() {
+        $screen = get_current_screen();
+        if(!is_object($screen) || !$screen->id)
+            return;
+        $args = array(
+            'label' => __('Messages per page', 'shub'),
+            'default' => 20,
+            'option' => 'shub_items_per_page'
+        );
+        add_screen_option( 'per_page', $args );
+    }
+
+    public function set_screen_options($status, $option, $value) {
+        if ( 'shub_items_per_page' == $option ) return $value;
+    }
+
+
 	public function inbox_assets() {
 
 		add_thickbox();
@@ -462,8 +481,12 @@ class SupportHub {
 
 		// hack to rmeove default submenu
 		$menu_label = sprintf( __( 'Inbox %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . number_format_i18n($message_count) . "</span></span>" : '' );
+
+
 		$page = add_submenu_page('support_hub_main', __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_main' , array($this, 'show_inbox'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
+        add_action("load-$page", array( $this, 'screen_options' ));
+
 
 		//$page = add_submenu_page('support_hub_main', __( 'Interactions', 'support_hub' ), __('Interactions' ,'support_hub'), 'edit_pages',  'support_hub_interactions' , array($this, 'show_interactions'));
 		//add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );

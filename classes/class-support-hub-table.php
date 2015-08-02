@@ -364,22 +364,6 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
         $this->layout_type = $layout_type;
     }
     public function extra_tablenav( $which ){
-        if($which == 'top') {
-            ?>
-            <div class="tablenav_display_type alignright actions">
-                <?php switch($this->layout_type){
-                    case 'inline':
-                    ?>
-                        <input type="button" class="swap_layout_type button" data-layout-type="table" value="Swap to Table View">
-                    <?php
-                    break;
-                default:
-                    ?>
-                    <input type="button" class="swap_layout_type button" data-layout-type="inline" value="Swap to Inline View">
-                <?php } ?>
-            </div>
-            <?php
-        }
     }
     public function display() {
         $singular = $this->_args['singular'];
