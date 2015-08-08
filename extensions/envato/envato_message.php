@@ -16,7 +16,7 @@ if($shub_account_id && !(int)$shub_message_id){
 	$envato = new shub_envato_account($shub_account_id);
     if($shub_account_id && $envato->get('shub_account_id') == $shub_account_id){
 
-	    /* @var $groups shub_envato_item[] */
+	    /* @var $groups shub_item[] */
 	    $groups = $envato->get('groups');
 	    //print_r($groups);
 	    ?>
@@ -31,7 +31,7 @@ if($shub_account_id && !(int)$shub_message_id){
 				),
 			    'class' => 'tableclass tableclass_form tableclass_full',
 			    'elements' => array(
-			       'envato_item' => array(
+			       'item' => array(
 			            'title' => __('envato Group', 'support_hub'),
 			            'fields' => array(),
 			        ),
@@ -169,11 +169,11 @@ if($shub_account_id && !(int)$shub_message_id){
 				    ),
 			    )
 			);
-		    foreach($groups as $envato_item_id => $group){
-			    $fieldset_data['elements']['envato_item']['fields'][] =
+		    foreach($groups as $item_id => $group){
+			    $fieldset_data['elements']['item']['fields'][] =
 				    '<div id="envato_compose_group_select">' .
-				    '<input type="checkbox" name="compose_group_id['.$envato_item_id.']" value="1" checked> ' .
-				    '<img src="//graph.envato.com/'.$envato_item_id.'/picture"> ' .
+				    '<input type="checkbox" name="compose_group_id['.$item_id.']" value="1" checked> ' .
+				    '<img src="//graph.envato.com/'.$item_id.'/picture"> ' .
 				    htmlspecialchars($group->get('item_name')) .
 				    '</div>'
 			    ;

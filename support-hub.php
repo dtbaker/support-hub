@@ -30,6 +30,7 @@ define('_SUPPORT_HUB_LOG_INFO',0);
 define('_SUPPORT_HUB_LOG_ERROR',2);
 define('_SUPPORT_HUB_LINK_REQUEST_EXTRA','shrequestextra');
 define('_SUPPORT_HUB_LINK_REWRITE_PREFIX','shublnk');
+define('_SUPPORT_HUB_PASSWORD_FIELD_FUZZ','-password-');
 
 define('_DTBAKER_SUPPORT_HUB_CORE_FILE_',__FILE__);
 
@@ -37,7 +38,9 @@ define('_DTBAKER_SUPPORT_HUB_CORE_FILE_',__FILE__);
 require_once( 'classes/class-support-hub.php' );
 require_once( 'classes/class-support-hub-table.php' );
 require_once( 'classes/class-support-hub-extension.php' );
+require_once( 'classes/class-support-hub-account.php' );
 require_once( 'classes/class-support-hub-message.php' );
+require_once( 'classes/class-support-hub-item.php' );
 require_once( 'classes/class-support-hub-outbox.php' );
 require_once( 'classes/class-support-hub-product.php' );
 require_once( 'classes/class-support-hub-user.php' );

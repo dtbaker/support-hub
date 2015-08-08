@@ -3,6 +3,7 @@
 class shub_envato extends SupportHub_extension {
 
 
+
 	public function init(){
 		if(isset($_GET[_SHUB_ENVATO_OAUTH_DOING_FLAG]) && strlen($_GET[_SHUB_ENVATO_OAUTH_DOING_FLAG]) > 0){
 			// we're doing an oauth callback, grab the code and redirect back to the login url.
@@ -46,17 +47,17 @@ class shub_envato extends SupportHub_extension {
 			echo '<div class="envato_compose_account_select">' .
 				     '<input type="checkbox" name="compose_envato_id[' . $account['shub_account_id'] . '][share]" value="1"> ' .
 				     ($envato_account->get_picture() ? '<img src="'.$envato_account->get_picture().'">' : '' ) .
-				     '<span>' . htmlspecialchars( $envato_account->get( 'envato_name' ) ) . ' (status update)</span>' .
+				     '<span>' . htmlspecialchars( $envato_account->get( 'account_name' ) ) . ' (status update)</span>' .
 				     '</div>';
 			/*echo '<div class="envato_compose_account_select">' .
 				     '<input type="checkbox" name="compose_envato_id[' . $account['shub_account_id'] . '][blog]" value="1"> ' .
 				     ($envato_account->get_picture() ? '<img src="'.$envato_account->get_picture().'">' : '' ) .
-				     '<span>' . htmlspecialchars( $envato_account->get( 'envato_name' ) ) . ' (blog post)</span>' .
+				     '<span>' . htmlspecialchars( $envato_account->get( 'account_name' ) ) . ' (blog post)</span>' .
 				     '</div>';*/
 			$items            = $envato_account->get( 'items' );
-			foreach ( $items as $envato_item_id => $item ) {
+			foreach ( $items as $item_id => $item ) {
 				echo '<div class="envato_compose_account_select">' .
-				     '<input type="checkbox" name="compose_envato_id[' . $account['shub_account_id'] . '][' . $envato_item_id . ']" value="1"> ' .
+				     '<input type="checkbox" name="compose_envato_id[' . $account['shub_account_id'] . '][' . $item_id . ']" value="1"> ' .
 				     ($envato_account->get_picture() ? '<img src="'.$envato_account->get_picture().'">' : '' ) .
 				     '<span>' . htmlspecialchars( $item->get( 'item_name' ) ) . ' (item)</span>' .
 				     '</div>';
@@ -112,51 +113,6 @@ class shub_envato extends SupportHub_extension {
 		return $return;
 	}
 
-	// used in our Wp "outbox" view showing combined messages.
-	public function get_message_details($shub_message_id){
-		if(!$shub_message_id)return array();
-		$messages = $this->load_all_messages(array('shub_message_id'=>$shub_message_id));
-		// we want data for our colum outputs in the WP table:
-		/*'shub_column_time'    => __( 'Date/Time', 'support_hub' ),
-	    'shub_column_account' => __( 'Social Accounts', 'support_hub' ),
-		'shub_column_summary'    => __( 'Summary', 'support_hub' ),
-		'shub_column_links'    => __( 'Link Clicks', 'support_hub' ),
-		'shub_column_stats'    => __( 'Stats', 'support_hub' ),
-		'shub_column_action'    => __( 'Action', 'support_hub' ),*/
-		$data = array(
-			'shub_column_account' => '',
-			'shub_column_summary' => '',
-			'shub_column_links' => '',
-		);
-		$link_clicks = 0;
-		foreach($messages as $message){
-			$envato_message = new shub_message(false, false, $message['shub_message_id']);
-			$data['message'] = $envato_message;
-			$data['shub_column_account'] .= '<div><img src="'.plugins_url('extensions/envato/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="envato_icon small"><a href="'.$envato_message->get_link().'" target="_blank">'.htmlspecialchars( $envato_message->get('envato_item') ? $envato_message->get('envato_item')->get( 'item_name' ) : 'Share' ) .'</a></div>';
-			$data['shub_column_summary'] .= '<div><img src="'.plugins_url('extensions/envato/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="envato_icon small"><a href="'.$envato_message->get_link().'" target="_blank">'.htmlspecialchars( $envato_message->get_summary() ) .'</a></div>';
-			// how many link clicks does this one have?
-			$sql = "SELECT count(*) AS `link_clicks` FROM ";
-			$sql .= " `"._support_hub_DB_PREFIX."shub_message` m ";
-			$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_message_link` ml USING (shub_message_id) ";
-			$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_message_link_click` lc USING (shub_message_link_id) ";
-			$sql .= " WHERE 1 ";
-			$sql .= " AND m.shub_message_id = ".(int)$message['shub_message_id'];
-			$sql .= " AND lc.shub_message_link_id IS NOT NULL ";
-			$sql .= " AND lc.user_agent NOT LIKE '%Google%' ";
-			$sql .= " AND lc.user_agent NOT LIKE '%Yahoo%' ";
-			$sql .= " AND lc.user_agent NOT LIKE '%envatoexternalhit%' ";
-			$sql .= " AND lc.user_agent NOT LIKE '%Meta%' ";
-			$res = shub_qa1($sql);
-			$link_clicks = $res && $res['link_clicks'] ? $res['link_clicks'] : 0;
-			$data['shub_column_links'] .= '<div><img src="'.plugins_url('extensions/envato/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="envato_icon small">'. $link_clicks  .'</div>';
-		}
-		if(count($messages) && $link_clicks > 0){
-			//$data['shub_column_links'] = '<div><img src="'.plugins_url('extensions/envato/logo.png', _DTBAKER_SUPPORTHUB_CORE_FILE_).'" class="envato_icon small">'. $link_clicks  .'</div>';
-		}
-		return $data;
-
-	}
-
 
 
 	public function init_js(){
@@ -176,17 +132,17 @@ class shub_envato extends SupportHub_extension {
 					foreach($envato_accounts as $envato_account_id => $send_items){
 						$envato_account = new shub_envato_account($envato_account_id);
 						if($envato_account->get('shub_account_id') == $envato_account_id){
-							/* @var $available_items shub_envato_item[] */
+							/* @var $available_items shub_item[] */
 				            $available_items = $envato_account->get('items');
 							if($send_items){
-							    foreach($send_items as $envato_item_id => $tf){
+							    foreach($send_items as $item_id => $tf){
 								    if(!$tf)continue;// shouldnt happen
-								    switch($envato_item_id){
+								    switch($item_id){
 									    case 'share':
 										    // doing a status update to this envato account
 											$envato_message = new shub_message($envato_account, false, false);
 										    $envato_message->create_new();
-										    $envato_message->update('shub_envato_item_id',0);
+										    $envato_message->update('shub_item_id',0);
 							                $envato_message->update('shub_message_id',$options['shub_message_id']);
 										    $envato_message->update('shub_account_id',$envato_account->get('shub_account_id'));
 										    $envato_message->update('summary',isset($_POST['envato_message']) ? $_POST['envato_message'] : '');
@@ -232,11 +188,11 @@ class shub_envato extends SupportHub_extension {
 										    // posting to one of our available items:
 
 										    // see if this is an available item.
-										    if(isset($available_items[$envato_item_id])){
+										    if(isset($available_items[$item_id])){
 											    // push to db! then send.
-											    $envato_message = new shub_message($envato_account, $available_items[$envato_item_id], false);
+											    $envato_message = new shub_message($envato_account, $available_items[$item_id], false);
 											    $envato_message->create_new();
-											    $envato_message->update('shub_envato_item_id',$available_items[$envato_item_id]->get('shub_envato_item_id'));
+											    $envato_message->update('shub_item_id',$available_items[$item_id]->get('shub_item_id'));
 								                $envato_message->update('shub_message_id',$options['shub_message_id']);
 											    $envato_message->update('shub_account_id',$envato_account->get('shub_account_id'));
 											    $envato_message->update('summary',isset($_POST['envato_message']) ? $_POST['envato_message'] : '');
@@ -285,12 +241,15 @@ class shub_envato extends SupportHub_extension {
 				return $message_count;
 				break;
 		}
-        self::handle_process($process, $options);
+        parent::handle_process($process, $options);
 	}
 
+    public function get_account($shub_account_id){
+        return new shub_envato_account($shub_account_id);
+    }
 
-	public function get_message($envato_account = false, $envato_item = false, $shub_message_id = false){
-		return new shub_message($envato_account, $envato_item, $shub_message_id);
+	public function get_message($envato_account = false, $item = false, $shub_message_id = false){
+		return new shub_message($envato_account, $item, $shub_message_id);
 	}
 
 	public function handle_ajax($action, $support_hub_wp){
@@ -358,14 +317,14 @@ class shub_envato extends SupportHub_extension {
 			$shub_envato_account = new shub_envato_account( $account['shub_account_id'] );
 			$shub_envato_account->run_cron($debug);
 			$items = $shub_envato_account->get('items');
-			/* @var $items shub_envato_item[] */
+			/* @var $items shub_item[] */
 			foreach($items as $item){
 
                 if($last_cron_task){
-                    if($last_cron_task['shub_envato_item_id'] == $item->get('shub_envato_item_id')) {
+                    if($last_cron_task['shub_item_id'] == $item->get('shub_item_id')) {
                         // we got here last time, continue on the next item.
                         $last_cron_task = false;
-                        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'envato','Cron resuming operation from item : '.$item->get('shub_envato_item_id'));
+                        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'envato','Cron resuming operation from item : '.$item->get('shub_item_id'));
                     }
                     continue;
                 }
@@ -373,7 +332,7 @@ class shub_envato extends SupportHub_extension {
                 // recording where we get up to in the (sometimes very long) cron tasks.
                 update_option('last_support_hub_cron_envato',array(
                     'shub_account_id' => $account['shub_account_id'],
-                    'shub_envato_item_id' => $item->get('shub_envato_item_id'),
+                    'shub_item_id' => $item->get('shub_item_id'),
                     'time' => time(),
                 ));
 
@@ -523,7 +482,7 @@ class shub_envato extends SupportHub_extension {
 								$comment_data = @json_decode($first_comment['data'],true);
 								$api_result = $api->api('v1/market/private/user/username.json', array(), false);
 
-                                $account_data = $shub_envato_account->get('envato_data');
+                                $account_data = $shub_envato_account->get('account_data');
 
 								if($comment_data && $api_result && !empty($api_result['username']) && !empty($comment_data['username']) && (($account_data && isset($account_data['user']['username']) && $api_result['username'] == $account_data['user']['username']) || $comment_data['username'] == $api_result['username'])){ // the dtbaker is here for debugging..
 									SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','OAuth Login Success - request extra','User '.$api_result['username'] .' has logged in to provide extra details');
@@ -566,9 +525,9 @@ class shub_envato extends SupportHub_extension {
 								}else{
 									SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','OAuth Login Fail - Username mismatch','User '.var_export($api_result,true).' tried to login and gain access to ticket message ' .$message_id.': '.var_export($comment_data,true));
 									echo "Sorry, unable to verify identity. Please submit a new support message if you require assistance. <br><br> ";
-									$envato_item_data = $shub_message->get('envato_item')->get('envato_data');
-									if($envato_item_data && $envato_item_data['url']) {
-										echo '<a href="' . $envato_item_data['url'].'/comments' . (!empty($comment_data['id']) ? '/'.$comment_data['id'] : '') .'">Please click here to return to the Item Comment</a>';
+									$item_data = $shub_message->get('item')->get('item_data');
+									if($item_data && $item_data['url']) {
+										echo '<a href="' . $item_data['url'].'/comments' . (!empty($comment_data['id']) ? '/'.$comment_data['id'] : '') .'">Please click here to return to the Item Comment</a>';
 									}
 									return false;
 								}
@@ -691,20 +650,6 @@ class shub_envato extends SupportHub_extension {
 		global $wpdb;
 
 		$sql = <<< EOT
-
-CREATE TABLE {$wpdb->prefix}shub_envato_item (
-  shub_envato_item_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_account_id int(11) NOT NULL,
-  shub_product_id int(11) NOT NULL DEFAULT '0',
-  item_name varchar(50) NOT NULL,
-  last_message int(11) NOT NULL DEFAULT '0',
-  last_checked int(11) NOT NULL,
-  item_id varchar(255) NOT NULL,
-  envato_data text NOT NULL,
-  PRIMARY KEY  shub_envato_item_id (shub_envato_item_id),
-  KEY shub_account_id (shub_account_id)
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
 
 EOT;
 		return $sql;

@@ -203,17 +203,17 @@
     font-size: 0.9em;
     margin-left: 40px;
     padding: 0 0 5px 0;
+    text-align: right;
 }
-.shub_message_reply_box button{
+.shub_message_reply_box .shub_message_buttons{
+    padding: 5px 0;
+}
+.shub_message_reply_box .shub_send_message_reply_button{
     float: right;
     clear:right;
-    height:2em;
-    border:1px solid #bdc7d8;
-    margin:5px 0 0 0;
 }
 
 .shub_message_reply_box textarea{
-    float: left;
     background: #FFF;
     border:1px solid #bdc7d8;
     width:100%;

@@ -2,20 +2,10 @@
 
 class shub_envato_account extends SupportHub_account{
 
-    public function reset(){
-        parent::reset();
-        $this->items = array();
+    public function __construct($shub_account_id){
+        parent::__construct($shub_account_id);
+        $this->shub_extension = 'envato';
     }
-
-
-	public function is_item_active($envato_item_id){
-		if(isset($this->items[$envato_item_id]) && $this->items[$envato_item_id]->get('item_id') == $envato_item_id){
-			return true;
-		}else{
-			return false;
-		}
-	}
-
 
 	public function confirm_token(){
         // we quickly confirm our envato token by loading the my accounts page
@@ -52,18 +42,18 @@ class shub_envato_account extends SupportHub_account{
 		$api = $this->get_api();
 
 		// get user details and confirm username works.
-		$api_result = $api->api('v1/market/user:'.$this->get('envato_name').'.json');
-		if($api_result && isset($api_result['user']) && is_array($api_result['user']) && isset($api_result['user']['username']) && $api_result['user']['username'] == $this->get('envato_name')){
+		$api_result = $api->api('v1/market/user:'.$this->get('account_name').'.json');
+		if($api_result && isset($api_result['user']) && is_array($api_result['user']) && isset($api_result['user']['username']) && $api_result['user']['username'] == $this->get('account_name')){
 			$this->save_account_data($api_result);
 		}else{
-			echo 'Failed to verify username '.htmlspecialchars($this->get('envato_name')).'. Please ensure this is correct and try again.';
+			echo 'Failed to verify username '.htmlspecialchars($this->get('account_name')).'. Please ensure this is correct and try again.';
 			return false;
 		}
-		$api_result = $api->api('v1/market/user-items-by-site:' . $this->get('envato_name') . '.json');
+		$api_result = $api->api('v1/market/user-items-by-site:' . $this->get('account_name') . '.json');
 		if($api_result && isset($api_result['user-items-by-site']) && is_array($api_result['user-items-by-site'])){
 			$items = array();
 			foreach($api_result['user-items-by-site'] as $items_by_site){
-				$site_api_result = $api->api('v1/market/new-files-from-user:' . $this->get('envato_name') . ',' . strtolower($items_by_site['site']) .  '.json');
+				$site_api_result = $api->api('v1/market/new-files-from-user:' . $this->get('account_name') . ',' . strtolower($items_by_site['site']) .  '.json');
 				if($site_api_result && isset($site_api_result['new-files-from-user']) && is_array($site_api_result['new-files-from-user'])){
 					foreach($site_api_result['new-files-from-user'] as $item){
 						$item['site'] = $items_by_site['site'];
@@ -72,15 +62,15 @@ class shub_envato_account extends SupportHub_account{
 				}
 			}
 			// yes, this member has some items, save these items to the account ready for selection in the settings area.
-			$save_data = $this->get('envato_data');
+			$save_data = $this->get('account_data');
 			if(!is_array($save_data))$save_data=array();
 			// create a product for each of these items (if a matching one doesn't already exist)
 			$existing_products = SupportHub::getInstance()->get_products();
-			foreach($items as $key => $envato_item){
+			foreach($items as $key => $item){
 				// check if this item exists already
 				$exists = false;
 				foreach($existing_products as $existing_product){
-					if(isset($existing_product['product_data']['envato_item_id']) && $existing_product['product_data']['envato_item_id'] == $envato_item['id']){
+					if(isset($existing_product['product_data']['item_id']) && $existing_product['product_data']['item_id'] == $item['id']){
 						$exists = $existing_product['shub_product_id'];
 					}
 				}
@@ -90,17 +80,17 @@ class shub_envato_account extends SupportHub_account{
 				}else {
 					$newproduct->load( $exists );
 				}
-				$newproduct->update('product_name',$envato_item['item']);
+				$newproduct->update('product_name',$item['item']);
 				$newproduct->update('product_data',array(
-					'envato_item_id' => $envato_item['id'],
-					'envato_item_data' => $envato_item,
-					'image' => isset($envato_item['thumbnail']) ? $envato_item['thumbnail'] : false,
-					'url' => isset($envato_item['url']) ? $envato_item['url'] : false,
+					'item_id' => $item['id'],
+					'item_data' => $item,
+					'image' => isset($item['thumbnail']) ? $item['thumbnail'] : false,
+					'url' => isset($item['url']) ? $item['url'] : false,
 				));
 				$items[$key]['shub_product_id'] = $newproduct->get('shub_product_id');
 			}
 			$save_data['items'] = $items;
-			$this->update('envato_data',$save_data);
+			$this->update('account_data',$save_data);
 		}
 	}
 
@@ -125,26 +115,13 @@ class shub_envato_account extends SupportHub_account{
 	}
 
 	public function get_picture(){
-		$data = $this->get('envato_data');
+		$data = $this->get('account_data');
 		return $data && isset($data['pictureUrl']) && !empty($data['pictureUrl']) ? $data['pictureUrl'] : false;
 	}
 
-	/**
-	 * Links for wordpress
-	 */
-	public function link_connect(){
-		return 'admin.php?page=support_hub_settings&tab=envato&envato_do_oauth_connect&shub_account_id='.$this->get('shub_account_id');
-	}
-	public function link_edit(){
-		return 'admin.php?page=support_hub_settings&tab=envato&shub_account_id='.$this->get('shub_account_id');
-	}
-	public function link_new_message(){
-		return 'admin.php?page=support_hub_main&shub_account_id='.$this->get('shub_account_id').'&shub_message_id=new';
-	}
+    public function get_item($shub_item_id){
+        return new shub_envato_item($this, $shub_item_id);
+    }
 
-
-	public function link_refresh(){
-		return 'admin.php?page=support_hub_settings&tab=envato&manualrefresh&shub_account_id='.$this->get('shub_account_id').'&envato_stream=true';
-	}
 
 }

@@ -410,6 +410,7 @@ class shub_bbpress_message extends SupportHub_message{
             foreach($user_data['reply_options'] as $reply_option){
                 if(isset($reply_option['title'])){
                     echo '<div>';
+                    echo '<label for="">'.htmlspecialchars($reply_option['title']).'</label>';
                     if(isset($reply_option['field']) && is_array($reply_option['field'])){
                         $reply_option['field']['name'] = 'extra-'.$reply_option['field']['name'];
                         $reply_option['field']['data'] = array(
@@ -417,7 +418,6 @@ class shub_bbpress_message extends SupportHub_message{
                         );
                         shub_module_form::generate_form_element($reply_option['field']);
                     }
-                    echo '<label for="">'.htmlspecialchars($reply_option['title']).'</label>';
                     echo '</div>';
                 }
             }

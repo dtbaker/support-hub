@@ -2,24 +2,13 @@
 
 class SupportHub_account{
 
-    public $extension_id = false;
     public function __construct($shub_account_id){
-        if(!$this->extension_id){
-            // we're going in blind! find out what account this is from and load the correct class
-            $shub_account_id = (int)$shub_account_id;
-            if($shub_account_id > 0) {
-                $temp = shub_get_single('shub_account', 'shub_account_id', $shub_account_id);
-                if(!empty($temp['network']))
-            }
-
-            return false;
-        }
         $this->load($shub_account_id);
     }
 
     public $shub_account_id = false; // the current user id in our system.
+    public $shub_extension = ''; // the current extension name
     public $details = array();
-
 
     /* @var $items SupportHub_item[] */
     public $items = array();
@@ -30,20 +19,31 @@ class SupportHub_account{
         $this->shub_account_id = false;
         $this->details = array(
             'shub_account_id' => false,
-            'shub_user_id' => 0,
+            'shub_extension' => '',
             'account_name' => false,
+            'shub_user_id' => 0,
             'last_checked' => false,
             'account_data' => array(),
+            'items' => array(),
         );
         foreach($this->details as $field_id => $field_data){
             $this->{$field_id} = $field_data;
         }
     }
 
+    public function is_item_active($network_key){
+        if(isset($this->items[$network_key]) && $this->items[$network_key]->get('network_key') == $network_key){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+
     public function create_new(){
         $this->reset();
         $this->shub_account_id = shub_update_insert('shub_account_id',false,'shub_account',array(
-            'envato_name' => '',
+            'account_name' => '',
         ));
         $this->load($this->shub_account_id);
     }
@@ -73,14 +73,23 @@ class SupportHub_account{
         $this->items = array();
         if(!$this->shub_account_id)return false;
         foreach(shub_get_multiple('shub_item',array('shub_account_id'=>$this->shub_account_id),'shub_item_id') as $item){
-            $item = new SupportHub_item($this, $item['shub_item_id']);
-            $this->items[$item->get('item_id')] = $item;
+            $item = $this->get_item($item['shub_item_id']);
+            $this->items[$item->get('network_key')] = $item;
         }
         return $this->shub_account_id;
     }
 
     public function get($field){
-        return isset($this->{$field}) ? $this->{$field} : false;
+        if(isset($this->{$field})){
+            return $this->{$field};
+        }else{
+            // check in data
+            $data = $this->get('account_data');
+            if(!empty($data) && isset($data[$field])){
+                return $data[$field];
+            }
+        }
+        return false;
     }
 
     public function save_data($post_data){
@@ -90,7 +99,14 @@ class SupportHub_account{
         if(is_array($post_data)){
             foreach($this->details as $details_key => $details_val){
                 if(isset($post_data[$details_key])){
-                    if(($details_key == 'envato_app_secret' || $details_key == 'envato_token' || $details_key == 'envato_cookie') && $post_data[$details_key] == 'password')continue;
+                    if(is_array($post_data[$details_key])){
+                        foreach($post_data[$details_key] as $key=>$val){
+                            if($val == _SUPPORT_HUB_PASSWORD_FIELD_FUZZ){
+                                unset($post_data[$details_key][$key]);
+                            }
+                        }
+                    }else if($post_data[$details_key] == _SUPPORT_HUB_PASSWORD_FIELD_FUZZ)continue;
+
                     $this->update($details_key,$post_data[$details_key]);
                 }
             }
@@ -99,29 +115,29 @@ class SupportHub_account{
             $this->update('import_stream', 0);
         }
         // save the active envato items.
-        if(isset($post_data['save_envato_items']) && $post_data['save_envato_items'] == 'yep') {
+        if(isset($post_data['save_account_items']) && $post_data['save_account_items'] == 'yep') {
             $currently_active_items = $this->items;
-            $data = $this->get('envato_data');
+            $data = $this->get('account_data');
             $available_items = isset($data['items']) && is_array($data['items']) ? $data['items'] : array();
-            if(isset($post_data['envato_item']) && is_array($post_data['envato_item'])){
-                foreach($post_data['envato_item'] as $envato_item_id => $yesno){
-                    if(isset($currently_active_items[$envato_item_id])){
-                        if(isset($post_data['envato_item_product'][$envato_item_id])){
-                            $currently_active_items[$envato_item_id]->update('shub_product_id',$post_data['envato_item_product'][$envato_item_id]);
+            if(isset($post_data['item']) && is_array($post_data['item'])){
+                foreach($post_data['item'] as $network_key => $yesno){
+                    if(isset($currently_active_items[$network_key])){
+                        if(isset($post_data['item_product'][$network_key])){
+                            $currently_active_items[$network_key]->update('shub_product_id',$post_data['item_product'][$network_key]);
                         }
-                        unset($currently_active_items[$envato_item_id]);
+                        unset($currently_active_items[$network_key]);
                     }
-                    if($yesno && isset($available_items[$envato_item_id])){
+                    if($yesno && isset($available_items[$network_key])){
                         // we are adding this item to the list. check if it doesn't already exist.
-                        if(!isset($this->items[$envato_item_id])){
-                            $item = new shub_account_item($this);
+                        if(!isset($this->items[$network_key])){
+                            $item = new SupportHub_item($this);
                             $item->create_new();
                             $item->update('shub_account_id', $this->shub_account_id);
-                            //$item->update('envato_token', 'same'); // $available_items[$envato_item_id]['access_token']
-                            $item->update('item_name', $available_items[$envato_item_id]['item']);
-                            $item->update('item_id', $envato_item_id);
-                            $item->update('envato_data', $available_items[$envato_item_id]);
-                            $item->update('shub_product_id', isset($post_data['envato_item_product'][$envato_item_id]) ? $post_data['envato_item_product'][$envato_item_id] : 0);
+                            //$item->update('envato_token', 'same'); // $available_items[$network_key]['access_token']
+                            $item->update('item_name', $available_items[$network_key]['item']);
+                            $item->update('network_key', $network_key);
+                            $item->update('item_data', $available_items[$network_key]);
+                            $item->update('shub_product_id', isset($post_data['item_product'][$network_key]) ? $post_data['item_product'][$network_key] : 0);
                         }
                     }
                 }
@@ -138,11 +154,19 @@ class SupportHub_account{
         // what fields to we allow? or not allow?
         if(in_array($field,array('shub_account_id')))return;
         if($this->shub_account_id){
+            if($field == 'account_data'){
+                if(is_array($value)){
+                    // merge data with existing.
+                    $existing_data = $this->get('account_data');
+                    if(!is_array($existing_data))$existing_data=array();
+                    $value = array_merge($existing_data,$value);
+                }
+            }
             $this->{$field} = $value;
-            if(in_array($field,$this->json_fields)){
+            if (in_array($field, $this->json_fields)) {
                 $value = json_encode($value);
             }
-            shub_update_insert('shub_account_id',$this->shub_account_id,'shub_account',array(
+            shub_update_insert('shub_account_id', $this->shub_account_id, 'shub_account', array(
                 $field => $value,
             ));
         }
@@ -173,19 +197,29 @@ class SupportHub_account{
     }
 
     public function save_account_data($user_data){
-        // serialise this result into envato_data.
-        if(is_array($user_data)){
-            // yes, this member has some items, save these items to the account ready for selection in the settings area.
-            $save_data = $this->get('envato_data');
-            if(!is_array($save_data))$save_data=array();
-            $save_data = array_merge($save_data,$user_data);
-            $this->update('envato_data',$save_data);
-        }
+        $this->update('account_data',$user_data);
+
     }
 
     public function run_cron( $debug = false ){
 
 
+    }
+
+    /**
+     * Links for wordpress
+     */
+    public function link_connect(){
+        return 'admin.php?page=support_hub_settings&tab='.$this->shub_extension.'&do_connect&shub_account_id='.$this->get('shub_account_id');
+    }
+    public function link_edit(){
+        return 'admin.php?page=support_hub_settings&tab='.$this->shub_extension.'&shub_account_id='.$this->get('shub_account_id');
+    }
+    public function link_new_message(){
+        return 'admin.php?page=support_hub_main&shub_account_id='.$this->get('shub_account_id').'&shub_message_id=new';
+    }
+    public function link_refresh(){
+        return 'admin.php?page=support_hub_settings&tab='.$this->shub_extension.'&manualrefresh&shub_account_id='.$this->get('shub_account_id').'';
     }
 
 

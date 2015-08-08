@@ -37,7 +37,7 @@ class SupportHub_Account_Data_List_Table extends WP_List_Table {
 	}
 
 	function no_items() {
-		_e( 'No messages found.' );
+		_e( 'No accounts found.' );
 	}
 
 	function column_default( $item, $column_name ) {
@@ -142,6 +142,11 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 
 		$this->available_networks = SupportHub::getInstance()->message_managers;
 	}
+
+
+    function no_items() {
+        _e( 'No messages found.' );
+    }
 
 	function column_cb( $item ) {
 		foreach($this->available_networks as $network => $mm){
@@ -416,28 +421,28 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
     public function single_row( $item ) {
         switch($this->layout_type) {
             case 'inline':
-                if (is_array($item) && isset($item['message_manager']) && $item['message_manager']->id) {
+                if (is_array($item) && !empty($item['shub_extension']) && $message_manager = SupportHub::getInstance()->message_managers[$item['shub_extension']]) {
                     echo '<div class="shub_extension_message_action"><div class="action_content"></div></div>';
                     echo '<div';
                     echo ' class="shub_extension_message"';
-                    echo ' data-network="' . $item['message_manager']->id . '"';
-                    echo ' data-message-id="' . $item['shub_' . $item['message_manager']->id . '_message_id'] . '"';
+                    echo ' data-network="' . $message_manager->id . '"';
+                    echo ' data-message-id="' . $item['shub_message_id'] . '"';
                     echo '>';
                     // show the same content from output_message_page() page from the modal popup, but give it a minimal view so it doesn't look too cluttered on the page
-                    $message = $item['message_manager']->get_message(false, false, $item['shub_' . $item['message_manager']->id . '_message_id']);
+                    $message = $message_manager->get_message(false, false, $item['shub_message_id']);
                     $message->output_message_page('inline');
                     echo '</div>';
                 }else{
-                    echo 'Invalid item. Please remove bug to dtbaker.';
+                    echo 'Invalid item. Please report bug to dtbaker. <br>';
                 }
                 break;
             default:
                 echo '<tr class="shub_extension_message_action"><td class="action_content" colspan="'.$this->get_column_count().'"></td></tr>';
                 echo '<tr';
-                if (is_array($item) && isset($item['message_manager']) && $item['message_manager']->id) {
+                if (is_array($item) && !empty($item['shub_extension']) && $message_manager = SupportHub::getInstance()->message_managers[$item['shub_extension']]) {
                     echo ' class="shub_extension_message"';
-                    echo ' data-network="' . $item['message_manager']->id . '"';
-                    echo ' data-message-id="' . $item['shub_' . $item['message_manager']->id . '_message_id'] . '"';
+                    echo ' data-network="' . $message_manager->id . '"';
+                    echo ' data-message-id="' . $item['shub_message_id'] . '"';
                 }
                 echo '>';
                 $this->single_row_columns($item);

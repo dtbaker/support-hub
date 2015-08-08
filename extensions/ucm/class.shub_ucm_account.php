@@ -201,7 +201,7 @@ class shub_ucm_account{
             [4] => Array
                 (
                     [faq_product_id] => 4
-                    [envato_item_ids] => 48670|144064
+                    [item_ids] => 48670|144064
                     [default_type_id] => 3
                     [name] => asdfasdf333
                     [date_created] => 2012-12-11 14:22:12
@@ -219,11 +219,11 @@ class shub_ucm_account{
                             [default_user_id] => 0
                         )
 
-                    [envato_items] => Array
+                    [items] => Array
                         (
                             [0] => Array
                                 (
-                                    [envato_item_id] => 230
+                                    [item_id] => 230
                                     [envato_account_id] => 1
                                     [item_id] => 48670
                                     [marketplace] => themeforest

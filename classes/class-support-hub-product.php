@@ -23,7 +23,9 @@ class SupportHubProduct{
 
 	public function create_new(){
 		$this->reset();
-		$this->shub_product_id = shub_update_insert('shub_product_id',false,'shub_product',array());
+		$this->shub_product_id = shub_update_insert('shub_product_id',false,'shub_product',array(
+            'product_name' => '',
+        ));
 		$this->load($this->shub_product_id);
 	}
 

@@ -8,9 +8,8 @@ class SupportHub_extension{
 
     public $accounts = array();
 
-	public function __construct( $id = false ) {
+	public function __construct(  ) {
 		$this->reset();
-        if()
 	}
     private function reset() {
         $this->accounts = array();
@@ -48,17 +47,10 @@ class SupportHub_extension{
         }
     }
 
-    public function get_unread_count($search=array()){
-        if(!get_current_user_id())return 0;
-        $sql = "SELECT count(*) AS `unread` FROM `"._support_hub_DB_PREFIX."shub_message` m ";
-        $sql .= " WHERE 1 ";
-        $sql .= " AND m.shub_message_id NOT IN (SELECT mr.shub_message_id FROM `"._support_hub_DB_PREFIX."shub_message_read` mr WHERE mr.user_id = '".(int)get_current_user_id()."' AND mr.shub_message_id = m.shub_message_id)";
-        $sql .= " AND m.`status` = "._shub_MESSAGE_STATUS_UNANSWERED;
-        $res = shub_qa1($sql);
-        return $res ? $res['unread'] : 0;
-    }
 
-    
+
+
+
     public function init_menu(){}
 	public function page_assets(){}
 	public function settings_page(){}
@@ -80,75 +72,6 @@ class SupportHub_extension{
         ), 'shub_account_id' );
         return $this->accounts;
     }
-
-	public $all_messages = array();
-	public $limit_start = 0;
-	public $search_params = array();
-	public $search_order = array();
-	public $search_limit = 0;
-
-    public function load_all_messages($search=array(),$order=array(),$limit_batch=0){
-        $this->search_params = $search;
-        $this->search_order = $order;
-        $this->search_limit = $limit_batch;
-
-        $sql = "SELECT m.*, m.last_active AS `message_time`, mr.read_time FROM `"._support_hub_DB_PREFIX."shub_message` m ";
-        $sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_message_read` mr ON ( m.shub_message_id = mr.shub_message_id AND mr.user_id = ".get_current_user_id()." )";
-        //$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_item` ei ON ( m.shub_item_id = ei.shub_item_id )";
-        $sql .= " WHERE 1 ";
-        if(isset($search['status']) && $search['status'] !== false){
-            $sql .= " AND `status` = ".(int)$search['status'];
-        }
-        if(isset($search['shub_product_id']) && (int)$search['shub_product_id']){
-            $sql .= " AND `shub_product_id` = ".(int)$search['shub_product_id'];
-        }
-        if(isset($search['shub_message_id']) && $search['shub_message_id'] !== false){
-            $sql .= " AND m.`shub_message_id` = ".(int)$search['shub_message_id'];
-        }
-        if(isset($search['shub_account_id']) && $search['shub_account_id'] !== false){
-            $sql .= " AND m.`shub_account_id` = ".(int)$search['shub_account_id'];
-        }
-        if(isset($search['generic']) && !empty($search['generic'])){
-            // todo: search item comments too.. not just title (first comment) and summary (last comment)
-            $sql .= " AND (`title` LIKE '%".esc_sql($search['generic'])."%'";
-            $sql .= " OR `summary` LIKE '%".esc_sql($search['generic'])."%' )";
-        }
-        if(empty($order)){
-            $sql .= " ORDER BY `last_active` ASC ";
-        }else{
-            switch($order['orderby']){
-                case 'shub_column_time':
-                    $sql .= " ORDER BY `last_active` ";
-                    $sql .= $order['order'] == 'asc' ? 'ASC' : 'DESC';
-                    break;
-            }
-        }
-        if($limit_batch){
-            $sql .= " LIMIT ".$this->limit_start.', '.$limit_batch;
-            $this->limit_start += $limit_batch;
-        }
-        global $wpdb;
-        $this->all_messages = $wpdb->get_results($sql, ARRAY_A);
-        return $this->all_messages;
-    }
-
-	public $get_next_message_failed = false;
-	public function get_next_message(){
-		if(empty($this->all_messages) && !$this->get_next_message_failed){
-			// seed the next batch of messages.
-			$this->load_all_messages($this->search_params, $this->search_order, $this->search_limit);
-			if(empty($this->all_messages)){
-				// seed failed, we're completely out of messages from this one.
-				// mark is as failed so we don't keep hitting sql
-				$this->get_next_message_failed = true;
-			}
-		}
-		return !empty($this->all_messages) ? array_shift($this->all_messages) : false;
-		/*if(mysql_num_rows($this->all_messages)){
-			return mysql_fetch_assoc($this->all_messages);
-		}
-		return false;*/
-	}
 
     /**
      * @param $message - an array holding a result from the shub_message row
@@ -263,25 +186,33 @@ class SupportHub_extension{
 	public function handle_process($process, $options = array()){
         switch($process){
             case 'save_account_details':
-                $shub_account_id = isset($_REQUEST['shub_account_id']) ? (int)$_REQUEST['shub_account_id'] : 0;
-                if(check_admin_referer( 'save-account'.$shub_account_id )) {
-                    $account = new SupportHub_account( $shub_account_id );
-                    if ( isset( $_POST['butt_delete'] ) ) {
-                        $account->delete();
-                        $redirect = 'admin.php?page=support_hub_settings&tab='.$account->extension_id;
-                    } else {
-                        $account->save_data( $_POST );
-                        $shub_account_id = $account->get( 'shub_account_id' );
-                        if ( isset( $_POST['butt_save_reconnect'] ) ) {
-                            $redirect = $account->link_connect();
+                if(!empty($_POST['shub_extension']) && $_POST['shub_extension'] == $this->id) {
+                    $shub_account_id = isset($_REQUEST['shub_account_id']) ? (int)$_REQUEST['shub_account_id'] : 0;
+                    if (check_admin_referer('save-account' . $shub_account_id)) {
+                        // todo: figure out a NICE way to use the individual extension account classes for saving/deleting, rather than the generic shub one.
+                        $account = $this->get_account($shub_account_id);
+                        if (!$account) die('Unknown account to save');
+                        if (isset($_POST['butt_delete'])) {
+                            $account->delete();
+                            $redirect = 'admin.php?page=support_hub_settings&tab=' . $account->get('shub_extension');
                         } else {
-                            $redirect = $account->link_edit();
+                            $account->save_data($_POST);
+                            $shub_account_id = $account->get('shub_account_id');
+                            if($shub_account_id) {
+                                if (isset($_POST['butt_save_reconnect'])) {
+                                    $redirect = $account->link_connect();
+                                } else {
+                                    $redirect = $account->link_edit();
+                                }
+                            }else{
+                                die('Failed to save account');
+                            }
                         }
+                        wp_redirect($redirect);
+                        exit;
                     }
-                    header( "Location: $redirect" );
-                    exit;
+                    die('Invalid auth');
                 }
-
                 break;
         }
     }
@@ -293,6 +224,10 @@ class SupportHub_extension{
      * @return SupportHub_message
      */
 	public function get_message($account, $item, $message_id){ return false; }
+    /**
+     * @return SupportHub_account
+     */
+	public function get_account($shub_account_id){ return false; }
 
     public function handle_ajax($action, $support_hub_wp){}
     public function init_js(){}

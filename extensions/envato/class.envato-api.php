@@ -53,6 +53,7 @@ class envato_api_basic{
 		    );
 		}
 		$response     = wp_remote_get($this->_api_url . $endpoint, $headers);
+        //echo $this->_api_url . $endpoint; print_r($response);exit;
 		if( is_array($response) && isset($response['body']) && isset($response['response']['code']) && $response['response']['code'] == 200 ) {
 			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'envato', 'API Call: '.$endpoint,$response['body']);
 		    $header = $response['headers'];

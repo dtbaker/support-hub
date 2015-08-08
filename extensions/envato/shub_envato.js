@@ -6,7 +6,7 @@ ucm.social.envato = {
             f.show();
             f.find('textarea')[0].focus();
         }).delegate('.envato_check_all','change',function(){
-                jQuery('.check_envato_item').prop('checked', !!jQuery(this).prop('checked'));
+                jQuery('.check_item').prop('checked', !!jQuery(this).prop('checked'));
 
             });
 

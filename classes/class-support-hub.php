@@ -119,19 +119,19 @@ class SupportHub {
                     }
                     break;
                 case 'set-answered':
-                    if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_'.$_REQUEST['network'].'_message_id'])) {
-                        $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']);
-                        if ($shub_extension_message->get('shub_' . $_REQUEST['network'] . '_message_id') == $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']) {
+                    if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_message_id'])) {
+                        $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_message_id']);
+                        if ($shub_extension_message->get('shub_message_id') == $_REQUEST['shub_message_id']) {
                             $shub_extension_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
                             if (!headers_sent())header('Content-type: text/javascript');
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
                             ?>
-                            var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]');
+                            var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
                             var element_action = element.prev('.shub_extension_message_action').first();
                             element_action.find('.action_content').html('Message Archived. <a href="#" class="shub_message_action" data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $_REQUEST['network'],
-                                'shub_'.$_REQUEST['network'].'_message_id' => $_REQUEST['shub_'.$_REQUEST['network'].'_message_id'],
+                                'shub_message_id' => (int)$_REQUEST['shub_message_id'],
                             )));?>">Undo</a>');
                             if(element.is('div')){
                             element.slideUp();
@@ -146,19 +146,19 @@ class SupportHub {
                     }
                     break;
                 case 'set-unanswered':
-                    if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_'.$_REQUEST['network'].'_message_id'])) {
-                        $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']);
-                        if ($shub_extension_message->get('shub_' . $_REQUEST['network'] . '_message_id') == $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']) {
+                    if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_message_id'])) {
+                        $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_message_id']);
+                        if ($shub_extension_message->get('shub_message_id') == $_REQUEST['shub_message_id']) {
                             $shub_extension_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
                             if (!headers_sent())header('Content-type: text/javascript');
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
                             ?>
-                            var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]');
+                            var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
                             var element_action = element.prev('.shub_extension_message_action').first();
                             element_action.find('.action_content').html('Message Moved to Inbox. <a href="#" class="shub_message_action" data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $_REQUEST['network'],
-                                'shub_'.$_REQUEST['network'].'_message_id' => $_REQUEST['shub_'.$_REQUEST['network'].'_message_id'],
+                                'shub_message_id' => (int)$_REQUEST['shub_message_id'],
                             )));?>">Undo</a>');
                             if(element.is('div')){
                             element.slideUp();
@@ -471,10 +471,7 @@ class SupportHub {
 
 	public function add_menu_item() {
 
-		$message_count = 0;
-		foreach($this->message_managers as $name => $message_manager) {
-			$message_count += $message_manager->get_unread_count();
-		}
+		$message_count = $this->get_unread_count();;
 		$menu_label = sprintf( __( 'Support Hub %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . (int)$message_count . "</span></span>" : '');
 
         add_menu_page( __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages', 'support_hub_main', array($this, 'show_inbox'), 'dashicons-format-chat', "21.1" );
@@ -856,6 +853,72 @@ class SupportHub {
 	}
 
 
+    public $all_messages = array();
+    public $limit_start = 0;
+    public $search_params = array();
+    public $search_order = array();
+    public $search_limit = 0;
+
+    public function load_all_messages($search=array(),$order=array(),$limit_batch=0){
+        $this->search_params = $search;
+        $this->search_order = $order;
+        $this->search_limit = $limit_batch;
+
+        $sql = "SELECT m.*, m.last_active AS `message_time`, mr.read_time, sa.shub_extension FROM `"._support_hub_DB_PREFIX."shub_message` m ";
+        $sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_message_read` mr ON ( m.shub_message_id = mr.shub_message_id AND mr.user_id = ".get_current_user_id()." )";
+        $sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_account` sa ON ( m.shub_account_id = sa.shub_account_id )";
+        $sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_item` si ON ( m.shub_item_id = si.shub_item_id )";
+        $sql .= " WHERE 1 ";
+        if(!empty($search['extension'])){
+            $sql .= " AND sa.`shub_extension` = '".esc_sql($search['extension']) ."'";
+        }
+        if(isset($search['status']) && $search['status'] !== false){
+            $sql .= " AND `status` = ".(int)$search['status'];
+        }
+        if(isset($search['shub_product_id']) && (int)$search['shub_product_id']){
+            $sql .= " AND ( m.`shub_product_id` = ".(int)$search['shub_product_id'];
+            $sql .= " OR (m.`shub_product_id` = -1 AND si.shub_product_id = ".(int)$search['shub_product_id'].") )";
+        }
+        if(isset($search['shub_message_id']) && $search['shub_message_id'] !== false){
+            $sql .= " AND m.`shub_message_id` = ".(int)$search['shub_message_id'];
+        }
+        if(isset($search['shub_account_id']) && $search['shub_account_id'] !== false){
+            $sql .= " AND m.`shub_account_id` = ".(int)$search['shub_account_id'];
+        }
+        if(isset($search['generic']) && !empty($search['generic'])){
+            // todo: search item comments too.. not just title (first comment) and summary (last comment)
+            $sql .= " AND (`title` LIKE '%".esc_sql($search['generic'])."%'";
+            $sql .= " OR `summary` LIKE '%".esc_sql($search['generic'])."%' )";
+        }
+        if(empty($order)){
+            $sql .= " ORDER BY `last_active` DESC ";
+        }else{
+            switch($order['orderby']){
+                case 'shub_column_time':
+                    $sql .= " ORDER BY `last_active` ";
+                    $sql .= $order['order'] == 'asc' ? 'ASC' : 'DESC';
+                    break;
+            }
+        }
+        if($limit_batch){
+            $sql .= " LIMIT ".$this->limit_start.', '.$limit_batch;
+            $this->limit_start += $limit_batch;
+        }
+        global $wpdb;
+        $this->all_messages = $wpdb->get_results($sql, ARRAY_A);
+        return $this->all_messages;
+    }
+
+    public function get_unread_count($search=array()){
+        if(!get_current_user_id())return 0;
+        $sql = "SELECT count(*) AS `unread` FROM `"._support_hub_DB_PREFIX."shub_message` m ";
+        $sql .= " WHERE 1 ";
+        $sql .= " AND m.shub_message_id NOT IN (SELECT mr.shub_message_id FROM `"._support_hub_DB_PREFIX."shub_message_read` mr WHERE mr.user_id = '".(int)get_current_user_id()."' AND mr.shub_message_id = m.shub_message_id)";
+        $sql .= " AND m.`status` = "._shub_MESSAGE_STATUS_UNANSWERED;
+        $res = shub_qa1($sql);
+        return $res ? $res['unread'] : 0;
+    }
+
 
     public function db_upgrade_check(){
         // hash the SQL used for install.
@@ -892,6 +955,7 @@ CREATE TABLE {$wpdb->prefix}shub_message (
   shub_message_id int(11) NOT NULL AUTO_INCREMENT,
   shub_account_id int(11) NOT NULL,
   shub_product_id int(11) NOT NULL DEFAULT '-1',
+  shub_item_id int(11) NOT NULL DEFAULT '-1',
   post_id int(11) NOT NULL,
   network_key varchar(255) NOT NULL,
   summary text NOT NULL,
@@ -907,6 +971,7 @@ CREATE TABLE {$wpdb->prefix}shub_message (
   PRIMARY KEY  shub_message_id (shub_message_id),
   KEY shub_account_id (shub_account_id),
   KEY last_active (last_active),
+  KEY shub_item_id (shub_item_id),
   KEY shub_product_id (shub_product_id),
   KEY network_id (network_id),
   KEY shub_user_id (shub_user_id),

@@ -9,7 +9,7 @@ function shub_managers_envato( $shub ){
 		require_once 'class.shub_envato_user.php';
 		require_once 'class.shub_envato_account.php';
 		require_once 'class.shub_envato_item.php';
-		require_once 'class.shub_message.php';
+		require_once 'class.shub_envato_message.php';
 		$shub['envato'] = new shub_envato();
 		add_filter('shub_extra_validate_data', array($shub['envato'], 'extra_validate_data'), 10, 6);
 	}else{
