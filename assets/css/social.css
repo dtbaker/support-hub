@@ -290,10 +290,10 @@ tr.log_error{
         margin-left: 0px;
     }
 }
-.shub_network_message_action{
+.shub_extension_message_action{
     display: none;
 }
-.shub_network_message_action .action_content{
+.shub_extension_message_action .action_content{
     padding: 5px;
     text-align: center;
     background: #FFFBCD;
@@ -301,14 +301,14 @@ tr.log_error{
     -moz-border-radius: 4px;
     border-radius: 4px;
 }
-.shub_table_inline .shub_network_message_action:after{
+.shub_table_inline .shub_extension_message_action:after{
     content: "";
     display: block;
     margin-bottom: 5px;
     padding-top: 5px;
     clear: both;
 }
-.shub_table_inline .shub_network_message:after{
+.shub_table_inline .shub_extension_message:after{
     border-bottom: 1px solid #d4d4d4;
     content: "";
     display: block;

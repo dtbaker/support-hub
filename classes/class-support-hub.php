@@ -95,19 +95,19 @@ class SupportHub {
 			switch($action){
                 case 'modal':
                     // open a modal popup with the message in it (similar to pages/message.php)
-                    if(isset($_REQUEST['network']) && isset($_REQUEST['network_message_id']) && (int)$_REQUEST['network_message_id'] > 0) {
+                    if(isset($_REQUEST['network']) && isset($_REQUEST['message_id']) && (int)$_REQUEST['message_id'] > 0) {
                         $network = isset($_GET['network']) ? $_GET['network'] : false;
-                        $network_message_id = isset($_GET['network_message_id']) ? (int)$_GET['network_message_id'] : false;
+                        $message_id = isset($_GET['message_id']) ? (int)$_GET['message_id'] : false;
                         $network_message_comment_id = isset($_GET['network_message_comment_id']) ? (int)$_GET['network_message_comment_id'] : false;
-                        if($network && isset($this->message_managers[$network]) && $network_message_id > 0){
-                            $shub_network_message = $this->message_managers[$network]->get_message( false, false, $network_message_id);
-                            if($shub_network_message->get('shub_'.$network.'_message_id') == $network_message_id){
+                        if($network && isset($this->message_managers[$network]) && $message_id > 0){
+                            $shub_extension_message = $this->message_managers[$network]->get_message( false, false, $message_id);
+                            if($shub_extension_message->get('shub_'.$network.'_message_id') == $message_id){
                                 extract(array(
-                                    "shub_{$network}_id" => $shub_network_message->get($network.'_account')->get('shub_'.$network.'_id'),
-                                    "shub_{$network}_message_id" => $network_message_id,
+                                    "shub_{$network}_id" => $shub_extension_message->get($network.'_account')->get('shub_'.$network.'_id'),
+                                    "shub_{$network}_message_id" => $message_id,
                                     "shub_{$network}_message_comment_id" => $network_message_comment_id,
                                 ));
-                                include( trailingslashit( SupportHub::getInstance()->dir ) . 'networks/'.$network.'/'.$network.'_message.php');
+                                include( trailingslashit( SupportHub::getInstance()->dir ) . 'extensions/'.$network.'/'.$network.'_message.php');
                             }else{
                                 echo 'Failed to load message from database';
                             }
@@ -120,15 +120,15 @@ class SupportHub {
                     break;
                 case 'set-answered':
                     if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_'.$_REQUEST['network'].'_message_id'])) {
-                        $shub_network_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']);
-                        if ($shub_network_message->get('shub_' . $_REQUEST['network'] . '_message_id') == $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']) {
-                            $shub_network_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                        $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']);
+                        if ($shub_extension_message->get('shub_' . $_REQUEST['network'] . '_message_id') == $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']) {
+                            $shub_extension_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
                             if (!headers_sent())header('Content-type: text/javascript');
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
                             ?>
-                            var element = jQuery('.shub_network_message[data-network=<?php echo $_REQUEST['network']; ?>][data-network-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]');
-                            var element_action = element.prev('.shub_network_message_action').first();
+                            var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]');
+                            var element_action = element.prev('.shub_extension_message_action').first();
                             element_action.find('.action_content').html('Message Archived. <a href="#" class="shub_message_action" data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $_REQUEST['network'],
                                 'shub_'.$_REQUEST['network'].'_message_id' => $_REQUEST['shub_'.$_REQUEST['network'].'_message_id'],
@@ -147,15 +147,15 @@ class SupportHub {
                     break;
                 case 'set-unanswered':
                     if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_'.$_REQUEST['network'].'_message_id'])) {
-                        $shub_network_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']);
-                        if ($shub_network_message->get('shub_' . $_REQUEST['network'] . '_message_id') == $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']) {
-                            $shub_network_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+                        $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']);
+                        if ($shub_extension_message->get('shub_' . $_REQUEST['network'] . '_message_id') == $_REQUEST['shub_'.$_REQUEST['network'].'_message_id']) {
+                            $shub_extension_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
                             if (!headers_sent())header('Content-type: text/javascript');
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
                             ?>
-                            var element = jQuery('.shub_network_message[data-network=<?php echo $_REQUEST['network']; ?>][data-network-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]');
-                            var element_action = element.prev('.shub_network_message_action').first();
+                            var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_'.$_REQUEST['network'].'_message_id']; ?>]');
+                            var element_action = element.prev('.shub_extension_message_action').first();
                             element_action.find('.action_content').html('Message Moved to Inbox. <a href="#" class="shub_message_action" data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $_REQUEST['network'],
                                 'shub_'.$_REQUEST['network'].'_message_id' => $_REQUEST['shub_'.$_REQUEST['network'].'_message_id'],
@@ -178,21 +178,21 @@ class SupportHub {
                         action:support_hub_send-message-reply
                         wp_nonce:dfd377374d
                         message:test
-                        network-account-id:1
-                        network-message-id:246
+                        account-id:1
+                        message-id:246
                         network:envato
                         debug:1
                     */
-                    if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['network-account-id']) && !empty($_REQUEST['network-message-id'])) {
-                        $shub_network_message = $this->message_managers[$_REQUEST['network']]->get_message( false, false, $_REQUEST['network-message-id']);
-                        if($shub_network_message->get('shub_'.$_REQUEST['network'].'_message_id') == $_REQUEST['network-message-id']){
+                    if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['account-id']) && !empty($_REQUEST['message-id'])) {
+                        $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message( false, false, $_REQUEST['message-id']);
+                        if($shub_extension_message->get('shub_'.$_REQUEST['network'].'_message_id') == $_REQUEST['message-id']){
                             $return  = array(
                                 'message' => '',
                                 'error' => false,
                                 'shub_outbox_id' => false,
                             );
                             $message = isset( $_POST['message'] ) && $_POST['message'] ? $_POST['message'] : '';
-                            $network_account_id = $_REQUEST['network-account-id'];
+                            $account_id = $_REQUEST['account-id'];
                             $debug = isset( $_POST['debug'] ) && (int)$_POST['debug'] > 0 ? $_POST['debug'] : false;
                             if ( $message ) {
 
@@ -210,7 +210,7 @@ class SupportHub {
                                             $extra_data[substr($key, 6)] = $val;
                                         }
                                     }
-                                    $network_message_comment_id = $shub_network_message->queue_reply($network_account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
+                                    $network_message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
                                     if(!$network_message_comment_id){
                                         $return['message'] .= 'Failed to queue comment reply in database.';
                                         $return['error'] = true;
@@ -222,10 +222,10 @@ class SupportHub {
                                     }
 
                                     $outbox->update(array(
-                                        'shub_network' => $_REQUEST['network'],
-                                        'shub_network_account_id' => $network_account_id,
-                                        'shub_network_message_id' => $_REQUEST['network-message-id'],
-                                        'shub_network_message_comment_id' => $network_message_comment_id,
+                                        'shub_extension' => $_REQUEST['network'],
+                                        'shub_extension_account_id' => $account_id,
+                                        'shub_extension_message_id' => $_REQUEST['message-id'],
+                                        'shub_extension_message_comment_id' => $network_message_comment_id,
                                     ));
                                     $return['shub_outbox_id'] = $outbox->get('shub_outbox_id');
                                 }
@@ -833,7 +833,7 @@ class SupportHub {
                         default:
                             echo 'Other?';
                     } ?><br/>
-                    <a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-network_message_id="<?php echo (int)$other_message['network_message_id'];?>" data-network_message_comment_id="<?php echo isset($other_message['network_message_comment_id']) ? (int)$other_message['network_message_comment_id'] : '';?>" data-modaltitle="<?php echo esc_attr($other_message['summary']);?>"><?php echo esc_html($other_message['summary']);?></a>
+                    <a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-message_id="<?php echo (int)$other_message['message_id'];?>" data-network_message_comment_id="<?php echo isset($other_message['network_message_comment_id']) ? (int)$other_message['network_message_comment_id'] : '';?>" data-modaltitle="<?php echo esc_attr($other_message['summary']);?>"><?php echo esc_html($other_message['summary']);?></a>
                 </li>
                 <?php
             }
@@ -868,27 +868,114 @@ class SupportHub {
         global $wpdb;
         $sql .= <<< EOT
 
+
+CREATE TABLE {$wpdb->prefix}shub_account (
+  shub_account_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_extension varchar(40) NOT NULL DEFAULT '',
+  account_name varchar(50) NOT NULL,
+  shub_user_id int(11) NOT NULL DEFAULT '0',
+  last_checked int(11) NOT NULL DEFAULT '0',
+  account_data longtext NOT NULL,
+
+  import_stream int(11) NOT NULL DEFAULT '0',
+  post_stream int(11) NOT NULL DEFAULT '0',
+  envato_token varchar(255) NOT NULL,
+  envato_cookie mediumtext NOT NULL,
+  envato_app_id varchar(255) NOT NULL,
+  envato_app_secret varchar(255) NOT NULL,
+  machine_id varchar(255) NOT NULL,
+
+  PRIMARY KEY  shub_account_id (shub_account_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
 CREATE TABLE {$wpdb->prefix}shub_message (
   shub_message_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_account_id int(11) NOT NULL,
+  shub_product_id int(11) NOT NULL DEFAULT '-1',
   post_id int(11) NOT NULL,
-  sent_time int(11) NOT NULL DEFAULT '0',
-  message_data text NOT NULL,
-  message_count int(11) NOT NULL DEFAULT '0',
+  network_key varchar(255) NOT NULL,
+  summary text NOT NULL,
+  title text NOT NULL,
+  last_active int(11) NOT NULL DEFAULT '0',
+  comments text NOT NULL,
+  type varchar(20) NOT NULL,
+  link varchar(255) NOT NULL,
+  data text NOT NULL,
+  status tinyint(1) NOT NULL DEFAULT '0',
+  user_id int(11) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_message_id (shub_message_id),
-  KEY post_id (post_id)
+  KEY shub_account_id (shub_account_id),
+  KEY last_active (last_active),
+  KEY shub_product_id (shub_product_id),
+  KEY network_id (network_id),
+  KEY shub_user_id (shub_user_id),
+  KEY post_id (post_id),
+  KEY status (status)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_message_read (
+  shub_message_id int(11) NOT NULL,
+  read_time int(11) NOT NULL DEFAULT '0',
+  user_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_message_id (shub_message_id,user_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_message_comment (
+  shub_message_comment_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_message_id int(11) NOT NULL,
+  network_key varchar(255) NOT NULL,
+  time int(11) NOT NULL,
+  message_from text NOT NULL,
+  message_to text NOT NULL,
+  message_text text NOT NULL,
+  data text NOT NULL,
+  user_id int(11) NOT NULL DEFAULT '0',
+  private tinyint(1) NOT NULL DEFAULT '0',
+  shub_user_id int(11) NOT NULL DEFAULT '0',
+  shub_outbox_id int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY  shub_message_comment_id (shub_message_comment_id),
+  KEY shub_message_id (shub_message_id),
+  KEY shub_user_id (shub_user_id),
+  KEY network_key (network_key)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_message_link (
+  shub_message_link_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_message_id int(11) NOT NULL DEFAULT '0',
+  link varchar(255) NOT NULL,
+  PRIMARY KEY  shub_message_link_id (shub_message_link_id),
+  KEY shub_message_id (shub_message_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+CREATE TABLE {$wpdb->prefix}shub_message_link_click (
+  shub_message_link_click_id int(11) NOT NULL AUTO_INCREMENT,
+  shub_message_link_id int(11) NOT NULL DEFAULT '0',
+  click_time int(11) NOT NULL,
+  ip_address varchar(20) NOT NULL,
+  user_agent varchar(100) NOT NULL,
+  url_referrer varchar(255) NOT NULL,
+  PRIMARY KEY  shub_message_link_click_id (shub_message_link_click_id),
+  KEY shub_message_link_id (shub_message_link_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
 
 CREATE TABLE {$wpdb->prefix}shub_outbox(
   shub_outbox_id int(11) NOT NULL AUTO_INCREMENT,
-  shub_network varchar(40) NOT NULL DEFAULT '',
-  shub_network_account_id int(11) NOT NULL DEFAULT '0',
-  shub_network_message_id int(11) NOT NULL DEFAULT '0',
-  shub_network_message_comment_id int(11) NOT NULL DEFAULT '0',
+  shub_extension varchar(40) NOT NULL DEFAULT '',
+  shub_account_id int(11) NOT NULL DEFAULT '0',
+  shub_message_id int(11) NOT NULL DEFAULT '0',
+  shub_message_comment_id int(11) NOT NULL DEFAULT '0',
   queue_time int(11) NOT NULL DEFAULT '0',
   status int(11) NOT NULL DEFAULT '0',
   message_data text NOT NULL,
   PRIMARY KEY  shub_outbox_id (shub_outbox_id),
-  KEY status (status)
+  KEY status (status),
+  KEY shub_message_id (shub_message_id),
+  KEY shub_account_id (shub_account_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 CREATE TABLE {$wpdb->prefix}shub_log (
@@ -909,6 +996,21 @@ CREATE TABLE {$wpdb->prefix}shub_product (
   PRIMARY KEY  shub_product_id (shub_product_id),
   KEY product_name (product_name)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+
+CREATE TABLE {$wpdb->prefix}shub_item (
+  shub_item_id int(11) NOT NULL AUTO_INCREMENT,
+  network_key varchar(255) NOT NULL,
+  shub_account_id int(11) NOT NULL DEFAULT '0',
+  shub_product_id int(11) NOT NULL DEFAULT '0',
+  item_name varchar(50) NOT NULL,
+  last_message int(11) NOT NULL DEFAULT '0',
+  last_checked int(11) NOT NULL,
+  item_data text NOT NULL,
+  PRIMARY KEY  shub_item_id (shub_item_id),
+  KEY shub_account_id (shub_account_id)
+) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
 
 CREATE TABLE {$wpdb->prefix}shub_user (
   shub_user_id int(11) NOT NULL AUTO_INCREMENT,
@@ -973,15 +1075,15 @@ CREATE TABLE {$wpdb->prefix}shub_extra_data (
 CREATE TABLE {$wpdb->prefix}shub_extra_data_rel (
   shub_extra_data_id int(11) NOT NULL DEFAULT '0',
   shub_extra_id int(11) NOT NULL DEFAULT '0',
-  shub_network varchar(40) NOT NULL DEFAULT '',
-  shub_network_account_id int(11) NOT NULL DEFAULT '0',
-  shub_network_message_id int(11) NOT NULL DEFAULT '0',
-  shub_network_user_id int(11) NOT NULL DEFAULT '0',
+  shub_extension varchar(40) NOT NULL DEFAULT '',
+  shub_account_id int(11) NOT NULL DEFAULT '0',
+  shub_message_id int(11) NOT NULL DEFAULT '0',
+  shub_extension_user_id int(11) NOT NULL DEFAULT '0',
   KEY shub_extra_data_id (shub_extra_data_id),
-  KEY shub_network (shub_network),
-  KEY shub_network_account_id (shub_network_account_id),
-  KEY shub_network_message_id (shub_network_message_id),
-  KEY shub_network_user_id (shub_network_user_id),
+  KEY shub_extension (shub_extension),
+  KEY shub_account_id (shub_account_id),
+  KEY shub_message_id (shub_message_id),
+  KEY shub_extension_user_id (shub_extension_user_id),
   KEY shub_extra_id (shub_extra_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 

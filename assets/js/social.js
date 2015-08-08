@@ -112,8 +112,8 @@ ucm.social = {
                         }else if(typeof r.shub_outbox_id != 'undefined' && r.shub_outbox_id){
                             // successfully queued the message reply for sending.
                             // slide up this window and show a "queued" message, similar to archiving a message.
-                            var element = jQuery(pt).parents('.shub_network_message').first();
-                            var element_action = element.prev('.shub_network_message_action').first();
+                            var element = jQuery(pt).parents('.shub_extension_message').first();
+                            var element_action = element.prev('.shub_extension_message_action').first();
                             element_action.find('.action_content').html('Sending message...');
                             t.queue_watch.add(r.shub_outbox_id, element_action);
                             if(element.is('div')){

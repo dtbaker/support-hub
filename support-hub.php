@@ -25,15 +25,18 @@ define('_shub_MESSAGE_STATUS_ANSWERED',1);
 define('_shub_MESSAGE_STATUS_PENDINGSEND',3);
 define('_shub_MESSAGE_STATUS_SENDING',4);
 define('_shub_MESSAGE_STATUS_HIDDEN',9);
+
 define('_SUPPORT_HUB_LOG_INFO',0);
 define('_SUPPORT_HUB_LOG_ERROR',2);
-define('_DTBAKER_SUPPORT_HUB_CORE_FILE_',__FILE__);
 define('_SUPPORT_HUB_LINK_REQUEST_EXTRA','shrequestextra');
+define('_SUPPORT_HUB_LINK_REWRITE_PREFIX','shublnk');
+
+define('_DTBAKER_SUPPORT_HUB_CORE_FILE_',__FILE__);
 
 // Include core files that do all the magic
 require_once( 'classes/class-support-hub.php' );
 require_once( 'classes/class-support-hub-table.php' );
-require_once( 'classes/class-support-hub-network.php' );
+require_once( 'classes/class-support-hub-extension.php' );
 require_once( 'classes/class-support-hub-message.php' );
 require_once( 'classes/class-support-hub-outbox.php' );
 require_once( 'classes/class-support-hub-product.php' );
@@ -46,13 +49,13 @@ require_once( 'vendor/autoload.php' );
 // include the different network plugins:
 // these plugins hook on 'shub_init' to add their instance to the global 'message_manager' variable
 // 3rd party plugins can hook into shub_init to add their own 'message_manager'
-require_once( 'networks/facebook/init.facebook.php' );
-require_once( 'networks/twitter/init.twitter.php' );
-require_once( 'networks/google/init.google.php' );
-//require_once( 'networks/linkedin/init.linkedin.php' ); // linkedin doesn't work any more - API has been restricted.
-require_once( 'networks/envato/init.envato.php' );
-require_once( 'networks/bbpress/init.bbpress.php' );
-require_once( 'networks/ucm/init.ucm.php' );
+require_once( 'extensions/facebook/init.facebook.php' );
+require_once( 'extensions/twitter/init.twitter.php' );
+require_once( 'extensions/google/init.google.php' );
+//require_once( 'extensions/linkedin/init.linkedin.php' ); // linkedin doesn't work any more - API has been restricted.
+require_once( 'extensions/envato/init.envato.php' );
+require_once( 'extensions/bbpress/init.bbpress.php' );
+require_once( 'extensions/ucm/init.ucm.php' );
 
 // commence the awesome:
 SupportHub::getInstance( _DTBAKER_SUPPORT_HUB_CORE_FILE_ );

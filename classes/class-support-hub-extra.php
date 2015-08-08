@@ -117,17 +117,17 @@ class SupportHubExtra{
 	}
 
 	// find out if there is any data saved against this particular extra field and message.
-	public function get_data($shub_network, $shub_network_account_id, $shub_network_message_id, $shub_user_id){
+	public function get_data($shub_extension, $shub_extension_account_id, $shub_extension_message_id, $shub_user_id){
 
 		$return = array();
 
 		// find any data items that are linked to this particular support message:
-		if($shub_network && $shub_network_account_id && $shub_network_message_id) {
+		if($shub_extension && $shub_extension_account_id && $shub_extension_message_id) {
 			$data = shub_get_multiple( 'shub_extra_data_rel', array(
 				'shub_extra_id'           => $this->shub_extra_id,
-				'shub_network'            => $shub_network,
-				'shub_network_account_id' => $shub_network_account_id,
-				'shub_network_message_id' => $shub_network_message_id
+				'shub_extension'            => $shub_extension,
+				'shub_extension_account_id' => $shub_extension_account_id,
+				'shub_extension_message_id' => $shub_extension_message_id
 			), 'shub_extra_data_id' );
 			foreach ( $data as $d ) {
 				$return[ $d['shub_extra_data_id'] ] = new SupportHubExtraData( $d['shub_extra_data_id'] );
@@ -149,15 +149,15 @@ class SupportHubExtra{
 
     /**
      * @param $data array('extra_value'=>'SOMETHING', 'extra_data'=>array(SOMETHING))
-     * @param $shub_network
-     * @param $shub_network_account_id
-     * @param $shub_network_message_id
+     * @param $shub_extension
+     * @param $shub_extension_account_id
+     * @param $shub_extension_message_id
      * @param $shub_user_id
      *
      * This method will save a set of extra data against a message/user
      *
      */
-	public function save_and_link($data, $shub_network, $shub_network_account_id, $shub_network_message_id, $shub_user_id ){
+	public function save_and_link($data, $shub_extension, $shub_extension_account_id, $shub_extension_message_id, $shub_user_id ){
 		// find if this data exists already in the table.
 		$shub_extra_data_ids = shub_get_multiple('shub_extra_data',array(
 			'shub_extra_id' => $this->shub_extra_id,
@@ -182,9 +182,9 @@ class SupportHubExtra{
 		// link these existing (or new) entries with this network/account/message (if they're not already linked)
 		$existing_linked = shub_get_multiple('shub_extra_data_rel', array(
 			'shub_extra_id' => $this->shub_extra_id,
-			'shub_network' => $shub_network,
-			'shub_network_account_id' => $shub_network_account_id,
-			'shub_network_message_id' => $shub_network_message_id
+			'shub_extension' => $shub_extension,
+			'shub_extension_account_id' => $shub_extension_account_id,
+			'shub_extension_message_id' => $shub_extension_message_id
 		), 'shub_extra_data_id');
 		foreach($shub_extra_data_ids as $shub_extra_data_id => $tf){
 			if(!isset($existing_linked[$shub_extra_data_id])){
@@ -193,9 +193,9 @@ class SupportHubExtra{
 				$result = $wpdb->insert(_support_hub_DB_PREFIX.'shub_extra_data_rel', array(
 					'shub_extra_data_id' => $shub_extra_data_id,
 					'shub_extra_id' => $this->get('shub_extra_id'),
-					'shub_network' => $shub_network,
-					'shub_network_account_id' => $shub_network_account_id,
-					'shub_network_message_id' => $shub_network_message_id,
+					'shub_extension' => $shub_extension,
+					'shub_extension_account_id' => $shub_extension_account_id,
+					'shub_extension_message_id' => $shub_extension_message_id,
 				));
 				// shweet. should all be linked up.
 			}
@@ -259,8 +259,8 @@ class SupportHubExtra{
 		</p>
 		<?php
 	}
-	public static function build_message_hash($network, $network_account_id, $network_message_id, $extra_ids){
-		return $network.':'.$network_account_id.':'.$network_message_id.':'.implode(',',$extra_ids).':'.md5(NONCE_SALT.serialize(func_get_args()));
+	public static function build_message_hash($network, $account_id, $message_id, $extra_ids){
+		return $network.':'.$account_id.':'.$message_id.':'.implode(',',$extra_ids).':'.md5(NONCE_SALT.serialize(func_get_args()));
 	}
 	public static function build_message($data){
 		return 'Hello,
@@ -269,8 +269,8 @@ please send through some more details and we can assist:
 
 <a href="' . add_query_arg(_SUPPORT_HUB_LINK_REQUEST_EXTRA,self::build_message_hash(
 			$data['network'],
-			$data['network_account_id'],
-			$data['network_message_id'],
+			$data['account_id'],
+			$data['message_id'],
 			$data['extra_ids']
 		),home_url()) . '">click here</a>.
 
@@ -288,10 +288,10 @@ Thanks.';
 			$bits = explode(':',$_REQUEST[_SUPPORT_HUB_LINK_REQUEST_EXTRA]);
 			if(count($bits) == 5){
 				$network = $bits[0];
-				$network_account_id = (int)$bits[1];
-				$network_message_id = (int)$bits[2];
+				$account_id = (int)$bits[1];
+				$message_id = (int)$bits[2];
 				$extra_ids = explode(',',$bits[3]);
-				$legit_hash = self::build_message_hash($network, $network_account_id, $network_message_id, $extra_ids);
+				$legit_hash = self::build_message_hash($network, $account_id, $message_id, $extra_ids);
 				if($legit_hash == $_REQUEST[_SUPPORT_HUB_LINK_REQUEST_EXTRA]){
 					// woo we have a legit hash. continue.
 
@@ -314,7 +314,7 @@ Thanks.';
 
 					include $SupportHub->get_template('shub_external_header.php');
 					if(isset($SupportHub->message_managers[$network])){
-						$login_status = $SupportHub->message_managers[$network]->extra_process_login($network, $network_account_id, $network_message_id, $extra_ids);
+						$login_status = $SupportHub->message_managers[$network]->extra_process_login($network, $account_id, $message_id, $extra_ids);
 					}else{
 						die('Invalid message manager');
 					}
@@ -337,13 +337,13 @@ Thanks.';
 								// this extra is to be shown on the page. load in any existing data for this extra item.
 								// todo: hmm nah, dont re-show that information here in the form, the form is only for adding new information.
 								// only show information that was an error and needs to be corrected again before submission/save.
-								//$extra_data = $extra->get_data($network, $network_account_id, $network_message_id);
+								//$extra_data = $extra->get_data($network, $account_id, $message_id);
 								if(isset($extra_previous_data[$extra_id]) && is_string($extra_previous_data[$extra_id])){
 									$status = array(
 										'success' => true,
 									);
 									// validate the data, we have to filter it because Twitter might want to validate a Purchase code against the envato plugin.
-									$status = apply_filters('shub_extra_validate_data', $status, $extra, $extra_previous_data[$extra_id], $network, $network_account_id, $network_message_id);
+									$status = apply_filters('shub_extra_validate_data', $status, $extra, $extra_previous_data[$extra_id], $network, $account_id, $message_id);
 
 									if($status && $status['success']){
 										// all good ready to save!
@@ -377,12 +377,12 @@ Thanks.';
 							// (e.g. envato module will validate the 'purchase_code' and return a possible error)
 							foreach($extras as $extra_id => $extra){
 								if(isset($extra_previous_data_validated[$extra_id])) {
-									$status = $SupportHub->message_managers[ $network ]->extra_save_data( $extra, $extra_previous_data_validated[$extra_id], $network, $network_account_id, $network_message_id );
+									$status = $SupportHub->message_managers[ $network ]->extra_save_data( $extra, $extra_previous_data_validated[$extra_id], $network, $account_id, $message_id );
 									unset($extra_previous_data[$extra_id]);
 								}
 							}
 							// all done! save our message in the db
-							$SupportHub->message_managers[ $network ]->extra_send_message( $message, $network, $network_account_id, $network_message_id );
+							$SupportHub->message_managers[ $network ]->extra_send_message( $message, $network, $account_id, $message_id );
 							// redirect browser to a done page.
 							header("Location: ".$_SERVER['REQUEST_URI'].'&done');
 							exit;
@@ -422,9 +422,9 @@ class SupportHubExtraData {
 		$this->details       = array(
 			'shub_extra_data_id'     => '',
 			'shub_extra_id'     => '',
-			'shub_network'        => '',
-			'shub_network_account_id'        => 0,
-			'shub_network_message_id'        => 0,
+			'shub_extension'        => '',
+			'shub_extension_account_id'        => 0,
+			'shub_extension_message_id'        => 0,
 			'extra_value' => '',
 			'extra_data' => '',
 			'shub_user_id'       => 0,

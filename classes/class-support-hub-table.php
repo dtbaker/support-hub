@@ -178,11 +178,11 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 	            case 'archive':
 					$messages = isset($_POST['shub_message']) && is_array($_POST['shub_message']) ? $_POST['shub_message'] : array();
                     $shub = SupportHub::getInstance();
-					foreach($messages as $network => $network_message_ids){
+					foreach($messages as $network => $message_ids){
                         if(isset($shub->message_managers[$network])){
-                            foreach($network_message_ids as $network_message_id){
-                                $network_message = $shub->message_managers[$network]->get_message(false, false, $network_message_id);
-                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $network_message_id){
+                            foreach($message_ids as $message_id){
+                                $network_message = $shub->message_managers[$network]->get_message(false, false, $message_id);
+                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $message_id){
                                     $network_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
                                     $change_count++;
                                 }
@@ -193,11 +193,11 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 	            case 'un-archive':
 					$messages = isset($_POST['shub_message']) && is_array($_POST['shub_message']) ? $_POST['shub_message'] : array();
                     $shub = SupportHub::getInstance();
-                    foreach($messages as $network => $network_message_ids){
+                    foreach($messages as $network => $message_ids){
                         if(isset($shub->message_managers[$network])){
-                            foreach($network_message_ids as $network_message_id){
-                                $network_message = $shub->message_managers[$network]->get_message(false, false, $network_message_id);
-                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $network_message_id){
+                            foreach($message_ids as $message_id){
+                                $network_message = $shub->message_managers[$network]->get_message(false, false, $message_id);
+                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $message_id){
                                     $network_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
                                     $change_count++;
                                 }
@@ -208,11 +208,11 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 	            case 'hide':
 					$messages = isset($_POST['shub_message']) && is_array($_POST['shub_message']) ? $_POST['shub_message'] : array();
                     $shub = SupportHub::getInstance();
-                    foreach($messages as $network => $network_message_ids){
+                    foreach($messages as $network => $message_ids){
                         if(isset($shub->message_managers[$network])){
-                            foreach($network_message_ids as $network_message_id){
-                                $network_message = $shub->message_managers[$network]->get_message(false, false, $network_message_id);
-                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $network_message_id){
+                            foreach($message_ids as $message_id){
+                                $network_message = $shub->message_managers[$network]->get_message(false, false, $message_id);
+                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $message_id){
                                     $network_message->update('status',_shub_MESSAGE_STATUS_HIDDEN);
                                     $change_count++;
                                 }
@@ -417,27 +417,27 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
         switch($this->layout_type) {
             case 'inline':
                 if (is_array($item) && isset($item['message_manager']) && $item['message_manager']->id) {
-                    echo '<div class="shub_network_message_action"><div class="action_content"></div></div>';
+                    echo '<div class="shub_extension_message_action"><div class="action_content"></div></div>';
                     echo '<div';
-                    echo ' class="shub_network_message"';
+                    echo ' class="shub_extension_message"';
                     echo ' data-network="' . $item['message_manager']->id . '"';
-                    echo ' data-network-message-id="' . $item['shub_' . $item['message_manager']->id . '_message_id'] . '"';
+                    echo ' data-message-id="' . $item['shub_' . $item['message_manager']->id . '_message_id'] . '"';
                     echo '>';
                     // show the same content from output_message_page() page from the modal popup, but give it a minimal view so it doesn't look too cluttered on the page
                     $message = $item['message_manager']->get_message(false, false, $item['shub_' . $item['message_manager']->id . '_message_id']);
-                    $message->output_message_page();
+                    $message->output_message_page('inline');
                     echo '</div>';
                 }else{
                     echo 'Invalid item. Please remove bug to dtbaker.';
                 }
                 break;
             default:
-                echo '<tr class="shub_network_message_action"><td class="action_content" colspan="'.$this->get_column_count().'"></td></tr>';
+                echo '<tr class="shub_extension_message_action"><td class="action_content" colspan="'.$this->get_column_count().'"></td></tr>';
                 echo '<tr';
                 if (is_array($item) && isset($item['message_manager']) && $item['message_manager']->id) {
-                    echo ' class="shub_network_message"';
+                    echo ' class="shub_extension_message"';
                     echo ' data-network="' . $item['message_manager']->id . '"';
-                    echo ' data-network-message-id="' . $item['shub_' . $item['message_manager']->id . '_message_id'] . '"';
+                    echo ' data-message-id="' . $item['shub_' . $item['message_manager']->id . '_message_id'] . '"';
                 }
                 echo '>';
                 $this->single_row_columns($item);

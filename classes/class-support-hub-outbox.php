@@ -24,10 +24,10 @@ class SupportHubOutbox{
 		$this->{$this->db_primary_key} = false;
 		$this->details = array(
 			'shub_outbox_id' => '',
-			'shub_network' => '',
-			'shub_network_account_id' => '',
-			'shub_network_message_id' => '',
-			'shub_network_message_comment_id' => '',
+			'shub_extension' => '',
+			'shub_extension_account_id' => '',
+			'shub_extension_message_id' => '',
+			'shub_extension_message_comment_id' => '',
 			'queue_time' => '',
 			'status' => '',
 			'message_data' => array(),

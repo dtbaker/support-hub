@@ -14,11 +14,13 @@ class SupportHub_message{
         return $this->get('shub_product_id');
     }
 
-    public function output_message_page(){
-        $network_message_id = $this->get('shub_'.$this->network.'_message_id');
-        if($network_message_id && $this->get('shub_'.$this->network.'_id')){
+    public function output_message_page($type='inline'){
+        $message_id = $this->get('shub_'.$this->network.'_message_id');
+        if($message_id && $this->get('shub_'.$this->network.'_id')){
 
-            $this->mark_as_read();
+            if('popup' == $type){
+                $this->mark_as_read();
+            }
 
             ?>
 
@@ -34,13 +36,13 @@ class SupportHub_message{
                             <a href="#" class="shub_message_action btn btn-default btn-xs button"
                                data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
-                                'shub_'.$this->network.'_message_id' => $network_message_id,
+                                'shub_'.$this->network.'_message_id' => $message_id,
                             )));?>"><?php _e( 'Inbox' ); ?></a>
                         <?php }else{ ?>
                             <a href="#" class="shub_message_action btn btn-default btn-xs button"
                                data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
-                                'shub_'.$this->network.'_message_id' => $network_message_id,
+                                'shub_'.$this->network.'_message_id' => $message_id,
                             )));?>"><?php _e( 'Archive' ); ?></a>
                         <?php } ?>
                     </header>
@@ -58,7 +60,7 @@ class SupportHub_message{
                         do_action('supporthub_message_header', $this->network, $this);
                         ?>
 
-                        <a href="#" class="shub_request_extra btn btn-default btn-xs button" data-modaltitle="<?php _e( 'Request Extra Details' ); ?>" data-action="request_extra_details" data-network="<?php echo $this->network;?>" data-<?php echo $this->network;?>-message-id="<?php echo $network_message_id;?>"><?php _e( 'Request Extra Details' ); ?></a>
+                        <a href="#" class="shub_request_extra btn btn-default btn-xs button" data-modaltitle="<?php _e( 'Request Extra Details' ); ?>" data-action="request_extra_details" data-network="<?php echo $this->network;?>" data-<?php echo $this->network;?>-message-id="<?php echo $message_id;?>"><?php _e( 'Request Extra Details' ); ?></a>
                     </aside>
                 </section>
                 <section class="message_content">
@@ -136,13 +138,15 @@ class SupportHub_message{
                         <div class="shub_message_body">
                             <textarea placeholder="Write a reply..."></textarea>
                             <button data-post="<?php echo esc_attr(json_encode(array(
-                                'network-account-id' => $this->get('shub_'.$this->network.'_id'),
-                                'network-message-id' => $network_message_id,
+                                'account-id' => $this->get('shub_'.$this->network.'_id'),
+                                'message-id' => $message_id,
                                 'network' => $this->network,
                             )));?>" class="btn button"><?php _e('Send');?></button>
                         </div>
                         <div class="shub_message_actions">
-                            <input id="message_reply_debug_<?php echo $network_message_id;?>" type="checkbox" name="debug" data-reply="yes" value="1"> <label for="message_reply_debug_<?php echo $network_message_id;?>"><?php _e('enable debug mode','shub');?></label>
+                            <div>
+                                <input id="message_reply_debug_<?php echo $message_id;?>" type="checkbox" name="debug" data-reply="yes" value="1"> <label for="message_reply_debug_<?php echo $message_id;?>"><?php _e('Enable Debug Mode','shub');?></label>
+                            </div>
                             <?php $this->reply_actions();?>
                         </div>
                     </div>
@@ -151,8 +155,8 @@ class SupportHub_message{
                     <?php
                     SupportHubExtra::form_request_extra(array(
                         'network' => $this->network,
-                        'network-account-id' => $this->get('shub_'.$this->network.'_id'),
-                        'network-message-id' => $network_message_id,
+                        'account-id' => $this->get('shub_'.$this->network.'_id'),
+                        'message-id' => $message_id,
                     ));
                     ?>
                 </section>

@@ -37,6 +37,7 @@
         // get the default value if none is set
         $per_page = $screen->get_option( 'per_page', 'default' );
     }
+    if(!$per_page)$per_page=20;
     $myListTable->items_per_page = $per_page;
     $myListTable->set_columns( array(
 		'cb' => 'Select All',
