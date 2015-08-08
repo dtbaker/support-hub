@@ -185,7 +185,7 @@ class SupportHub {
                     */
                     if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['account-id']) && !empty($_REQUEST['message-id'])) {
                         $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message( false, false, $_REQUEST['message-id']);
-                        if($shub_extension_message->get('shub_'.$_REQUEST['network'].'_message_id') == $_REQUEST['message-id']){
+                        if($shub_extension_message->get('shub_message_id') == $_REQUEST['message-id']){
                             $return  = array(
                                 'message' => '',
                                 'error' => false,
@@ -223,9 +223,9 @@ class SupportHub {
 
                                     $outbox->update(array(
                                         'shub_extension' => $_REQUEST['network'],
-                                        'shub_extension_account_id' => $account_id,
-                                        'shub_extension_message_id' => $_REQUEST['message-id'],
-                                        'shub_extension_message_comment_id' => $network_message_comment_id,
+                                        'shub_account_id' => $account_id,
+                                        'shub_message_id' => $_REQUEST['message-id'],
+                                        'shub_message_comment_id' => $network_message_comment_id,
                                     ));
                                     $return['shub_outbox_id'] = $outbox->get('shub_outbox_id');
                                 }

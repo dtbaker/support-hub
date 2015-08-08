@@ -124,6 +124,9 @@
 .message_sidebar header{
     padding: 0 0 10px 0;
 }
+.message_sidebar aside{
+    word-wrap: break-word;
+}
 .message_content{
     margin-left: 200px;
     padding: 10px 0;

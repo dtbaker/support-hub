@@ -354,7 +354,7 @@ class SupportHub_message{
                             )));?>"><?php _e( 'Archive' ); ?></a>
                         <?php } ?>
                     </header>
-                    <aside>
+                    <aside class="message_sidebar">
 
                         <?php $this->message_sidebar_data(); ?>
 

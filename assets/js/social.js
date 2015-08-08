@@ -72,10 +72,9 @@ ucm.social = {
                 while (b && (b != jQuery(a).prop('scrollHeight')));
             }
             jQuery(a).height(jQuery(a).prop('scrollHeight') + 10);
-        }).delegate('.shub_message_reply button','click',function(){
+        }).delegate('.shub_send_message_reply_button','click',function(){
             // send a message!
-            var pt = jQuery(this).parent();
-            var p = pt.parent();
+            var pt = jQuery(this).parents('.shub_message_reply_box').first();
             var txt = pt.find('textarea');
             var message = txt.val();
             if(message.length > 0){
@@ -94,7 +93,7 @@ ucm.social = {
                     }
                 }
                 // add any additioal reply options to this.
-                p.find('[data-reply="yes"]').each(function(){
+                pt.find('[data-reply="yes"]').each(function(){
                     if(jQuery(this).attr('type') == 'checkbox'){
                         post_data[jQuery(this).attr('name')] = this.checked ? jQuery(this).val() : false;
                     }else{
@@ -109,7 +108,7 @@ ucm.social = {
                     success: function(r){
                         if(r && typeof r.redirect != 'undefined') {
                             window.location = r.redirect;
-                        }else if(typeof r.shub_outbox_id != 'undefined' && r.shub_outbox_id){
+                        }else if(r && typeof r.shub_outbox_id != 'undefined' && r.shub_outbox_id){
                             // successfully queued the message reply for sending.
                             // slide up this window and show a "queued" message, similar to archiving a message.
                             var element = jQuery(pt).parents('.shub_extension_message').first();
@@ -131,7 +130,7 @@ ucm.social = {
                     }
                 });
                 pt.html('Sending...');
-                p.find('.shub_message_actions').hide();
+                pt.find('.shub_message_actions').hide();
             }
             return false;
         }).delegate('.shub_message_action','click',function(){
