@@ -759,7 +759,11 @@ class SupportHub {
 			<?php
 		}
 
+        // work out if this user has a valid support period
+        $support_period = false;
+
         $user_bits = array();
+        $user_bits[] = array('Support Pack','UNKNOWN');
         if(!empty($user_hints['shub_user_id'])){
             foreach($user_hints['shub_user_id'] as $shub_user_id) {
                 $user = new SupportHubUser($shub_user_id);
@@ -817,19 +821,23 @@ class SupportHub {
             foreach($other_messages as $other_message){
                 ?>
                 <li>
-                    <?php echo shub_print_date($other_message['time']);?> - <?php switch($other_message['message_status']){
-                        case _shub_MESSAGE_STATUS_ANSWERED:
-                            echo 'Archived';
-                            break;
-                        case _shub_MESSAGE_STATUS_UNANSWERED:
-                            echo 'Inbox';
-                            break;
-                        case _shub_MESSAGE_STATUS_HIDDEN:
-                            echo 'Hidden';
-                            break;
-                        default:
-                            echo 'Other?';
-                    } ?><br/>
+                    <?php echo shub_print_date($other_message['time']);?> - <?php
+                    if(isset($other_message['message_status'])) {
+                        switch ($other_message['message_status']) {
+                            case _shub_MESSAGE_STATUS_ANSWERED:
+                                echo 'Archived';
+                                break;
+                            case _shub_MESSAGE_STATUS_UNANSWERED:
+                                echo 'Inbox';
+                                break;
+                            case _shub_MESSAGE_STATUS_HIDDEN:
+                                echo 'Hidden';
+                                break;
+                            default:
+                                echo 'Other?';
+                        }
+                    }
+                    ?><br/>
                     <a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-message_id="<?php echo (int)$other_message['message_id'];?>" data-network_message_comment_id="<?php echo isset($other_message['network_message_comment_id']) ? (int)$other_message['network_message_comment_id'] : '';?>" data-modaltitle="<?php echo esc_attr($other_message['summary']);?>"><?php echo esc_html($other_message['summary']);?></a>
                 </li>
                 <?php
@@ -1028,7 +1036,7 @@ CREATE TABLE {$wpdb->prefix}shub_message_link_click (
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
-CREATE TABLE {$wpdb->prefix}shub_outbox(
+CREATE TABLE {$wpdb->prefix}shub_outbox (
   shub_outbox_id int(11) NOT NULL AUTO_INCREMENT,
   shub_extension varchar(40) NOT NULL DEFAULT '',
   shub_account_id int(11) NOT NULL DEFAULT '0',

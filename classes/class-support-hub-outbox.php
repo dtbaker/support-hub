@@ -25,9 +25,9 @@ class SupportHubOutbox{
 		$this->details = array(
 			'shub_outbox_id' => '',
 			'shub_extension' => '',
-			'shub_extension_account_id' => '',
-			'shub_extension_message_id' => '',
-			'shub_extension_message_comment_id' => '',
+			'shub_account_id' => '',
+			'shub_message_id' => '',
+			'shub_message_comment_id' => '',
 			'queue_time' => '',
 			'status' => '',
 			'message_data' => array(),

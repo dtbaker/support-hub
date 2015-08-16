@@ -56,9 +56,6 @@ class shub_ucm extends SupportHub_extension {
 	}
 
 
-
-	private $accounts = array();
-
 	private function reset() {
 		$this->accounts = array();
 	}
@@ -134,7 +131,7 @@ class shub_ucm extends SupportHub_extension {
 	}
 
 
-	private function get_url($url, $post_data = false){
+	public function get_url($url, $post_data = false){
 		// get feed from fb:
 
 		$ch = curl_init($url);
@@ -278,7 +275,7 @@ class shub_ucm extends SupportHub_extension {
 	}
 
 
-	public function output_row($message){
+	public function output_row($message, $foo=array()){
 		$ucm_message = new shub_ucm_message(false, false, $message['shub_ucm_message_id']);
 	    $messages         = $ucm_message->get_comments();
 		$return = array();

@@ -57,8 +57,6 @@ class shub_bbpress extends SupportHub_extension {
 
 
 
-	private $accounts = array();
-
 	private function reset() {
 		$this->accounts = array();
 	}
@@ -134,7 +132,7 @@ class shub_bbpress extends SupportHub_extension {
 	}
 
 
-	private function get_url($url, $post_data = false){
+	public function get_url($url, $post_data = false){
 		// get feed from fb:
 
 		$ch = curl_init($url);
@@ -278,7 +276,7 @@ class shub_bbpress extends SupportHub_extension {
 	}
 
 
-	public function output_row($message){
+	public function output_row($message, $foo = array()){
 		$bbpress_message = new shub_bbpress_message(false, false, $message['shub_bbpress_message_id']);
 	    $messages         = $bbpress_message->get_comments();
 		$return = array();

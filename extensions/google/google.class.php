@@ -4,8 +4,6 @@ define('_support_hub_GOOGLE_LINK_REWRITE_PREFIX','ssglnk');
 
 class shub_google extends SupportHub_extension {
 
-	private $accounts = array();
-
 	public function init(){
 		if(isset($_GET[_support_hub_GOOGLE_LINK_REWRITE_PREFIX]) && strlen($_GET[_support_hub_GOOGLE_LINK_REWRITE_PREFIX]) > 0){
 			// check hash
@@ -225,7 +223,7 @@ class shub_google extends SupportHub_extension {
 		return $res ? $res['unread'] : 0;
 	}
 
-	public function output_row($message, $settings){
+	public function output_row($message, $settings=array()){
 		$google_message = new shub_google_message(false, $message['shub_google_message_id']);
 		?>
 		<tr class="<?php echo isset($settings['row_class']) ? $settings['row_class'] : '';?> google_message_row <?php echo !isset($message['read_time']) || !$message['read_time'] ? ' message_row_unread' : '';?>"

@@ -15,7 +15,6 @@ class shub_bbpress_message extends SupportHub_message{
 	/* @var $bbpress_account shub_bbpress_account */
 	private $bbpress_account = false;
 	private $shub_bbpress_message_id = false; // the current user id in our system.
-    private $details = array();
 
     public $json_fields = array('data','comments');
 

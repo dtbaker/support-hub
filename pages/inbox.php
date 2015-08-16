@@ -33,7 +33,7 @@
     $screen_option = $screen->get_option('per_page', 'option');
     // retrieve the value of the option stored for the current user
     $per_page = get_user_meta(get_current_user_id(), $screen_option, true);
-    if ( empty ( $per_page) || $per_page < 1 ) {
+    if ( empty ( $per_page) || $per_page < 1  || is_array($per_page) ) {
         // get the default value if none is set
         $per_page = $screen->get_option( 'per_page', 'default' );
     }

@@ -12,8 +12,6 @@ define('_support_hub_TWITTER_LINK_REWRITE_PREFIX','sstlnk');
 
 class shub_twitter extends SupportHub_extension {
 
-	private $accounts = array();
-
 	public function init(){
 		if(isset($_GET[_support_hub_TWITTER_LINK_REWRITE_PREFIX]) && strlen($_GET[_support_hub_TWITTER_LINK_REWRITE_PREFIX]) > 0){
 			// check hash
@@ -252,7 +250,7 @@ class shub_twitter extends SupportHub_extension {
 		return $res ? $res['unread'] : 0;
 	}
 
-	public function output_row($message, $settings){
+	public function output_row($message, $settings=array()){
 		$twitter_message = new shub_twitter_message(false, $message['shub_twitter_message_id']);
 		?>
 		<tr class="<?php echo isset($settings['row_class']) ? $settings['row_class'] : '';?> twitter_message_row <?php echo !isset($message['read_time']) || !$message['read_time'] ? ' message_row_unread' : '';?>"
