@@ -122,8 +122,42 @@ class SupportHubOutbox{
 		}
 	}
 
+    public function send_queued(){
+        if($this->shub_outbox_id){
+            // check the status of it.
+            // todo - find any ones that are stuck in 'SENDING' status for too long and send those as well.
+            if($this->get('status') == _SHUB_OUTBOX_STATUS_QUEUED){
+                $managers = SupportHub::getInstance()->message_managers;
+                if(!empty($this->shub_extension) && isset($managers[$this->shub_extension]) && $managers[$this->shub_extension]->is_enabled()){
+                    // find the message manager responsible for this message and fire off the reply.
+                    $message = $managers[$this->shub_extension]->get_message(false, false, $this->shub_message_id);
+                    if($message->get('shub_message_id') == $this->shub_message_id){
+                        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'sending','Starting Send: '.$this->shub_message_id);
+                        // todo: look at adding a better "lock" so we don't sent duplicate messages between the QUEUE/SENDING get/update
+                        $this->update('status', _SHUB_OUTBOX_STATUS_SENDING);
+                        // sweet! we're here, send the reply.
+                        ob_start();
+                        $status = $message->send_queued_comment_reply($this->shub_message_comment_id);
+                        $errors = ob_get_clean();
+                        if($status){
+                            // success! it worked! flag it as sent.
+                            // todo: remove from this table? not sure.
+                            $this->update('status', _SHUB_OUTBOX_STATUS_SENT);
+                        }else{
+                            $this->update('status', _SHUB_OUTBOX_STATUS_FAILED);
+                            SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'sending','Failed to Send: '.$this->shub_message_id.': error: '.$errors);
+                        }
+                        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'sending','Finished Send: '.$this->shub_message_id);
+
+
+                    }
+                }
+            }
+        }
+    }
+
     public static function get_pending(){
-        return shub_get_multiple('shub_outbox',array('status'=>_SHUB_OUTBOX_STATUS_QUEUED),'shub_outbox_id');
+        return array_merge(shub_get_multiple('shub_outbox',array('status'=>_SHUB_OUTBOX_STATUS_QUEUED),'shub_outbox_id'),shub_get_multiple('shub_outbox',array('status'=>_SHUB_OUTBOX_STATUS_SENDING),'shub_outbox_id'));
     }
     public static function get_failed(){
         return shub_get_multiple('shub_outbox',array('status'=>_SHUB_OUTBOX_STATUS_FAILED),'shub_outbox_id');

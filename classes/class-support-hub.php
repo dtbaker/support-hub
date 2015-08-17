@@ -33,8 +33,7 @@ class SupportHub {
 
 		add_action( 'plugins_loaded', array( $this, 'db_upgrade_check') );
 
-		register_activation_hook( $file, array( $this, 'activation') );
-		register_deactivation_hook( $file, array( $this, 'deactivation') );
+		register_deactivation_hook( $file, array( 'SupportHub', 'deactivation') );
 
 		global $wpdb;
 		define('_support_hub_DB_PREFIX',$wpdb->prefix);
@@ -50,6 +49,7 @@ class SupportHub {
 		add_action( 'wp_ajax_support_hub_modal' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_fb_url_info' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_request_extra_details' , array( $this, 'admin_ajax' ) );
+		add_action( 'wp_ajax_support_hub_queue-watch' , array( $this, 'admin_ajax' ) );
 
         add_filter('set-screen-option', array( $this, 'set_screen_options' ), 10, 3);
 
@@ -61,6 +61,7 @@ class SupportHub {
 		add_action( 'support_hub_cron_job', array( $this, 'cron_run') );
 
 		add_action( 'init', array( $this, 'shub_init' ) );
+//		add_action( 'init', array( $this, 'send_outbox_messages' ) );
 
 
 	}
@@ -235,6 +236,30 @@ class SupportHub {
                             exit;
                         }
                     }
+                    break;
+                case 'queue-watch':
+                    // find out how many pending messages exist and display that result back to the browser.
+                    // along with outbox_ids so we can update the UI when it is sent
+                    $this->send_outbox_messages();
+                    $pending = SupportHubOutbox::get_pending();
+                    $failed = SupportHubOutbox::get_failed();
+                    $return = array();
+                    if (!headers_sent())header('Content-type: text/javascript');
+                    $return['outbox_ids'] = array();
+                    foreach($pending as $message){
+                        $return['outbox_ids'][] = array(
+                            'shub_outbox_id' => $message['shub_outbox_id'],
+                            'status' => $message['status'],
+                        );
+                    }
+                    foreach($failed as $message){
+                        $return['outbox_ids'][] = array(
+                            'shub_outbox_id' => $message['shub_outbox_id'],
+                            'status' => $message['status'],
+                        );
+                    }
+                    echo json_encode( $return );
+
                     break;
 			}
 			// pass off the ajax handling to our media managers:
@@ -570,10 +595,24 @@ class SupportHub {
 	public function plugin_updates_page(){
 		include( trailingslashit( $this->dir ) . 'pages/plugin_updates.php');
 	}
+
+    public function send_outbox_messages($debug = false){
+        // find any pending outbox messages and send them
+        // return stats on the messages left for update in the UI
+        $pending_messages = SupportHubOutbox::get_pending();
+        if(count($pending_messages)){
+            foreach($pending_messages as $pending_message){
+                $pending = new SupportHubOutbox($pending_message['shub_outbox_id']);
+                $pending->send_queued();
+            }
+        }
+    }
+
 	public function cron_new_interval($interval){
 		$interval['minutes_5'] = array('interval' => 5 * 60, 'display' => 'Once 5 minutes');
 	    return $interval;
 	}
+
 	function cron_run( $debug = false ){
 		// running the cron job every 10 minutes.
 		// we get a list of accounts and refresh them all.
@@ -593,6 +632,9 @@ class SupportHub {
 		$this->log_data(0,'cron','Starting Cron Jobs',array(
 			'from' => $last_cron_task ? $last_cron_task : 'start',
 		));
+
+        // send any messages from the outbox
+        $this->send_outbox_messages($debug);
 
 		foreach($this->message_managers as $name => $message_manager) {
 			if($last_cron_task){
@@ -947,7 +989,6 @@ CREATE TABLE {$wpdb->prefix}shub_account (
   shub_user_id int(11) NOT NULL DEFAULT '0',
   last_checked int(11) NOT NULL DEFAULT '0',
   account_data longtext NOT NULL,
-
   import_stream int(11) NOT NULL DEFAULT '0',
   post_stream int(11) NOT NULL DEFAULT '0',
   envato_token varchar(255) NOT NULL,
@@ -955,7 +996,6 @@ CREATE TABLE {$wpdb->prefix}shub_account (
   envato_app_id varchar(255) NOT NULL,
   envato_app_secret varchar(255) NOT NULL,
   machine_id varchar(255) NOT NULL,
-
   PRIMARY KEY  shub_account_id (shub_account_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
@@ -1170,7 +1210,7 @@ EOT;
             update_option( "support_hub_db_hash", $hash );
         }
     }
-    public function deactivation(){
+    public static function deactivation(){
         wp_clear_scheduled_hook( 'support_hub_cron_job' );
     }
     public function activation($sql) {

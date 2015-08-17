@@ -111,17 +111,25 @@ ucm.social = {
                         }else if(r && typeof r.shub_outbox_id != 'undefined' && r.shub_outbox_id){
                             // successfully queued the message reply for sending.
                             // slide up this window and show a "queued" message, similar to archiving a message.
-                            var element = jQuery(pt).parents('.shub_extension_message').first();
-                            var element_action = element.prev('.shub_extension_message_action').first();
-                            element_action.find('.action_content').html('Sending message...');
-                            t.queue_watch.add(r.shub_outbox_id, element_action);
-                            if(element.is('div')){
-                                element.slideUp();
-                                element_action.slideDown();
-                            }else{
-                                element.hide();
-                                element_action.show();
-                            }
+                            (function(){
+                                var element = jQuery(pt).parents('.shub_extension_message').first();
+                                var element_action = element.prev('.shub_extension_message_action').first();
+                                element_action.find('.action_content').html('Sending message...');
+                                t.queue_watch.add(r.shub_outbox_id, element_action, function(){
+                                    // successfully sent
+                                    element_action.find('.action_content').html('Message Sent!');
+                                }, function(){
+                                    // failed to send
+                                    element_action.find('.action_content').html('FAILED TO SEND MESSAGE');
+                                });
+                                if(element.is('div')){
+                                    element.slideUp();
+                                    element_action.slideDown();
+                                }else{
+                                    element.hide();
+                                    element_action.show();
+                                }
+                            })();
                         }else if(r && typeof r.message != 'undefined' && r.message.length > 0){
                             pt.html("Info: "+ r.message);
                         }else{
@@ -183,11 +191,13 @@ ucm.social = {
 
     queue_watch: {
         queue: [],
-        add: function(shub_outbox_id, element){
+        add: function(shub_outbox_id, element, success_callback, fail_callback){
             this.queue.push(
                 {
                     shub_outbox_id: shub_outbox_id,
-                    element: element
+                    element: element,
+                    success_callback: success_callback,
+                    fail_callback: fail_callback
                 }
             );
             this.watch();
@@ -210,6 +220,36 @@ ucm.social = {
                 data: post_data,
                 dataType: 'json',
                 success: function(r){
+                    for(var x = 0; x < t.queue.length; x++){
+                        // find this shub_outbox_id in the queue response from server.
+                        var found = false;
+                        if(r && typeof r.outbox_ids != 'undefined'){
+                            for(var i in r.outbox_ids){
+                                if(r.outbox_ids.hasOwnProperty(i) && typeof r.outbox_ids[i] != 'undefined') {
+                                    if (r.outbox_ids[i].shub_outbox_id && t.queue[x].shub_outbox_id == r.outbox_ids[i].shub_outbox_id) {
+                                        found = true;
+                                        // has it errored?
+                                        if (r.outbox_ids[i].status == 2) {
+                                            if (typeof t.queue[x].fail_callback == 'function') {
+                                                t.queue[x].fail_callback();
+                                                delete(t.queue[x]);
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if(!found){
+                            // it's no longer in the queue! yay!
+                            // fire off complete callback
+                            if(typeof t.queue[x].success_callback == 'function'){
+                                t.queue[x].success_callback();
+                                delete(t.queue[x]);
+                            }
+                        }
+                    }
+
                     t.watching = false;
                     setTimeout(function(){
                         t.watch();

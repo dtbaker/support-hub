@@ -89,7 +89,6 @@ class envato_api_basic{
         }
         return false;
     }
-
 	public function post_comment($comment_url, $parent_comment_id, $comment_text){
 
 		// login to the market using our account cookie.
