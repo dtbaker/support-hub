@@ -157,6 +157,14 @@ class SupportHubUser{
             ));
         }
     }
+    public function add_unique_meta($key,$val){
+        if((int)$this->shub_user_id>0) {
+            $existing = $this->get_meta($key,$val);
+            if(!$existing){
+                $this->add_meta($key,$val);
+            }
+        }
+    }
     public function update_meta($key,$oldval,$newval){
         $existing = $this->get_meta($key,$oldval);
         if(!$existing){
