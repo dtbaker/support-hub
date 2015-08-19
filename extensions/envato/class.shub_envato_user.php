@@ -81,7 +81,7 @@ class SupportHubUser_Envato extends SupportHubUser{
             // store this purchase history in our db for later use.
             if($api_result_purchase_history && !empty($api_result_purchase_history['buyer']['id']) && !empty($api_result_purchase_history['buyer']['username']) && $api_result_purchase_history['buyer']['username'] == $api_result['username']) {
                 // we have the buyer ID! yay! this is better than a username.
-                $thiis->add_unique_meta('envato_user_id', $api_result_purchase_history['buyer']['id']);
+                $this->add_unique_meta('envato_user_id', $api_result_purchase_history['buyer']['id']);
                 if (!empty($api_result_purchase_history['purchases']) && is_array($api_result_purchase_history['purchases'])) {
                     foreach ($api_result_purchase_history['purchases'] as $purchase) {
                         if (!empty($purchase['item']['id'])) {
@@ -140,6 +140,7 @@ class SupportHubUser_Envato extends SupportHubUser{
                                         'purchase_time' => strtotime($purchase['sold_at']),
                                         'envato_user_id' => $api_result_purchase_history['buyer']['id'],
                                         'purchase_code' => '', // todo: hopefully they add this in!
+                                        'api_type' => 'buyer/purchases',
                                         'purchase_data' => json_encode($purchase),
                                     ));
                                 } else {
@@ -151,6 +152,7 @@ class SupportHubUser_Envato extends SupportHubUser{
                                     // work out when this purchase support expires
                                     // this is the expiry date returned in the api or just 6 months from the original purchase date.
                                     $support_expiry_time = strtotime("+6 months", strtotime($purchase['sold_at']));
+                                    // todo - check for this expiry time in the new api results.
 
                                     $existing_support = shub_get_single('shub_envato_support', array('shub_user_id','shub_envato_purchase_id'), array($this->get('shub_user_id'), $shub_envato_purchase_id));
                                     if ($existing_support && $existing_support['shub_envato_support_id'] && $existing_support['start_time'] == strtotime($purchase['sold_at'])) {
@@ -159,6 +161,7 @@ class SupportHubUser_Envato extends SupportHubUser{
                                             // we have a support extension!
                                             $shub_envato_support_id = shub_update_insert('shub_envato_support_id', $existing_support['shub_envato_support_id'], 'shub_envato_support', array(
                                                 'end_time' => $support_expiry_time,
+                                                'api_type' => 'buyer/purchases',
                                                 'support_data' => json_encode($purchase),
                                             ));
                                         }
@@ -170,6 +173,7 @@ class SupportHubUser_Envato extends SupportHubUser{
                                             'shub_envato_purchase_id' => $shub_envato_purchase_id,
                                             'start_time' => strtotime($purchase['sold_at']),
                                             'end_time' => $support_expiry_time,
+                                            'api_type' => 'buyer/purchases',
                                             'support_data' => json_encode($purchase),
                                         ));
                                     }

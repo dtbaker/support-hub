@@ -638,7 +638,7 @@ class shub_envato extends SupportHub_extension {
         "supported_until": ""
         }
         }*/
-        if($result && !empty($result['verify-purchase'])) {
+        if($result && !empty($result['verify-purchase']) && !empty($result['verify-purchase']['item_id'])) {
             // valid purchase code.
             // what is the username attached to this purchase result?
             $envato_username = $result['verify-purchase']['buyer'];
@@ -652,20 +652,117 @@ class shub_envato extends SupportHub_extension {
                 $shub_user->update('user_username',$envato_username);
                 $shub_user->add_meta('envato_username',$envato_username);
             }
-            // store this in our purchase code database so we can access it easier later on
-            $existing_purchase = shub_get_single('shub_envato_purchase', 'purchase_code', $possible_purchase_code);
-            if ($existing_purchase && $existing_purchase['shub_envato_purchase_id']) {
-
+            // find out which product this purchase code is relating to
+            $existing_products = SupportHub::getInstance()->get_products();
+            // check if this item exists already
+            $exists = false;
+            foreach ($existing_products as $existing_product) {
+                if (isset($existing_product['product_data']['item_id']) && $existing_product['product_data']['item_id'] == $result['verify-purchase']['item_id']) {
+                    $exists = $existing_product['shub_product_id'];
+                }
+            }
+            $newproduct = new SupportHubProduct();
+            if (!$exists) {
+                $newproduct->create_new();
             } else {
+                $newproduct->load($exists);
+            }
+            if (!$newproduct->get('product_name')) {
+                $newproduct->update('product_name', $result['verify-purchase']['item_name']);
+            }
+            $existing_product_data = $newproduct->get('product_data');
+            if (!is_array($existing_product_data)) $existing_product_data = array();
+            if (empty($existing_product_data['item_id'])) {
+                $existing_product_data['item_id'] = $result['verify-purchase']['item_id'];
+            }
+            if (empty($existing_product_data['item_data'])) {
+                // get these item details from api
+                $item_data = $api->api('v2/market/catalog/item?id='.$result['verify-purchase']['item_id']);
+                if(!empty($item_data) && $item_data['id'] == $result['verify-purchase']['item_id']){
+                    $existing_product_data['item_data'] = $item_data;
+                    if (empty($existing_product_data['image'])) {
+                        $existing_product_data['image'] = $item_data['thumbnail_url'];
+                    }
+                    if (empty($existing_product_data['url'])) {
+                        $existing_product_data['url'] = $item_data['url'];
+                    }
+                }
+            }
+            $newproduct->update('product_data', $existing_product_data);
+            if ($newproduct->get('shub_product_id')) {
+
+            }
+            $shub_envato_purchase_id = false;
+            // store this in our purchase code database so we can access it easier later on
+            $existing_purchase = shub_get_single('shub_envato_purchase', 'purchase_code', $purchase_code);
+            if(!$existing_purchase){
+                // see if we can find an existing purchase by this user at the same time, without a purchase code.
+                // (because results from the purchase api do not contian purchase codes)
+                $possible_purchases = shub_get_multiple('shub_envato__purchase',array(
+                    'shub_user_id' => $shub_user->get('shub_user_id'),
+                    'shub_product_id' => $newproduct->get('shub_product_id'),
+                    'purchase_time' => strtotime($result['verify-purchase']['created_at']),
+                ));
+                foreach($possible_purchases as $possible_purchase){
+                    if(empty($possible_purchases['purchase_code'])){
+                        // this purchase came from the other api and doesn't have a purchase code.
+                        // add it in!
+                        $shub_envato_purchase_id = shub_update_insert('shub_envato_purchase_id', $possible_purchase['shub_envato_purchase_id'], 'shub_envato_purchase', array(
+                            'purchase_code' => $purchase_code,
+                        ));
+                    }
+                }
+            }
+            if (!$shub_envato_purchase_id){
                 // add new one
                 $shub_envato_purchase_id = shub_update_insert('shub_envato_purchase_id', false, 'shub_envato_purchase', array(
                     'shub_user_id' => $shub_user->get('shub_user_id'),
-                    'shub_product_id' => $shub_message->get('shub_product_id'),
+                    'shub_product_id' => $newproduct->get('shub_product_id'),
                     'envato_user_id' => 0,
-                    'time' => time(),
+                    'api_type' => 'verify-purchase',
+                    'purchase_time' => strtotime($result['verify-purchase']['created_at']),
+                    'purchase_code' => $purchase_code,
+                    'purchase_data' => $result['verify-purchase'],
                 ));
             }
-            // todo: add or modify the supported_until param
+            if($shub_envato_purchase_id){
+
+                // support expiry time is 6 months from the purchase date, or as specified by the api result.
+                $support_expiry_time = strtotime("+6 months", strtotime($result['verify-purchase']['created_at']));
+                if(!empty($result['verify-purchase']['supported_until'])){
+                    $support_expiry_time = strtotime($result['verify-purchase']['supported_until']);
+                }
+
+                $existing_support = shub_get_single('shub_envato_support', array(
+                    'shub_user_id',
+                    'shub_envato_purchase_id',
+                ), array(
+                    $shub_user->get('shub_user_id'),
+                    $shub_envato_purchase_id,
+                ));
+                if ($existing_support && $existing_support['shub_envato_support_id'] && $existing_support['start_time'] == strtotime($result['verify-purchase']['created_at'])) {
+                    // check the existing support expiry matches the one we have in the database.
+                    if($existing_support['end_time'] < $support_expiry_time){
+                        // we have a support extension!
+                        $shub_envato_support_id = shub_update_insert('shub_envato_support_id', $existing_support['shub_envato_support_id'], 'shub_envato_support', array(
+                            'end_time' => $support_expiry_time,
+                            'api_type' => 'verify-purchase',
+                            'support_data' => json_encode($result['verify-purchase']),
+                        ));
+                    }
+                }else{
+                    // we are adding a new support entry
+                    $shub_envato_support_id = shub_update_insert('shub_envato_support_id', false, 'shub_envato_support', array(
+                        'shub_user_id' => $shub_user->get('shub_user_id'),
+                        'shub_product_id' => $newproduct->get('shub_product_id'),
+                        'shub_envato_purchase_id' => $shub_envato_purchase_id,
+                        'api_type' => 'verify-purchase',
+                        'start_time' => strtotime($result['verify-purchase']['created_at']),
+                        'end_time' => $support_expiry_time,
+                        'support_data' => json_encode($result['verify-purchase']),
+                    ));
+                }
+            }
         }
         return $result;
     }
@@ -791,6 +888,7 @@ CREATE TABLE {$wpdb->prefix}shub_envato_purchase (
   shub_product_id int(11) NOT NULL,
   envato_user_id int(11) NOT NULL,
   purchase_time int(11) NOT NULL,
+  api_type varchar(20) NOT NULL DEFAULT '',
   purchase_code varchar(255) NOT NULL DEFAULT '',
   purchase_data longtext NOT NULL,
   PRIMARY KEY  shub_envato_purchase_id (shub_envato_purchase_id),
@@ -806,6 +904,7 @@ CREATE TABLE {$wpdb->prefix}shub_envato_support (
   shub_envato_purchase_id int(11) NOT NULL,
   start_time int(11) NOT NULL,
   end_time int(11) NOT NULL,
+  api_type varchar(20) NOT NULL DEFAULT '',
   support_data longtext NOT NULL,
   PRIMARY KEY  shub_envato_support_id (shub_envato_support_id),
   KEY shub_envato_purchase_id (shub_envato_purchase_id),
