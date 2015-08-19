@@ -5,7 +5,6 @@ class shub_envato_account extends SupportHub_account{
     public function __construct($shub_account_id){
         parent::__construct($shub_account_id);
         $this->shub_extension = 'envato';
-        //$this->run_cron();
     }
 
 	public function confirm_token(){
@@ -96,112 +95,7 @@ class shub_envato_account extends SupportHub_account{
 		}
 	}
 
-    public function login_to_own_app(){
 
-
-        $api = $this->get_api();
-        // check if we have a code from a previous redirect:
-        if(!empty($_SESSION['shub_oauth_doing_envato']['code'])) {
-            // grab a token from the api
-            $token = $api->get_authentication($_SESSION['shub_oauth_doing_envato']['code']);
-            unset($_SESSION['shub_oauth_doing_envato']['code']);
-            if(!empty($token) && !empty($token['access_token'])) {
-                $api_result = $api->api('v1/market/private/user/username.json', array(), false);
-                $api_result_email = $api->api('v1/market/private/user/email.json', array(), false);
-                $api_user = new SupportHubUser_Envato();
-
-                if($api_result && !empty($api_result['username'])){
-                    if($api_result_email && !empty($api_result_email['email'])) {
-                        $email = trim(strtolower($api_result_email['email']));
-                        $api_user->load_by('user_email', $email);
-                        if(!$api_user->get('shub_user_id')) {
-                            // see if we can load by envato username instead
-                            $api_user->load_by_meta('envato_username', $api_result['username']);
-                            if(!$api_user->get('shub_user_id')) {
-                                // no match on envato username
-                                // try to find a match by plain old username instead
-                                // no existing match by email, find a match by username
-                                $api_user->load_by( 'user_username', $api_result['username']);
-                                if(!$api_user->get('shub_user_id')) {
-                                    // no existing match by email, envato_username or plain username, pump a new entry in the db
-                                    $api_user->create_new();
-                                    $api_user->add_meta('envato_username',$api_result['username']);
-                                    $api_user->update('user_email',$email);
-                                    $api_user->update('user_username',$api_result['username']);
-                                }else{
-                                    // we got a match by username
-                                }
-                            }else{
-                                // yes! we got a match by envato username.
-                            }
-                        }
-                    }else{
-                        // no email from the user, strange! we should always get an email from the API.
-                        // well just incase we fall back and try to load based on username.
-
-                        // (COPIED CODE FROM ABOVE )
-                        // see if we can load by envato username instead
-                        $api_user->load_by_meta('envato_username', $api_result['username']);
-                        if(!$api_user->get('shub_user_id')) {
-                            // no match on envato username
-                            // try to find a match by plain old username instead
-                            // no existing match by email, find a match by username
-                            $api_user->load_by( 'user_username', $api_result['username']);
-                            if(!$api_user->get('shub_user_id')) {
-                                // no existing match by email, envato_username or plain username, pump a new entry in the db
-                                $api_user->create_new();
-                                $api_user->add_meta('envato_username',$api_result['username']);
-                                $api_user->update('user_username',$api_result['username']);
-                            }else{
-                                // we got a match by username
-                            }
-                        }else{
-                            // yes! we got a match by envato username.
-                        }
-                    }
-                }
-                if(!$api_result || empty($api_result['username']) || !$api_user->get('shub_user_id')){
-                    // we got an API error, should always have a username.
-                    echo "Sorry, unable to login with Envato to own app.  <br><br> ";
-                    return false;
-                }
-
-                if(!$api_user->get('user_email') && !empty($api_result_email['email'])){
-                    $api_user->update('user_email',trim(strtolower($api_result_email['email'])));
-                }
-                $api_user->add_unique_meta('envato_username',$api_result['username']);
-
-                $shub_envato_oauth_id = shub_update_insert('shub_envato_oauth_id',false,'shub_envato_oauth',array(
-                    'expire_time' => time() + $token['expires_in'],
-                    'shub_account_id' => $this->shub_account_id,
-                    'shub_user_id' => $api_user->get('shub_user_id'),
-                    'access_token' => $token['access_token'],
-                    'refresh_token' => $token['refresh_token'],
-                ));
-
-                $this->update('account_data',array(
-                    'shub_envato_oauth_id' => $shub_envato_oauth_id,
-                ));
-            }else{
-                echo "Failed to get token during login.";
-                return false;
-            }
-        }else{
-            // set our redirect session variable and go to envato for login
-            $login_url                           = $api->get_authorization_url();
-            $_SESSION['shub_oauth_doing_envato'] = array(
-                'url' => $_SERVER['REQUEST_URI'],
-            );
-            ?>
-            <p>
-                To continue please login using your Envato account.
-            </p>
-            <a href="<?php echo esc_attr( $login_url );?>" class="button">Login with Envato</a>
-            <?php
-            return false;
-        }
-        return true;
-    }
 	private $api = false;
 	public function get_api(){
 		if(!$this->api){
@@ -240,39 +134,13 @@ class shub_envato_account extends SupportHub_account{
 
         $api = $this->get_api();
 
-        $account_data = $this->get('account_data');
-        if(empty($account_data['shub_envato_oauth_id'])){
-            echo 'Please reconnect this account from the Support Hub settings page';
-            return false;
-        }
-        $account_token = shub_get_single('shub_envato_oauth','shub_envato_oauth_id',$account_data['shub_envato_oauth_id']);
-        if(!$account_token['shub_envato_oauth_id']){
-            echo 'Failed to get self account token';
-            return false;
-        }
-
-        $api->set_manual_token($account_token);
-        if($account_token['expire_time'] <= time()){
-            // renew this token!
-            $new_access_token = $api->refresh_token();
-            if($new_access_token){
-                shub_update_insert('shub_envato_oauth_id',$account_token['shub_envato_oauth_id'],'shub_envato_oauth',array(
-                    'access_token' => $new_access_token,
-                    'expire_time' => time() + 3600,
-                ));
-            }else{
-                echo 'Token refresh failed';
-                return false;
-            }
-        }
-
         // how many days do we want to go back? maybe 60 days to start with?
         $last_sale = get_option('supporthub_envato_author_sales_last',false);
-        if(!$last_sale)$last_sale = strtotime('-60 days');
+        if(!$last_sale)$last_sale = strtotime('-360 days');
         $last_sale_in_this_batch = 0;
         $page = 1;
         while(true){
-            $recent_sales = $api->api('v2/market/author/sales?page='.$page,array(),false);
+            $recent_sales = $api->api('v2/market/author/sales?page='.$page,array(),true);
 //            echo "Recent sales are: ";print_r($recent_sales);exit;
             $page++;
             if(!$recent_sales || !is_array($recent_sales)){
@@ -284,7 +152,18 @@ class shub_envato_account extends SupportHub_account{
 //                    echo $recent_sale['sold_at']."<br>";
                     // add this to the database, or break if we already have this one in the db.
                     $sale_time = strtotime($recent_sale['sold_at']);
-                    if ($sale_time < $last_sale) break;
+                    if ($sale_time < $last_sale){
+                        // we might already have this one in our database
+                        // unless we are doing the intial seed
+                        $existing_purchase = shub_get_single('shub_envato_purchase', array(
+                            'purchase_code',
+                        ), array(
+                            $recent_sale['code'],
+                        ));
+                        if($existing_purchase){
+                            break;// exists already in the db, skip this batch
+                        }
+                    }
                     $last_sale_in_this_batch = max($last_sale_in_this_batch,$sale_time);
 
                     // todo: check if they add username to the system, for now we use a 0 shub_user_id because we're unsure which user this purchase is related to (without doing another separate purchase call)

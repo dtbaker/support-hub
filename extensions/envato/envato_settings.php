@@ -36,18 +36,15 @@ if($current_account !== false){
 		<?php
 		if($shub_envato_account->get('shub_account_id') && $shub_envato_account->get('shub_account_id') == $current_account && $shub_envato_account->get( 'envato_app_id' ) && $shub_envato_account->get( 'envato_app_secret' ) && $shub_envato_account->get( 'envato_token' )) {
 
-            // we have to "login" to our own app in order to get a token to access our author/sales as this endpoint doesn't work using the personal token for some reason
-            if($shub_envato_account->login_to_own_app()) {
-
-                // now we load in a list of envato items to manage and redirect the user back to the 'edit' screen where they can continue managing the account.
-                $shub_envato_account->load_available_items();
-                $shub_envato_account->confirm_token();
-                //$shub_envato_account->run_cron();
-                ?>
-                <p>You have successfully connected Envato with the Support Hub plugin. Please click the button
-                    below:</p>
-                <?php
-            }
+            // now we load in a list of envato items to manage and redirect the user back to the 'edit' screen where they can continue managing the account.
+//            $shub_envato_account->run_cron(); echo 'done';exit;
+            $shub_envato_account->load_available_items();
+            $shub_envato_account->confirm_token();
+            //$shub_envato_account->run_cron();
+            ?>
+            <p>You have successfully connected Envato with the Support Hub plugin. Please click the button
+                below:</p>
+            <?php
 
             ?>
 
@@ -118,7 +115,7 @@ if($current_account !== false){
                             <?php _e( 'App Secret Key', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="password" name="account_data[envato_app_secret]" value="<?php echo esc_attr( !empty($shub_envato_account->get('envato_app_secret')) ? _SUPPORT_HUB_PASSWORD_FIELD_FUZZ : '' ); ?>">
+                            <input type="password" name="account_data[envato_app_secret]" value="<?php echo esc_attr( $shub_envato_account->get('envato_app_secret') ? _SUPPORT_HUB_PASSWORD_FIELD_FUZZ : '' ); ?>">
                         </td>
                     </tr>
                     <tr>
@@ -126,7 +123,7 @@ if($current_account !== false){
                             <?php _e( 'App Client ID', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="text" name="account_data[envato_app_id]" value="<?php echo esc_attr( !empty($shub_envato_account->get('envato_app_id')) ? $shub_envato_account->get('envato_app_id') : '' ); ?>">
+                            <input type="text" name="account_data[envato_app_id]" value="<?php echo esc_attr( $shub_envato_account->get('envato_app_id') ? $shub_envato_account->get('envato_app_id') : '' ); ?>">
                         </td>
                     </tr>
                     <tr>
@@ -134,7 +131,7 @@ if($current_account !== false){
                             <?php _e( 'Personal Token', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="password" name="account_data[envato_token]" value="<?php echo esc_attr( !empty($shub_envato_account->get('envato_token')) ? _SUPPORT_HUB_PASSWORD_FIELD_FUZZ : '' ); ?>">
+                            <input type="password" name="account_data[envato_token]" value="<?php echo esc_attr( $shub_envato_account->get('envato_token') ? _SUPPORT_HUB_PASSWORD_FIELD_FUZZ : '' ); ?>">
                         </td>
                     </tr>
                     <tr>
@@ -142,7 +139,7 @@ if($current_account !== false){
                             <?php _e( 'Session Cookie', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="password" name="account_data[envato_cookie]" value="<?php echo esc_attr( !empty($shub_envato_account->get('envato_cookie')) ? _SUPPORT_HUB_PASSWORD_FIELD_FUZZ : '' ); ?>">
+                            <input type="password" name="account_data[envato_cookie]" value="<?php echo esc_attr( $shub_envato_account->get('envato_cookie') ? _SUPPORT_HUB_PASSWORD_FIELD_FUZZ : '' ); ?>">
 							<a href="http://supporthub.co/documentation/envato/" target="_blank">(help)</a>
                         </td>
                     </tr>

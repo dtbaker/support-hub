@@ -102,11 +102,11 @@ class SupportHub {
                         $network_message_comment_id = isset($_GET['network_message_comment_id']) ? (int)$_GET['network_message_comment_id'] : false;
                         if($network && isset($this->message_managers[$network]) && $message_id > 0){
                             $shub_extension_message = $this->message_managers[$network]->get_message( false, false, $message_id);
-                            if($shub_extension_message->get('shub_'.$network.'_message_id') == $message_id){
+                            if($shub_extension_message->get('shub_message_id') == $message_id){
                                 extract(array(
-                                    "shub_{$network}_id" => $shub_extension_message->get($network.'_account')->get('shub_'.$network.'_id'),
-                                    "shub_{$network}_message_id" => $message_id,
-                                    "shub_{$network}_message_comment_id" => $network_message_comment_id,
+                                    "shub_account_id" => $shub_extension_message->get('account')->get('shub_account_id'),
+                                    "shub_message_id" => $message_id,
+                                    "shub_message_comment_id" => $network_message_comment_id,
                                 ));
                                 include( trailingslashit( SupportHub::getInstance()->dir ) . 'extensions/'.$network.'/'.$network.'_message.php');
                             }else{
@@ -637,28 +637,30 @@ class SupportHub {
         $this->send_outbox_messages($debug);
 
 		foreach($this->message_managers as $name => $message_manager) {
-			if($last_cron_task){
-				if($last_cron_task['name'] == $name) {
-					// we got here last time, continue off from where we left
-					$last_cron_task = false;
-				}else{
-                    // keep hunting for the cron job we were up to last time.
-                    continue;
+            if ($message_manager->is_enabled()) {
+                if ($last_cron_task) {
+                    if ($last_cron_task['name'] == $name) {
+                        // we got here last time, continue off from where we left
+                        $last_cron_task = false;
+                    } else {
+                        // keep hunting for the cron job we were up to last time.
+                        continue;
+                    }
                 }
-			}
-			// recording where we get up to in the (sometimes very long) cron tasks.
-			update_option('last_support_hub_cron',array(
-				'name' => $name,
-				'time' => time(),
-			));
-			$this->log_data(0,'cron','Starting Extension Cron: '.$name);
-			$message_manager->run_cron( $debug, $cron_timeout, $cron_start );
-			// this cron job has completed successfully.
-			// if we've been running more than timeout, quit.
-			if($cron_start + $cron_timeout < time()){
-				$cron_completed = false;
-				break;
-			}
+                // recording where we get up to in the (sometimes very long) cron tasks.
+                update_option('last_support_hub_cron', array(
+                    'name' => $name,
+                    'time' => time(),
+                ));
+                $this->log_data(0, 'cron', 'Starting Extension Cron: ' . $name);
+                $message_manager->run_cron($debug, $cron_timeout, $cron_start);
+                // this cron job has completed successfully.
+                // if we've been running more than timeout, quit.
+                if ($cron_start + $cron_timeout < time()) {
+                    $cron_completed = false;
+                    break;
+                }
+            }
 		}
 		if($cron_completed){
 			update_option('last_support_hub_cron',false);

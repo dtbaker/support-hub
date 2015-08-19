@@ -9,7 +9,7 @@
 			'log_subject'    => __( 'Subject', 'support_hub' ),
 			'log_data'    => __( 'Data', 'support_hub' ),
 		) );
-	$latest_logs = shub_get_multiple('shub_log',isset($_REQUEST['search']) && is_array($_REQUEST['search']) ? $_REQUEST['search'] : array(), 'shub_log_id','shub_log_id DESC');
+	$latest_logs = shub_get_multiple('shub_log',isset($_REQUEST['search']) && is_array($_REQUEST['search']) ? $_REQUEST['search'] : array(), 'shub_log_id','shub_log_id DESC LIMIT 100');
 	$myListTable->set_data($latest_logs);
 	$myListTable->prepare_items();
 	?>

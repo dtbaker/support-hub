@@ -49,12 +49,13 @@ class shub_envato_item extends SupportHub_item{
 
 		$count = 0;
 		if(isset($api_result['matches']) && is_array($api_result['matches'])){
-			foreach($api_result['matches'] as $item_message){
-                echo !$item_message['id']."<br>\n";
+			//foreach($api_result['matches'] as $item_message){
+            while($api_result['matches']){
+                $item_message = array_pop($api_result['matches']);
 				if(!$item_message['id'])continue;
 				$message_time = strtotime($item_message['last_comment_at']);
 				$newest_message_received = max($newest_message_received,$message_time);
-				if($message_time <= $last_message_received)break; // all done here.
+				if($message_time <= $last_message_received)continue; // all done here.
 
 				// check if we have this message in our database already.
 				$envato_message = new shub_message($this->account, $this, false);

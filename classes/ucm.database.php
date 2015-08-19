@@ -308,9 +308,13 @@ function shub_forum_text($original_text, $paragraph = true){
 
 // copied from stackoverflow somewhere.
 function shub_pretty_date($time,$suffix=' ago'){
+//    echo date_default_timezone_get()." <br> ".date('Z').'<br>';
+//    echo "Now is ".time()."<br> then is ".$time."<br>";
     $now = time();
     $ago = $now - $time;
-    if($ago < 60){
+    if($ago <= 0){
+        return "just now";
+    }else if($ago < 60){
         $when = round($ago);
         $s = ($when == 1)?"second":"seconds";
         return "$when $s".$suffix;
