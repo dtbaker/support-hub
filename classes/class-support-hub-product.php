@@ -2,7 +2,10 @@
 
 class SupportHubProduct{
 
-	public function __construct(){
+	public function __construct($shub_product_id = false){
+        if($shub_product_id){
+            $this->load($shub_product_id);
+        }
 	}
 
 	private $shub_product_id = false; // the current user id in our system.

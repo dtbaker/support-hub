@@ -58,124 +58,6 @@ class shub_message extends SupportHub_message{
 
 	}
 
-	private $can_reply = false;
-	private function _output_block($envato_data,$level){
-		if($level == 1){
-			$comments = $this->get_comments();
-			$comment = array_shift($comments);
-		}else{
-			$comments = array();
-			$comment = $envato_data;
-		}
-//		echo '<pre>';echo $level;print_r($comment);echo '</pre>';
-//		echo '<pre>';print_r($envato_data);echo '</pre>';
-		$from = @json_decode($comment['message_from'],true);
-		if(!$from && !empty($comment['private'])){
-			// assume it's from the original message user.
-			$from_user = new SupportHubUser_Envato($comment['shub_user_id']);
-			$from = array(
-				'profile_image_url' => $from_user->get_image(),
-				'username' => $from_user->get('user_username'),
-			);;
-		}
-		?>
-		<div class="shub_message<?php echo !empty($comment['private']) ? ' shub_message_private':'';?>">
-			<div class="shub_message_picture">
-				<img src="<?php echo isset($from['profile_image_url']) && $from['profile_image_url'] ? $from['profile_image_url'] : plugins_url('extensions/envato/default-user.jpg',_DTBAKER_SUPPORT_HUB_CORE_FILE_);?>">
-			</div>
-			<div class="shub_message_header">
-				<?php echo shub_envato::format_person($from, $this->account); ?>
-				<span><?php $time = isset($envato_data['time']) ? $envato_data['time'] : false;
-				echo $time ? ' @ ' . shub_print_date($time,true) : '';
-
-				// todo - better this! don't call on every message, load list in main loop and pass through all results.
-				if ( isset( $envato_data['user_id'] ) && $envato_data['user_id'] ) {
-					$user_info = get_userdata($envato_data['user_id']);
-					echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
-				}
-				?>
-				</span>
-			</div>
-			<div class="shub_message_body">
-				<div>
-					<?php
-					echo shub_forum_text($comment['message_text']);?>
-				</div>
-			</div>
-			<div class="shub_message_actions">
-			</div>
-		</div>
-		<div class="shub_message_replies">
-		<?php
-		//if(strpos($envato_data['message'],'picture')){
-			//echo '<pre>'; print_r($envato_data); echo '</pre>';
-		//}
-		if(count($comments)){
-			// recursively print out our messages!
-			//$messages = array_reverse($messages);
-			foreach($comments as $comment){
-				$this->_output_block($comment,$level+1);
-			}
-		}
-		if($level <= 1) {
-			if ( $this->can_reply && isset( $envato_data['id'] ) && $envato_data['id'] ) {
-				$this->reply_box( $envato_data['id'], $level );
-			}
-		}
-		?>
-		</div>
-		<?php
-	}
-
-	public function full_message_output($can_reply = false){
-		$this->can_reply = $can_reply;
-		// used in shub_envato_list.php to display the full message and its messages
-		switch($this->get('type')){
-			default:
-				$envato_data = @json_decode($this->get('data'),true);
-				$envato_data['message'] = $this->get('title');
-				$envato_data['user_id'] = $this->get('user_id');
-//				$envato_data['comments'] = array_reverse($this->get_comments());
-				//echo '<pre>'; print_r($envato_data['comments']); echo '</pre>';
-				$this->_output_block($envato_data,1);
-
-				break;
-		}
-	}
-
-	public function reply_box($network_key,$level=1){
-		if($this->account && $this->shub_message_id) {
-			$user_data = $this->account->get('account_data');
-
-			?>
-			<div class="shub_message shub_message_reply_box shub_message_reply_box_level<?php echo $level;?>">
-				<div class="shub_message_picture">
-					<img src="<?php echo isset($user_data['user'],$user_data['user']['image']) ? $user_data['user']['image'] : '#';?>">
-				</div>
-				<div class="shub_message_header">
-					<?php echo isset($user_data['user']) ? shub_envato::format_person( $user_data['user'], $this->account ) : 'Error'; ?>
-				</div>
-				<div class="shub_message_reply envato_message_reply">
-					<textarea placeholder="Write a reply..."></textarea>
-					<button data-envato-id="<?php echo htmlspecialchars($network_key);?>" data-post="<?php echo esc_attr(json_encode(array(
-						'id' => (int)$this->shub_message_id,
-						'network' => 'envato',
-						'network_key' => htmlspecialchars($network_key),
-					)));?>"><?php _e('Send');?></button>
-				</div>
-				<div class="shub_message_actions">
-					(debug) <input type="checkbox" name="debug" data-reply="yes" value="1"> <br/>
-				</div>
-			</div>
-		<?php
-		}else{
-			?>
-			<div class="shub_message shub_message_reply_box">
-				(incorrect settings, please report this bug)
-			</div>
-			<?php
-		}
-	}
 
 	public function get_link() {
         $item = $this->get('item');
@@ -327,10 +209,7 @@ class shub_message extends SupportHub_message{
         }
         ?>
         <br/>
-
-
         <strong><?php _e('Account:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('account') ? $this->get('account')->get( 'account_name' ) : 'N/A' ); ?></a> <br/>
-
         <strong><?php _e('Time:');?></strong> <?php echo shub_print_date( $this->get('last_active'), true ); ?>  <br/>
 
         <?php
@@ -344,13 +223,13 @@ class shub_message extends SupportHub_message{
             <?php
         }
 
-        $data = $this->get('data');
+        /*$data = $this->get('data');
         if(!empty($data['buyer_and_author']) && $data['buyer_and_author'] && $data['buyer_and_author'] !== 'false'){
             // hmm - this doesn't seem to be a "purchased" flag.
-            /*?>
+            ?>
             <strong>PURCHASED</strong><br/>
-            <?php*/
-        }
+            <?php
+        }*/
     }
 
     public function get_user_hints($user_hints = array()){

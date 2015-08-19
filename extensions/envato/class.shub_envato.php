@@ -19,6 +19,7 @@ class shub_envato extends SupportHub_extension {
 			exit;
 		}
         parent::init();
+        add_filter('supporthub_message_user_sidebar',array($this,'filter_message_user_sidebar'),10,2);
 
 	}
 
@@ -633,16 +634,44 @@ class shub_envato extends SupportHub_extension {
 		return false;
 	}
 
-    public function pull_purchase_code($api, $purchase_code){
+    public function pull_purchase_code($api, $purchase_code, $api_raw_data = array()){
         $result = $api->api( 'v1/market/private/user/verify-purchase:' . $purchase_code . '.json' );
-        /* {
-        "verify-purchase": {
-        "item_name": "Ultimate Client Manager - CRM - Pro Edition",
-        "item_id": "2621629",
-        "created_at": "Mon May 04 09:18:26 +1000 2015",
-        "buyer": "erjp",
-        "licence": "Regular License",
-        "supported_until": ""
+//        $result = $api->api( 'v2/market/author/sale?code='.$purchase_code );
+        /*
+        {
+          "amount": "12.60",
+          "sold_at": "2015-08-18T21:30:02+10:00",
+          "item": {
+            "id": 1299019,
+            "name": "WooCommerce Australia Post Shipping Calculator",
+            "description": ...
+            "site": "codecanyon.net",
+            "classification": "wordpress/ecommerce/woocommerce/shipping",
+            "classification_url": "http://codecanyon.net/category/wordpress/ecommerce/woocommerce/shipping",
+            "price_cents": 1800,
+            "number_of_sales": 1054,
+            "author_username": "dtbaker",
+            "author_url": "http://codecanyon.net/user/dtbaker",
+            "author_image": "https://0.s3.envato.com/files/111547951/dtbaker-php-scripts-wordpress-themes-and-plugins.png",
+            "url": "http://codecanyon.net/item/woocommerce-australia-post-shipping-calculator/1299019",
+            "thumbnail_url": "https://0.s3.envato.com/files/15047665/thumb.png",
+            "summary": "High Resolution: No, Compatible With: WooCommerce 2.3.x, Software Version: WordPress 4.2, WordPress 4.1, WordPress 4.0, WordPress 3.9, WordPress 3.8, WordPress 3.7",
+            "rating": {
+              "rating": 3.82,
+              "count": 49
+            },
+            "updated_at": "2015-08-13T12:34:59+10:00",
+            "published_at": "2012-01-15T17:59:18+11:00",
+            "trending": false,
+            "previews": {
+              "landscape_preview": {
+                "landscape_url": "https://image-cc.s3.envato.com/files/15047663/preview.jpg"
+              }
+            }
+          },
+          "license": "Regular License",
+          "code": "c77ff344-9be4-4ba1-9e50-ce92e37c33e0",
+          "support_amount": ""
         }
         }*/
         if($result && !empty($result['verify-purchase']) && !empty($result['verify-purchase']['item_id'])) {
@@ -664,7 +693,7 @@ class shub_envato extends SupportHub_extension {
             // check if this item exists already
             $exists = false;
             foreach ($existing_products as $existing_product) {
-                if (isset($existing_product['product_data']['item_id']) && $existing_product['product_data']['item_id'] == $result['verify-purchase']['item_id']) {
+                if (isset($existing_product['product_data']['envato_item_id']) && $existing_product['product_data']['envato_item_id'] == $result['verify-purchase']['item_id']) {
                     $exists = $existing_product['shub_product_id'];
                 }
             }
@@ -679,14 +708,14 @@ class shub_envato extends SupportHub_extension {
             }
             $existing_product_data = $newproduct->get('product_data');
             if (!is_array($existing_product_data)) $existing_product_data = array();
-            if (empty($existing_product_data['item_id'])) {
-                $existing_product_data['item_id'] = $result['verify-purchase']['item_id'];
+            if (empty($existing_product_data['envato_item_id'])) {
+                $existing_product_data['envato_item_id'] = $result['verify-purchase']['item_id'];
             }
-            if (empty($existing_product_data['item_data'])) {
+            if (empty($existing_product_data['envato_item_data'])) {
                 // get these item details from api
                 $item_data = $api->api('v2/market/catalog/item?id='.$result['verify-purchase']['item_id']);
                 if(!empty($item_data) && $item_data['id'] == $result['verify-purchase']['item_id']){
-                    $existing_product_data['item_data'] = $item_data;
+                    $existing_product_data['envato_item_data'] = $item_data;
                     if (empty($existing_product_data['image'])) {
                         $existing_product_data['image'] = $item_data['thumbnail_url'];
                     }
@@ -719,9 +748,18 @@ class shub_envato extends SupportHub_extension {
                         ));
                     }
                 }
+            }else{
+                // we do have an existing purchase.
+                $shub_envato_purchase_id = $existing_purchase['shub_envato_purchase_id'];
+                if(empty($existing_purchase['shub_user_id'])){
+                    shub_update_insert('shub_envato_purchase_id', $shub_envato_purchase_id, 'shub_envato_purchase', array(
+                        'shub_user_id' => $shub_user->get('shub_user_id'),
+                    ));
+                }
             }
             if (!$shub_envato_purchase_id){
                 // add new one
+                $raw_purchase_data = array_merge(array('verify-purchase' => $result['verify-purchase']), is_array($api_raw_data) ? $api_raw_data : array() );
                 $shub_envato_purchase_id = shub_update_insert('shub_envato_purchase_id', false, 'shub_envato_purchase', array(
                     'shub_user_id' => $shub_user->get('shub_user_id'),
                     'shub_product_id' => $newproduct->get('shub_product_id'),
@@ -729,7 +767,7 @@ class shub_envato extends SupportHub_extension {
                     'api_type' => 'verify-purchase',
                     'purchase_time' => strtotime($result['verify-purchase']['created_at']),
                     'purchase_code' => $purchase_code,
-                    'purchase_data' => $result['verify-purchase'],
+                    'purchase_data' => json_encode($raw_purchase_data),
                 ));
             }
             if($shub_envato_purchase_id){
@@ -741,12 +779,15 @@ class shub_envato extends SupportHub_extension {
                 }
 
                 $existing_support = shub_get_single('shub_envato_support', array(
-                    'shub_user_id',
                     'shub_envato_purchase_id',
                 ), array(
-                    $shub_user->get('shub_user_id'),
                     $shub_envato_purchase_id,
                 ));
+                if($existing_support && empty($existing_support['shub_user_id'])){
+                    shub_update_insert('shub_envato_support_id', $existing_support['shub_envato_support_id'], 'shub_envato_support', array(
+                        'shub_user_id' => $shub_user->get('shub_user_id'),
+                    ));
+                }
                 if ($existing_support && $existing_support['shub_envato_support_id'] && $existing_support['start_time'] == strtotime($result['verify-purchase']['created_at'])) {
                     // check the existing support expiry matches the one we have in the database.
                     if($existing_support['end_time'] < $support_expiry_time){
@@ -868,6 +909,48 @@ class shub_envato extends SupportHub_extension {
 		// todo: post a "Thanks for providing information, we will reply soon" message on Envato comment page
 
 	}
+
+    public function filter_message_user_sidebar($user_bits, $shub_user_ids){
+        // find purchases for these user ids and if they are in a valid support term.
+        if(!empty($shub_user_ids) && is_array($shub_user_ids)){
+            foreach($shub_user_ids as $shub_user_id){
+                if((int)$shub_user_id > 0){
+                    // find purchases.
+                    $total = 0;
+                    $purchases = shub_get_multiple('shub_envato_purchase',array('shub_user_id'=>$shub_user_id));
+                    foreach($purchases as $purchase){
+                        if($purchase['shub_product_id']){
+                            $purchase_product = new SupportHubProduct($purchase['shub_product_id']);
+                            $data = $purchase_product->get('product_data');
+                            if(!empty($data['envato_item_data']['item'])){
+                                $support_text = '<strong>EXPIRED</strong>';
+                                $support = shub_get_single('shub_envato_support','shub_envato_purchase_id',$purchase['shub_envato_purchase_id']);
+                                if($support && !empty($support['end_time']) && $support['end_time'] > time()){
+                                    $support_text = shub_print_date($support['end_time']);
+                                }
+                                $user_bits[] = array(
+                                    'Purchase',
+                                    esc_html($data['envato_item_data']['item']).' on '.shub_print_date($purchase['purchase_time']) .
+                                    ' support until ' . $support_text
+                                );
+                                $sale_data = @json_decode($purchase['purchase_data'],true);
+                                if($sale_data && !empty($sale_data['amount'])){
+                                    $total +=  $sale_data['amount'];
+                                }
+                            }
+                        }
+                    }
+                    if($total){
+                        $user_bits[] = array(
+                            'Total',
+                            '$'.$total,
+                        );
+                    }
+                }
+            }
+        }
+        return $user_bits;
+    }
 
 	public function get_install_sql() {
 

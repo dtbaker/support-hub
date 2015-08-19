@@ -111,9 +111,6 @@ class SupportHub_account{
                 }
             }
         }
-        if(!isset($post_data['import_stream'])){
-            $this->update('import_stream', 0);
-        }
         // save the active envato items.
         if(isset($post_data['save_account_items']) && $post_data['save_account_items'] == 'yep') {
             $currently_active_items = $this->items;

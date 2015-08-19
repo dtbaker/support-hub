@@ -48,16 +48,12 @@ input.default {
 
 #submit-go {
 	margin-top:1em;
-	width:69px;
-	height:26px;
 	overflow:hidden;
 	border:0;
 	display:block;
 	background: #0b77b7;
 	color:#FFF;
-}
-#submit-go:hover {
-	background-position:0 -26px;
+    padding: 8px 10px;
 }
 a,a:link,a:visited{
 	color:#0b77b7;
@@ -128,6 +124,6 @@ a,a:link,a:visited{
 			)); ?>
 		</div>
 	</fieldset>
-	<div><button type="submit" id="submit-go">Submit</button></div>
+	<div><button type="submit" id="submit-go">Submit Private Message</button></div>
 	<?php } ?>
 </form>

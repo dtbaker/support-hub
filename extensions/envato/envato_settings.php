@@ -36,18 +36,29 @@ if($current_account !== false){
 		<?php
 		if($shub_envato_account->get('shub_account_id') && $shub_envato_account->get('shub_account_id') == $current_account && $shub_envato_account->get( 'envato_app_id' ) && $shub_envato_account->get( 'envato_app_secret' ) && $shub_envato_account->get( 'envato_token' )) {
 
-            // now we load in a list of envato items to manage and redirect the user back to the 'edit' screen where they can continue managing the account.
-            $shub_envato_account->load_available_items();
-            $shub_envato_account->confirm_token();
-            $url = $shub_envato_account->link_edit();
+            // we have to "login" to our own app in order to get a token to access our author/sales as this endpoint doesn't work using the personal token for some reason
+            if($shub_envato_account->login_to_own_app()) {
+
+                // now we load in a list of envato items to manage and redirect the user back to the 'edit' screen where they can continue managing the account.
+                $shub_envato_account->load_available_items();
+                $shub_envato_account->confirm_token();
+                //$shub_envato_account->run_cron();
+                ?>
+                <p>You have successfully connected Envato with the Support Hub plugin. Please click the button
+                    below:</p>
+                <?php
+            }
+
             ?>
-            <p>You have successfully connected Envato with the Support Hub plugin. Please click the button below:</p>
-            <p><a href="<?php echo $shub_envato_account->link_edit(); ?>" class="button">Click here to continue.</a></p>
-			<p>&nbsp;</p>
-			<p>&nbsp;</p>
-			<p>&nbsp;</p>
-			<p>&nbsp;</p>
+
+            <p><a href="<?php echo $shub_envato_account->link_edit(); ?>" class="button">Back</a>
+            </p>
+            <p>&nbsp;</p>
+            <p>&nbsp;</p>
+            <p>&nbsp;</p>
+            <p>&nbsp;</p>
             <?php
+
 
 		} else {
             // no app / secret defined, use the default Support Hub API ones.

@@ -474,10 +474,10 @@ class SupportHub_message{
                            data-modaltitle="<?php _e('Request Extra Details'); ?>" data-action="request_extra_details"
                            data-network="<?php echo $this->network; ?>"
                            data-<?php echo $this->network; ?>-message-id="<?php echo $message_id; ?>"><?php _e('Request Details'); ?></a>
-                        <a href="#" class="shub_template_button btn btn-default btn-xs button"
+                        <!-- <a href="#" class="shub_template_button btn btn-default btn-xs button"
                            data-modaltitle="<?php _e('Send Template Message'); ?>" data-action="send_template_message"
                            data-network="<?php echo $this->network; ?>"
-                           data-<?php echo $this->network; ?>-message-id="<?php echo $message_id; ?>"><?php _e('Template'); ?></a>
+                           data-<?php echo $this->network; ?>-message-id="<?php echo $message_id; ?>"><?php _e('Template'); ?></a> -->
 
                         <button data-post="<?php echo esc_attr(json_encode(array(
                             'account-id' => $this->get('shub_account_id'),

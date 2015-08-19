@@ -42,6 +42,7 @@ class envato_api_basic{
 	public function api($endpoint, $params=array(), $personal = true){
 		$headers = array(
 		    'user-agent' => 'SupportHub WP Plugin',
+            'timeout' => 20,
 		);
 		if($personal && !empty($this->_personal_token)){
 			$headers['headers'] = array(
@@ -53,7 +54,7 @@ class envato_api_basic{
 		    );
 		}
 		$response     = wp_remote_get($this->_api_url . $endpoint, $headers);
-        //echo "<hr><br><br><strong>API REQUEST TO: </strong>".$this->_api_url . $endpoint; echo '<br><br>';print_r($response);
+//        echo "<hr><br><br><strong>API REQUEST TO: </strong>".$this->_api_url . $endpoint; echo '<br><br>';print_r($response);
 		if( is_array($response) && isset($response['body']) && isset($response['response']['code']) && $response['response']['code'] == 200 ) {
 			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'envato', 'API Call: '.$endpoint,$response['body']);
 		    $header = $response['headers'];

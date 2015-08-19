@@ -805,7 +805,7 @@ class SupportHub {
         $support_period = false;
 
         $user_bits = array();
-        $user_bits[] = array('Support Pack','UNKNOWN');
+        //$user_bits[] = array('Support Pack','UNKNOWN');
         if(!empty($user_hints['shub_user_id'])){
             foreach($user_hints['shub_user_id'] as $shub_user_id) {
                 $user = new SupportHubUser($shub_user_id);
@@ -838,6 +838,7 @@ class SupportHub {
 		}else if(isset($user_details['username'])){
             $user_bits[] =  array('Username',esc_html($user_details['username']));
 		}
+        /*
         if(isset($user_details['codes'])){
             // todo: pull in information about this purchase code via ajax after the page has loaded.
             // cache and re-validate the purchase code from time to time.
@@ -846,6 +847,8 @@ class SupportHub {
                 $user_bits[] = array('Purchase Codes',$purchase_codes);
             }
         }
+        */
+        $user_bits = apply_filters('supporthub_message_user_sidebar', $user_bits, $user_hints['shub_user_id']);
         ?> <ul class="linked_user_details"> <?php
         foreach($user_bits as $user_bit){
             ?>
