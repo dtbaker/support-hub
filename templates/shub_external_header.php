@@ -14,9 +14,15 @@
         font-weight: 400;
         line-height: 1.6;
     }
+    #shub_page{
+        max-width: 1200px;
+        margin:40px auto;
+    }
     #shub_wrapper h1{
         text-align: center;
         color: #FFF;
+        margin: 0;
+        padding: 0 0 27px;;
     }
     #shub_content{
         border-radius: 5px;
@@ -37,16 +43,16 @@
         top: -10px;
         width: 20px;
     }
-    @media (min-width: 1024px){
-        #shub_wrapper {
-            padding-left: 26.66667%;
-            padding-right: 26.66667%;
-        }
-    }
     @media (min-width: 640px) {
         #shub_wrapper {
             padding-left: 10.0%;
             padding-right: 10.0%;
+        }
+    }
+    @media (min-width: 1024px){
+        #shub_wrapper {
+            padding-left: 20%;
+            padding-right: 20%;
         }
     }
     .submit_button{
@@ -68,6 +74,7 @@
 </style>
 <body>
 
-<div id="shub_wrapper">
-    <h1>Support Hub</h1>
-    <div id="shub_content">
+<div id="shub_page">
+    <div id="shub_wrapper">
+        <h1>Support Hub</h1>
+        <div id="shub_content">

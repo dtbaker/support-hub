@@ -374,95 +374,8 @@ class SupportHub_message{
                     <?php
                     // we display the first "primary" message (from the ucm_message table) followed by comments from the ucm_message_comment table.
                     //$this->full_message_output(true);
-                    $comments         = $this->get_comments();
-                    $x=0;
-                    foreach($comments as $comment){
-                        $x++;
-                        $from_user = $this->get_user($comment['shub_user_id']);
-                        $time = isset($comment['time']) ? $comment['time'] : false;
-                        // is this a queued-to-send message?
-                        $extra_class = '';
-                        $comment_status = '';
-                        if(!empty($comment['shub_outbox_id'])){
-                            $shub_outbox = new SupportHubOutbox($comment['shub_outbox_id']);
-                            switch($shub_outbox->get('status')){
-                                case _SHUB_OUTBOX_STATUS_QUEUED:
-                                case _SHUB_OUTBOX_STATUS_SENDING:
-                                    $extra_class .= ' outbox_queued';
-                                    $comment_status = 'Currently Sending....';
-                                    break;
-                                case _SHUB_OUTBOX_STATUS_FAILED:
-                                    $extra_class .= ' outbox_failed';
-                                    $comment_status = 'Failed to send message! Please check logs.';
-                                    break;
-                            }
-                        }
-                        ?>
-                        <div class="shub_message shub_message_<?php echo $x==1 ? 'primary' : 'reply'; echo $extra_class;?>">
-                            <div class="shub_message_picture">
-                                <img src="<?php echo $from_user->get_image();?>" />
-                            </div>
-                            <div class="shub_message_header">
-                                <?php if($comment_status){ ?>
-                                    <div class="shub_comment_status"><?php echo $comment_status;?></div>
-                                <?php } ?>
-                                <?php echo $from_user->get_full_link(); ?>
-                                <span>
-                                    <?php if($time){ ?>
-                                    <span class="time" data-time="<?php echo esc_attr($time);?>" data-date="<?php echo esc_attr(shub_print_date($time,true));?>"><?php echo shub_pretty_date($time);?></span>
-                                    <?php } ?>
-                                    <span class="wp_user">
-                                    <?php
-                                    // todo - better this! don't call on every message, load list in main loop and pass through all results.
-                                    if ( isset( $envato_data['user_id'] ) && $envato_data['user_id'] ) {
-                                        $user_info = get_userdata($envato_data['user_id']);
-                                        echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
-                                    }
-                                    ?>
-                                    </span>
-                                </span>
-                            </div>
-                            <div class="shub_message_body">
-                                <div>
-                                    <?php
-                                    echo shub_forum_text($comment['message_text']);?>
-                                </div>
-                            </div>
-                            <div class="shub_message_actions">
-                            </div>
-                        </div>
-                    <?php } ?>
-                    <div class="shub_message shub_message_reply shub_message_reply_box">
-                        <?php
-                        $reply_shub_user = $this->get_reply_user();
-                        ?>
-                        <div class="shub_message_picture">
-                           <!--  <img src="<?php echo $reply_shub_user->get_image();?>" /> -->
-                        </div>
-                        <div class="shub_message_header">
-                            <!-- <?php echo $reply_shub_user->get_full_link(); ?> -->
-                        </div>
-                        <div class="shub_message_body">
-                            <textarea placeholder="Write a reply..."></textarea>
-                            <div class="shub_message_buttons">
-                                <a href="#" class="shub_request_extra btn btn-default btn-xs button" data-modaltitle="<?php _e( 'Request Extra Details' ); ?>" data-action="request_extra_details" data-network="<?php echo $this->network;?>" data-<?php echo $this->network;?>-message-id="<?php echo $message_id;?>"><?php _e( 'Request Details' ); ?></a>
-                                <a href="#" class="shub_template_button btn btn-default btn-xs button" data-modaltitle="<?php _e( 'Send Template Message' ); ?>" data-action="send_template_message" data-network="<?php echo $this->network;?>" data-<?php echo $this->network;?>-message-id="<?php echo $message_id;?>"><?php _e( 'Template' ); ?></a>
-
-                                <button data-post="<?php echo esc_attr(json_encode(array(
-                                    'account-id' => $this->get('shub_account_id'),
-                                    'message-id' => $message_id,
-                                    'network' => $this->network,
-                                )));?>" class="btn button shub_send_message_reply_button"><?php _e('Send');?></button>
-                            </div>
-                        </div>
-                        <div class="shub_message_actions">
-                            <div>
-                                <label for="message_reply_debug_<?php echo $message_id;?>"><?php _e('Enable Debug Mode','shub');?></label>
-                                <input id="message_reply_debug_<?php echo $message_id;?>" type="checkbox" name="debug" data-reply="yes" value="1">
-                            </div>
-                            <?php $this->reply_actions();?>
-                        </div>
-                    </div>
+                    $this->output_message_list();
+                    ?>
                 </section>
                 <section class="message_request_extra">
                     <?php
@@ -476,6 +389,115 @@ class SupportHub_message{
             </div>
 
         <?php }
+    }
+
+
+    public function output_message_list( $allow_reply = true ){
+        $message_id = $this->get('shub_message_id');
+        $comments         = $this->get_comments();
+        $x=0;
+        foreach($comments as $comment){
+            $x++;
+            $from_user = $this->get_user($comment['shub_user_id']);
+            $time = isset($comment['time']) ? $comment['time'] : false;
+            // is this a queued-to-send message?
+            $extra_class = '';
+            $comment_status = '';
+            if(!empty($comment['shub_outbox_id'])){
+                $shub_outbox = new SupportHubOutbox($comment['shub_outbox_id']);
+                switch($shub_outbox->get('status')){
+                    case _SHUB_OUTBOX_STATUS_QUEUED:
+                    case _SHUB_OUTBOX_STATUS_SENDING:
+                        $extra_class .= ' outbox_queued';
+                        $comment_status = 'Currently Sending....';
+                        break;
+                    case _SHUB_OUTBOX_STATUS_FAILED:
+                        $extra_class .= ' outbox_failed';
+                        $comment_status = 'Failed to send message! Please check logs.';
+                        break;
+                }
+            }
+            if(!empty($comment['private'])){
+                $extra_class .= ' shub_message_private';
+            }
+            ?>
+            <div class="shub_message shub_message_<?php echo $x==1 ? 'primary' : 'reply'; echo $extra_class;?>">
+                <div class="shub_message_picture">
+                    <img src="<?php echo $from_user->get_image();?>" />
+                </div>
+                <div class="shub_message_header">
+                    <?php if($comment_status){ ?>
+                        <div class="shub_comment_status"><?php echo $comment_status;?></div>
+                    <?php } ?>
+                    <?php echo $from_user->get_full_link(); ?>
+                    <span>
+                                            <?php if($time){ ?>
+                                                <span class="time" data-time="<?php echo esc_attr($time);?>" data-date="<?php echo esc_attr(shub_print_date($time,true));?>"><?php echo shub_pretty_date($time);?></span>
+                                            <?php } ?>
+                        <span class="wp_user">
+                                            <?php
+                                            // todo - better this! don't call on every message, load list in main loop and pass through all results.
+                                            if ( isset( $envato_data['user_id'] ) && $envato_data['user_id'] ) {
+                                                $user_info = get_userdata($envato_data['user_id']);
+                                                echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
+                                            }
+                                            ?>
+                                            </span>
+                                        </span>
+                </div>
+                <div class="shub_message_body">
+                    <div>
+                        <?php
+                        echo shub_forum_text($comment['message_text']);?>
+                    </div>
+                </div>
+                <div class="shub_message_actions">
+                </div>
+            </div>
+        <?php }
+        if($allow_reply) { ?>
+            <div class="shub_message shub_message_reply shub_message_reply_box">
+                <?php
+                $reply_shub_user = $this->get_reply_user();
+                ?>
+                <div class="shub_message_picture">
+                    <!--  <img src="<?php echo $reply_shub_user->get_image(); ?>" /> -->
+                </div>
+                <div class="shub_message_header">
+                    <!-- <?php echo $reply_shub_user->get_full_link(); ?> -->
+                </div>
+                <div class="shub_message_body">
+                    <textarea placeholder="Write a reply..."></textarea>
+
+                    <div class="shub_message_buttons">
+                        <a href="#" class="shub_request_extra btn btn-default btn-xs button"
+                           data-modaltitle="<?php _e('Request Extra Details'); ?>" data-action="request_extra_details"
+                           data-network="<?php echo $this->network; ?>"
+                           data-<?php echo $this->network; ?>-message-id="<?php echo $message_id; ?>"><?php _e('Request Details'); ?></a>
+                        <a href="#" class="shub_template_button btn btn-default btn-xs button"
+                           data-modaltitle="<?php _e('Send Template Message'); ?>" data-action="send_template_message"
+                           data-network="<?php echo $this->network; ?>"
+                           data-<?php echo $this->network; ?>-message-id="<?php echo $message_id; ?>"><?php _e('Template'); ?></a>
+
+                        <button data-post="<?php echo esc_attr(json_encode(array(
+                            'account-id' => $this->get('shub_account_id'),
+                            'message-id' => $message_id,
+                            'network' => $this->network,
+                        ))); ?>" class="btn button shub_send_message_reply_button"><?php _e('Send'); ?></button>
+                    </div>
+                </div>
+                <div class="shub_message_actions">
+                    <div>
+                        <label
+                            for="message_reply_debug_<?php echo $message_id; ?>"><?php _e('Enable Debug Mode', 'shub'); ?></label>
+                        <input id="message_reply_debug_<?php echo $message_id; ?>" type="checkbox" name="debug"
+                               data-reply="yes" value="1">
+                    </div>
+                    <?php $this->reply_actions(); ?>
+                </div>
+            </div>
+            <?php
+        }
     }
 
 }

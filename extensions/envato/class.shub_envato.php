@@ -439,7 +439,7 @@ class shub_envato extends SupportHub_extension {
 			// for testing without doing a full login:
 			$shub_message = new shub_message( false, false, $message_id );
 			ob_start();
-			$shub_message->full_message_output( false );
+			$shub_message->output_message_list( false );
 			return array(
 				'message' => ob_get_clean(),
 			);
@@ -450,12 +450,15 @@ class shub_envato extends SupportHub_extension {
 			// user is logged in
 			$shub_message = new shub_message(false, false, $message_id);
 			if($shub_message->get('account')->get('shub_account_id') == $account_id && $shub_message->get('shub_message_id') == $message_id){
-				if(isset($_GET['done'])){
-					// submission of extra data was successful, clear the token so the user has to login again
-					$_SESSION['shub_oauth_envato'] = false;
-				}
 				ob_start();
-				$shub_message->full_message_output(false);
+                if(!empty($_SESSION['shub_oauth_envato']['is_admin'])){
+                    echo "<p>You are currently logged in as the Administrator account. You can see all message history.</p>";
+                }
+				$shub_message->output_message_list(false);
+                if(isset($_GET['done'])){
+                    // submission of extra data was successful, clear the token so the user has to login again
+                    $_SESSION['shub_oauth_envato'] = false;
+                }
 				return array(
 					'message' => ob_get_clean(),
 				);
@@ -583,10 +586,14 @@ class shub_envato extends SupportHub_extension {
 									$_SESSION['shub_oauth_envato']['shib_envato_oauth_id']            = $shub_envato_oauth_id;
 									$_SESSION['shub_oauth_envato']['account_id']            = $account_id;
 									$_SESSION['shub_oauth_envato']['message_id']            = $message_id;
+									$_SESSION['shub_oauth_envato']['is_admin']            = ($account_data && isset($account_data['user']['username']) && $api_result['username'] == $account_data['user']['username']);
 									$_SESSION['shub_oauth_envato']['expires'] = time() + $token['expires_in'];
 									$_SESSION['shub_oauth_envato']['shub_user_id'] = $comment_user->get('shub_user_id');
 									ob_start();
-									$shub_message->full_message_output(false);
+                                    if($_SESSION['shub_oauth_envato']['is_admin']){
+                                        echo "<p>You are currently logged in as the Administrator account. You can see all message history.</p>";
+                                    }
+									$shub_message->output_message_list(false);
 									return array(
 										'message' => ob_get_clean(),
 									);
