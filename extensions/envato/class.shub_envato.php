@@ -734,7 +734,7 @@ class shub_envato extends SupportHub_extension {
             if(!$existing_purchase){
                 // see if we can find an existing purchase by this user at the same time, without a purchase code.
                 // (because results from the purchase api do not contian purchase codes)
-                $possible_purchases = shub_get_multiple('shub_envato__purchase',array(
+                $possible_purchases = shub_get_multiple('shub_envato_purchase',array(
                     'shub_user_id' => $shub_user->get('shub_user_id'),
                     'shub_product_id' => $newproduct->get('shub_product_id'),
                     'purchase_time' => strtotime($result['verify-purchase']['created_at']),
