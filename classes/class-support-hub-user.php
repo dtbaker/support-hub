@@ -8,7 +8,7 @@ class SupportHubUser{
 		}
 	}
 
-	private $shub_user_id = false; // the current user id in our system.
+	public $shub_user_id = false; // the current user id in our system.
     public $details = array();
 	private $json_fields = array('user_data');
 

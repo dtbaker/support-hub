@@ -427,6 +427,8 @@ class shub_envato extends SupportHub_extension {
 		return $details;
 	}
 
+
+
 	public function extra_process_login($network, $account_id, $message_id, $extra_ids){
 		if($network != 'envato')dir('Incorrect network in request_extra_login() - this should not happen');
 		$accounts = $this->get_accounts();
@@ -549,95 +551,18 @@ class shub_envato extends SupportHub_extension {
                                 }
                                 $api_user->add_unique_meta('envato_username',$api_result['username']);
 
-                                $api_result_purchase_history = $api->api('v2/market/buyer/purchases', array(), false);
-                                // store this purchase history in our db for later use.
-                                if($api_result_purchase_history && !empty($api_result_purchase_history['buyer']['id']) && !empty($api_result_purchase_history['buyer']['username']) && $api_result_purchase_history['buyer']['username'] == $api_result['username']){
-                                    // we have the buyer ID! yay! this is better than a username.
-                                    $api_user->add_unique_meta('envato_user_id',$api_result_purchase_history['buyer']['id']);
-                                    if(!empty($api_result_purchase_history['']))
-
-                                        // todo: this is where I am at. kids are crying bbl!
-                                        /*Array
-(
-    [buyer] => Array
-        (
-            [id] => 4895562
-            [username] => Memphy2
-        )
-
-    [author] => Array
-        (
-            [id] => 157851
-            [username] => dtbaker
-        )
-
-    [purchases] => Array
-        (
-            [0] => Array
-                (
-                    [amount] => Array
-                        (
-                            [fractional] => 5800.0
-                            [currency] => Array
-                                (
-                                    [id] => usd
-                                    [alternate_symbols] => Array
-                                        (
-                                            [0] => US$
-                                        )
-
-                                    [decimal_mark] => .
-                                    [disambiguate_symbol] =>
-                                    [html_entity] => $
-                                    [iso_code] => USD
-                                    [iso_numeric] => 840
-                                    [name] => United States Dollar
-                                    [priority] => 1
-                                    [smallest_denomination] => 1
-                                    [subunit] => Cent
-                                    [subunit_to_unit] => 100
-                                    [symbol] => $
-                                    [symbol_first] => 1
-                                    [thousands_separator] => ,
-                                )
-
-                            [bank] => Array
-                                (
-                                    [store] => Array
-                                        (
-                                            [index] => Array
-                                                (
-                                                )
-
-                                            [options] => Array
-                                                (
-                                                )
-
-                                            [mutex] => Array
-                                                (
-                                                )
-
-                                            [in_transaction] =>
-                                        )
-
-                                    [rounding_method] =>
-                                )
-
-                        )
-
-                    [support_amount] =>
-                    [sold_at] => 2014-11-14T08:19:32+11:00
-                    [item] => Array
-                        (
-                            [id] => 9367833
-                            [name] => Boutique Kids Creative - WordPress WooCommerce
-                            [description] =>*/
-                                }
 
                                 // if we get this far then we have a successul api result and we should store it so we can use the refresh token at a later date
-                                $token['shub_user_id'] = $api_user->get('shub_user_id');
-                                $token['expires'] = time() + $token['expires_id'];
-                                $shub_envato_oauth_id = shub_update_insert('shub_envato_oauth_id',false,'shub_envato_oauth',$token);
+                                $shub_envato_oauth_id = shub_update_insert('shub_envato_oauth_id',false,'shub_envato_oauth',array(
+                                    'expire_time' => time() + $token['expires_in'],
+                                    'shub_account_id' => $accounts[$account_id]['shub_account_id'],
+                                    'shub_user_id' => $api_user->get('shub_user_id'),
+                                    'access_token' => $token['access_token'],
+                                    'refresh_token' => $token['refresh_token'],
+                                ));
+
+                                // this also updates their username/email from the API. not sure if that's a good idea.
+                                $api_user->update_purchase_history();
 
 
                                 // NOTE AT THIS STAGE WE HAVE NOT VERIFIED THAT THE LOGGING IN USER IS INFACT THE USER WHO POSTED THE COMMENT
@@ -648,12 +573,11 @@ class shub_envato extends SupportHub_extension {
                                 $account_data = $shub_envato_account->get('account_data');
 
                                 // todo: THIS WILL FAIL IF THE USER CHANGES THEIR USERNAME. maybe? maybe not? we should refresh the comment from the API serach if a username change is detected. this will load our serialized comment data back into the db so we can confirm new username.
-								if($comment_data && $api_result && !empty($api_result['username']) && (($account_data && isset($account_data['user']['username']) && $api_result['username'] == $account_data['user']['username']) || $api_user->get('shub_user_id') == $shub_message->get('shub_user_id')){
+								if($comment_data && $api_result && !empty($api_result['username']) && (($account_data && isset($account_data['user']['username']) && $api_result['username'] == $account_data['user']['username']) || $api_user->get('shub_user_id') == $shub_message->get('shub_user_id'))){
 								//if($comment_data && $api_result && !empty($api_result['username']) && !empty($comment_data['username']) && (($account_data && isset($account_data['user']['username']) && $api_result['username'] == $account_data['user']['username']) || $comment_data['username'] == $api_result['username'])){
 									SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','OAuth Login Success - request extra','User '.$api_result['username'] .' has logged in to provide extra details');
 
 									$comment_user = new SupportHubUser_Envato($shub_message->get('shub_user_id'));
-
 
 									$_SESSION['shub_oauth_envato']            = $token;
 									$_SESSION['shub_oauth_envato']['shib_envato_oauth_id']            = $shub_envato_oauth_id;
@@ -691,13 +615,60 @@ class shub_envato extends SupportHub_extension {
 						'url' => str_replace('&done','',$_SERVER['REQUEST_URI']),
 					);
 					?>
-					<a href="<?php echo esc_attr( $login_url );?>">Login to Envato</a>
+                    <p>
+                        To continue please login using your Envato account.
+                    </p>
+					<a href="<?php echo esc_attr( $login_url );?>" class="submit_button">Login with Envato</a>
 				<?php
 				}
 			}
 		}
 		return false;
 	}
+
+    public function pull_purchase_code($api, $purchase_code){
+        $result = $api->api( 'v1/market/private/user/verify-purchase:' . $purchase_code . '.json' );
+        /* {
+        "verify-purchase": {
+        "item_name": "Ultimate Client Manager - CRM - Pro Edition",
+        "item_id": "2621629",
+        "created_at": "Mon May 04 09:18:26 +1000 2015",
+        "buyer": "erjp",
+        "licence": "Regular License",
+        "supported_until": ""
+        }
+        }*/
+        if($result && !empty($result['verify-purchase'])) {
+            // valid purchase code.
+            // what is the username attached to this purchase result?
+            $envato_username = $result['verify-purchase']['buyer'];
+            // find this user in our system.
+            $shub_user = new SupportHubUser_Envato();
+            $shub_user->load_by_meta('envato_username', $envato_username);
+            if (!$shub_user->get('shub_user_id')) {
+                // no users exists in our system with this username.
+                // add a new one.
+                $shub_user->create_new();
+                $shub_user->update('user_username',$envato_username);
+                $shub_user->add_meta('envato_username',$envato_username);
+            }
+            // store this in our purchase code database so we can access it easier later on
+            $existing_purchase = shub_get_single('shub_envato_purchase', 'purchase_code', $possible_purchase_code);
+            if ($existing_purchase && $existing_purchase['shub_envato_purchase_id']) {
+
+            } else {
+                // add new one
+                $shub_envato_purchase_id = shub_update_insert('shub_envato_purchase_id', false, 'shub_envato_purchase', array(
+                    'shub_user_id' => $shub_user->get('shub_user_id'),
+                    'shub_product_id' => $shub_message->get('shub_product_id'),
+                    'envato_user_id' => 0,
+                    'time' => time(),
+                ));
+            }
+            // todo: add or modify the supported_until param
+        }
+        return $result;
+    }
 
 	public function extra_validate_data($status, $extra, $value, $network, $account_id, $message_id){
 		if(!is_string($value))return $status;
@@ -712,41 +683,24 @@ class shub_envato extends SupportHub_extension {
 	        // see if it validates, if it does we return a success along with extra data that will be saved and eventually displayed
 	        $shub_message = new shub_message( false, false, $message_id );
 	        if(strlen($possible_purchase_code)==36) {
-		        $api    = $shub_message->get( 'account' )->get_api();
-		        $result = $api->api( 'v1/market/private/user/verify-purchase:' . $possible_purchase_code . '.json' );
-                /* {
-  "verify-purchase": {
-    "item_name": "Ultimate Client Manager - CRM - Pro Edition",
-    "item_id": "2621629",
-    "created_at": "Mon May 04 09:18:26 +1000 2015",
-    "buyer": "erjp",
-    "licence": "Regular License",
-    "supported_until": ""
-  }
-}*/
+
+                $api    = $shub_message->get( 'account' )->get_api();
+                $result = $this->pull_purchase_code($api, $possible_purchase_code);
+
 	        }else{
 		        $result = false;
 	        }
-	        if($result && !empty($result['verify-purchase'])){
-		        // valid purchase code.
-                // store this in our purchase code database so we can access it easier later on
-                $existing_purchase = shub_get_single('shub_envato_purchase','purchase_code',$possible_purchase_code);
-                $shub_envato_purchase_id = shub_update_insert('shub_envato_purchase_id',$existing_purchase ? $existing_purchase['shub_envato_purchase_id'] : false,'shub_envato_purchase',array(
-                    'shub_message_id' => $shub_message->get('shub_message_id'),
-                    'private' => 1,
-                    'message_text' => $message,
-                    'time' => time(),
-                    'shub_user_id' => !empty($_SESSION['shub_oauth_envato']['shub_user_id']) ? $_SESSION['shub_oauth_envato']['shub_user_id'] : $shub_message->get('shub_user_id'),
-                ));
-		        $status['success'] = true;
-		        $status['data'] = $possible_purchase_code;
-		        $result['verify-purchase']['time'] = time();
-		        $result['verify-purchase']['valid_purchase_code'] = true;
-		        $status['extra_data'] = $result['verify-purchase'];
-	        }else{
-		        $status['success'] = false;
-		        $status['message'] = 'Invalid purchase code, please try again.';
-	        }
+            if($result && !empty($result['verify-purchase'])){
+                $status['success'] = true;
+                $status['data'] = $possible_purchase_code;
+                $result['verify-purchase']['time'] = time();
+                $result['verify-purchase']['valid_purchase_code'] = true;
+                $status['extra_data'] = $result['verify-purchase'];
+            }else{
+                $status['success'] = false;
+                $status['message'] = 'Invalid purchase code, please try again.';
+            }
+
 
         }
 		return $status;
@@ -823,6 +777,7 @@ class shub_envato extends SupportHub_extension {
 CREATE TABLE {$wpdb->prefix}shub_envato_oauth (
   shub_envato_oauth_id int(11) NOT NULL AUTO_INCREMENT,
   shub_user_id int(11) NOT NULL,
+  shub_account_id int(11) NOT NULL,
   access_token varchar(255) NOT NULL,
   refresh_token varchar(255) NOT NULL,
   expire_time int(11) NOT NULL,
@@ -833,6 +788,7 @@ CREATE TABLE {$wpdb->prefix}shub_envato_oauth (
 CREATE TABLE {$wpdb->prefix}shub_envato_purchase (
   shub_envato_purchase_id int(11) NOT NULL AUTO_INCREMENT,
   shub_user_id int(11) NOT NULL,
+  shub_product_id int(11) NOT NULL,
   envato_user_id int(11) NOT NULL,
   purchase_time int(11) NOT NULL,
   purchase_code varchar(255) NOT NULL DEFAULT '',
@@ -846,6 +802,7 @@ CREATE TABLE {$wpdb->prefix}shub_envato_purchase (
 CREATE TABLE {$wpdb->prefix}shub_envato_support (
   shub_envato_support_id int(11) NOT NULL AUTO_INCREMENT,
   shub_user_id int(11) NOT NULL,
+  shub_product_id int(11) NOT NULL,
   shub_envato_purchase_id int(11) NOT NULL,
   start_time int(11) NOT NULL,
   end_time int(11) NOT NULL,

@@ -314,6 +314,13 @@ Thanks.';
 
 					include $SupportHub->get_template('shub_external_header.php');
 					if(isset($SupportHub->message_managers[$network])){
+                        // todo: offer them another way to login to the system.
+                        // e.g. someone might want to login using Facebook to access their Envato feed
+                        // if the email matches between accounts this should be possible
+                        // if no match is found then we can just show a not found error.
+                        // but for now we only allow login from the network we started with.
+                        // ooooooooooo maybe we can have the generic extra_process_login method show a list of available login methods? and the individual networks can override this if needed
+                        // hmm.. ideas ideas..
 						$login_status = $SupportHub->message_managers[$network]->extra_process_login($network, $account_id, $message_id, $extra_ids);
 					}else{
 						die('Invalid message manager');
