@@ -29,7 +29,7 @@ class shub_message extends SupportHub_message{
 					$this->update('link',$message_data['url'] . '/' . $message_data['id']);
 					$this->update('network_key', $network_key);
                     SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'envato','Updating message '.$network_key.' from API.',array(
-                        'Current Comment Count: ' => count($this->get('comments')),
+                        'Current Comment Count: ' => count($this->get_comments()),
                         'New Comment Count: ' => count($comments),
                         'Current Status: ' => $this->get('status'),
                     ));
@@ -37,7 +37,7 @@ class shub_message extends SupportHub_message{
                         // we have to decide if we're updating the message status from answered to unanswered.
                         // if this message status is already answered and the existing comment count matches the new comment count then we don't update the status
                         // this is because we insert a placeholder "comment" into the db while the API does the push, and when we read again a few minutes later it overwrites this placeholder comment, so really it's not a new comment coming in just the one we posted through the API that takes a while to come back through.
-                        if($this->get('status') == _shub_MESSAGE_STATUS_ANSWERED && count($comments) == count($this->get('comments'))){
+                        if($this->get('status') == _shub_MESSAGE_STATUS_ANSWERED && count($comments) == count($this->get_comments())){
                             // don't do anything
                         }else{
                             // comment count is different
