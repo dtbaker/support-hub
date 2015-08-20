@@ -120,7 +120,7 @@ class SupportHub_extension{
         }
         $return['shub_column_product'] = ob_get_clean();
 
-        $return['shub_column_time'] = '<span class="shub_time" data-time="'.esc_attr($message['message_time']).'" data-date="'.esc_attr(shub_print_date( $message['message_time'], true )).'">'.shub_pretty_date( $message['message_time']).'</span>';
+        $return['shub_column_time'] = '<span class="shub_time" data-time="'.esc_attr($extension_message->get('last_active')).'" data-date="'.esc_attr(shub_print_date( $extension_message->get('last_active'), true )).'">'.shub_pretty_date( $extension_message->get('last_active') ).'</span>';
 
         ob_start();
         // work out who this is from.
