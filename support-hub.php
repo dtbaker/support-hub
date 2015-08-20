@@ -52,13 +52,13 @@ require_once( 'vendor/autoload.php' );
 // include the different network plugins:
 // these plugins hook on 'shub_init' to add their instance to the global 'message_manager' variable
 // 3rd party plugins can hook into shub_init to add their own 'message_manager'
-require_once( 'extensions/facebook/init.facebook.php' );
-require_once( 'extensions/twitter/init.twitter.php' );
-require_once( 'extensions/google/init.google.php' );
+include_once( 'extensions/facebook/init.facebook.php' );
+include_once( 'extensions/twitter/init.twitter.php' );
+include_once( 'extensions/google/init.google.php' );
 //require_once( 'extensions/linkedin/init.linkedin.php' ); // linkedin doesn't work any more - API has been restricted.
-require_once( 'extensions/envato/init.envato.php' );
-require_once( 'extensions/bbpress/init.bbpress.php' );
-require_once( 'extensions/ucm/init.ucm.php' );
+include_once( 'extensions/envato/init.envato.php' );
+include_once( 'extensions/bbpress/init.bbpress.php' );
+include_once( 'extensions/ucm/init.ucm.php' );
 
 // commence the awesome:
 SupportHub::getInstance( _DTBAKER_SUPPORT_HUB_CORE_FILE_ );
