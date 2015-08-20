@@ -236,19 +236,17 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 	public $row_count = 0;
     function column_default($item, $column_name){
 
-	    foreach($this->available_networks as $network => $mm){
-			if(isset($item['shub_'.$network.'_message_id'])){
-				// pass this row rendering off to the facebook plugin
-			    if(!isset($this->row_output[$network][$item['shub_'.$network.'_message_id']])){
-				    if(!isset($this->row_output[$network]))$this->row_output[$network] = array();
-				    $this->row_output[$network][$item['shub_'.$network.'_message_id']] = $item['message_manager']->output_row($item);
-				    $this->row_output[$network][$item['shub_'.$network.'_message_id']]['row_class'] = $this->row_count++%2 ? 'alternate' : '';
-			    }
-			    if(isset($this->row_output[$network][$item['shub_'.$network.'_message_id']][$column_name])){
-				    return $this->row_output[$network][$item['shub_'.$network.'_message_id']][$column_name];
-			    }
-			}
-		}
+        if(!empty($item['shub_extension']) && isset($this->available_networks[$item['shub_extension']])){
+            $network = $item['shub_extension'];
+            if(!isset($this->row_output[$network][$item['shub_message_id']])){
+                if(!isset($this->row_output[$network]))$this->row_output[$network] = array();
+                $this->row_output[$network][$item['shub_message_id']] = $this->available_networks[$item['shub_extension']]->output_row($item);
+                $this->row_output[$network][$item['shub_message_id']]['row_class'] = $this->row_count++%2 ? 'alternate' : '';
+            }
+            if(isset($this->row_output[$network][$item['shub_message_id']][$column_name])){
+                return $this->row_output[$network][$item['shub_message_id']][$column_name];
+            }
+        }
 	    return false;
     }
 
@@ -537,7 +535,7 @@ class SupportHubSentList extends SupportHub_Account_Data_List_Table{
 	private $column_details = array();
     function column_default($item, $column_name){
 
-	    if(!$item['shub_message_id'])return 'DBERR';
+        if(!$item['shub_message_id'])return 'DBERR';
 	    if(!isset($this->column_details[$item['shub_message_id']])){
 		    $this->column_details[$item['shub_message_id']] = array();
 	    }

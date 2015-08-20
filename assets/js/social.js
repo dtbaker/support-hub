@@ -257,11 +257,22 @@ ucm.social = {
                             }
                         }
                     }
+                    var has_pending = false;
+                    if (r && typeof r.outbox_ids != 'undefined') {
+                        for (var i in r.outbox_ids) {
+                            if (r.outbox_ids.hasOwnProperty(i) && typeof r.outbox_ids[i] != 'undefined' && typeof r.outbox_ids[i].status != 'undefined' && (parseInt(r.outbox_ids[i].status) == 0  ||  parseInt(r.outbox_ids[i].status) == 1)) {
+                                // we have a pending queue to send!
+                                has_pending = true;
+                            }
+                        }
+                    }
 
                     t.watching = false;
-                    setTimeout(function(){
-                        t.watch();
-                    }, 2000);
+                    if(has_pending) {
+                        setTimeout(function () {
+                            t.watch();
+                        }, 2000);
+                    }
                 },
                 error: function(){
                     t.watching = false;

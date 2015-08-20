@@ -94,14 +94,22 @@ class SupportHub_extension{
         $return['shub_column_account'] = ob_get_clean();
 
         ob_start();
-        $shub_product_id = $extension_message->get('shub_product_id');
+        $shub_product_id = $extension_message->get_product_id();
+        $product_data = array();
+        $item_data = array();
+        $item = $extension_message->get('item');
+        if(!$shub_product_id && $item){
+            $shub_product_id = $item->get('shub_product_id');
+            $item_data = $item->get('item_data');
+            if(!is_array($item_data))$item_data = array();
+        }
         if($shub_product_id) {
             $shub_product = new SupportHubProduct();
             $shub_product->load($shub_product_id);
             $product_data = $shub_product->get('product_data');
             if(!empty($product_data['image'])){
                 ?>
-                <img src="<?php echo esc_attr($product_data['image']);?>" class="icon">
+                <img src="<?php echo esc_attr($product_data['image']);?>" class="shub_friendly_icon">
             <?php } ?>
             <?php if(!empty($product_data['url'])){ ?>
                 <a href="<?php echo esc_url($product_data['url']); ?>" target="_blank"><?php echo htmlspecialchars( $shub_product->get('product_name') ); ?></a>
