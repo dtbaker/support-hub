@@ -516,11 +516,9 @@ class SupportHubExtraData {
 			if ( in_array( $field, $this->json_fields ) ) {
 				$value = json_encode( $value );
 			}
-			if ( in_array( $field, $this->json_fields ) ) {
-				shub_update_insert( 'shub_extra_data_id', $this->shub_extra_data_id, 'shub_extra_data', array(
-					$field => $value,
-				) );
-			}
+            shub_update_insert( 'shub_extra_data_id', $this->shub_extra_data_id, 'shub_extra_data', array(
+                $field => $value,
+            ) );
 		}
 	}
 

@@ -482,6 +482,31 @@ class SupportHub {
 					exit;
 				}
 
+			}else if($process_action == 'save_product_details'){
+
+				$shub_product_id = !empty($_REQUEST['shub_product_id']) ? (int)$_REQUEST['shub_product_id'] : 0;
+				if(check_admin_referer( 'save-product' . $shub_product_id )){
+
+					$shub_product = new SupportHubProduct($shub_product_id);
+
+					if(isset($_REQUEST['butt_delete'])){
+
+						$shub_product->delete();
+						header( "Location: admin.php?page=support_hub_settings&tab=products" );
+						exit;
+					}
+
+					if(!$shub_product->get('shub_product_id')){
+						$shub_product->create_new();
+					}
+					$shub_product->update($_POST);
+
+					$shub_product_id = $shub_product->get('shub_product_id');
+
+					header( "Location: admin.php?page=support_hub_settings&tab=products" );//&shub_product_id=" . $shub_product_id );
+					exit;
+				}
+
 			}else{
 				// just process each request normally:
 

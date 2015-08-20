@@ -60,17 +60,27 @@ class SupportHubProduct{
 		return isset($this->{$field}) ? $this->{$field} : false;
 	}
 
-    public function update($field,$value){
-	    // what fields to we allow? or not allow?
-	    if(in_array($field,array('shub_product_id')))return;
-        if($this->shub_product_id){
+    public function update( $field, $value = false ) {
+        if ( is_array( $field ) ) {
+            foreach ( $field as $key => $val ) {
+                if ( isset( $this->details[ $key ] ) ) {
+                    $this->update( $key, $val );
+                }
+            }
+            return;
+        }
+        // what fields to we allow? or not allow?
+        if ( in_array( $field, array( 'shub_product_id' ) ) ) {
+            return;
+        }
+        if ( $this->shub_product_id ) {
             $this->{$field} = $value;
-	        if(in_array($field,$this->json_fields)){
-		        $value = json_encode($value);
-	        }
-            shub_update_insert('shub_product_id',$this->shub_product_id,'shub_product',array(
-	            $field => $value,
-            ));
+            if ( in_array( $field, $this->json_fields ) ) {
+                $value = json_encode( $value );
+            }
+            shub_update_insert( 'shub_product_id', $this->shub_product_id, 'shub_product', array(
+                $field => $value,
+            ) );
         }
     }
 	public function delete(){
