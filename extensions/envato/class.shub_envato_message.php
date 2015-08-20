@@ -28,6 +28,11 @@ class shub_message extends SupportHub_message{
 					$this->update('data',$message_data);
 					$this->update('link',$message_data['url'] . '/' . $message_data['id']);
 					$this->update('network_key', $network_key);
+                    SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'envato','Updating message '.$network_key.' from API.',array(
+                        'Current Comment Count: ' => count($this->get('comments')),
+                        'New Comment Count: ' => count($comments),
+                        'Current Status: ' => $this->get('status'),
+                    ));
                     if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN){
                         // we have to decide if we're updating the message status from answered to unanswered.
                         // if this message status is already answered and the existing comment count matches the new comment count then we don't update the status

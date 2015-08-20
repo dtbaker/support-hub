@@ -158,7 +158,7 @@ class shub_envato_account extends SupportHub_account{
                     ));
                     if($existing_purchase){
                         if(!$do_all){
-                            break; // stop processing once we reach one we've already saved
+                            break 2; // stop processing once we reach one we've already saved
                         }
                         continue;// exists already in the db, skip to next one.
                     }

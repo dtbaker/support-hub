@@ -239,7 +239,6 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
             if(!isset($this->row_output[$network][$item['shub_message_id']])){
                 if(!isset($this->row_output[$network]))$this->row_output[$network] = array();
                 $this->row_output[$network][$item['shub_message_id']] = $this->available_networks[$item['shub_extension']]->output_row($item);
-                $this->row_output[$network][$item['shub_message_id']]['row_class'] = $this->row_count++%2 ? 'alternate' : '';
             }
             if(isset($this->row_output[$network][$item['shub_message_id']][$column_name])){
                 return $this->row_output[$network][$item['shub_message_id']][$column_name];
@@ -436,7 +435,9 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                 echo '<tr class="shub_extension_message_action"><td class="action_content" colspan="'.$this->get_column_count().'"></td></tr>';
                 echo '<tr';
                 if (is_array($item) && !empty($item['shub_extension']) && $message_manager = SupportHub::getInstance()->message_managers[$item['shub_extension']]) {
-                    echo ' class="shub_extension_message"';
+                    echo ' class="shub_extension_message ';
+                    echo  $this->row_count++%2 ? 'alternate' : '';
+                    echo ' "';
                     echo ' data-network="' . $message_manager->id . '"';
                     echo ' data-message-id="' . $item['shub_message_id'] . '"';
                 }

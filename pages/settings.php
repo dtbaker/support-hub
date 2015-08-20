@@ -41,6 +41,10 @@
 		<form action="" method="post">
 			<input type="hidden" name="_process" value="save_general_settings">
 			<?php wp_nonce_field( 'save-general-settings' ); ?>
+            <p>Welcome to Support Hub! <br/>This is <em>BETA</em> software. It will have bugs. It is a very complicated plugin and it simply might not work on some hosting accounts. This plugin uses a lot of advanced cURL queries and will operate best on a dedicated VPS hosting account. </p>
+            <p>
+                Please send all bug reports over to Github here: <a href="https://github.com/dtbaker/support-hub/issues" target="_blank">https://github.com/dtbaker/support-hub/issues</a>
+            </p>
 			<table class="form-table">
 				<tbody>
 				<tr>
@@ -48,6 +52,7 @@
 						<?php _e('Enabled Extensions', 'support_hub') ;?>
 					</th>
 					<td class="">
+                        <em>More extensions will be made available shortly:</em>
 						<?php foreach($SupportHub->message_managers as $id => $message_manager){ ?>
 							<div>
 								<input type="hidden" name="possible_shub_manager_enabled[<?php echo $id;?>]" value="1">
