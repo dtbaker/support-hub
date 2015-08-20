@@ -149,13 +149,11 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
     }
 
 	function column_cb( $item ) {
-		foreach($this->available_networks as $network => $mm){
-			if(isset($item['shub_'.$network.'_message_id'])){
-			    return sprintf(
-				    '<input type="checkbox" name="shub_message['.$network.'][]" value="%s" />', $item['shub_'.$network.'_message_id']
-			    );
-			}
-		}
+        if(isset($item['shub_extension'])){
+            return sprintf(
+                '<input type="checkbox" name="shub_message['.esc_attr($item['shub_extension']).'][]" value="%s" />', $item['shub_message_id']
+            );
+        }
 	    return '';
 	}
 	public function get_bulk_actions(){
@@ -187,7 +185,7 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                         if(isset($shub->message_managers[$network])){
                             foreach($message_ids as $message_id){
                                 $network_message = $shub->message_managers[$network]->get_message(false, false, $message_id);
-                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $message_id){
+                                if($network_message && $network_message->get('shub_message_id') == $message_id){
                                     $network_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
                                     $change_count++;
                                 }
@@ -202,7 +200,7 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                         if(isset($shub->message_managers[$network])){
                             foreach($message_ids as $message_id){
                                 $network_message = $shub->message_managers[$network]->get_message(false, false, $message_id);
-                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $message_id){
+                                if($network_message && $network_message->get('shub_message_id') == $message_id){
                                     $network_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
                                     $change_count++;
                                 }
@@ -217,7 +215,7 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                         if(isset($shub->message_managers[$network])){
                             foreach($message_ids as $message_id){
                                 $network_message = $shub->message_managers[$network]->get_message(false, false, $message_id);
-                                if($network_message && $network_message->get('shub_'.$network.'_message_id') == $message_id){
+                                if($network_message && $network_message->get('shub_message_id') == $message_id){
                                     $network_message->update('status',_shub_MESSAGE_STATUS_HIDDEN);
                                     $change_count++;
                                 }

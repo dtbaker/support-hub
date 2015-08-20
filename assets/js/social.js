@@ -111,25 +111,64 @@ ucm.social = {
                         }else if(r && typeof r.shub_outbox_id != 'undefined' && r.shub_outbox_id){
                             // successfully queued the message reply for sending.
                             // slide up this window and show a "queued" message, similar to archiving a message.
-                            (function(){
-                                var element = jQuery(pt).parents('.shub_extension_message').first();
-                                var element_action = element.prev('.shub_extension_message_action').first();
-                                element_action.find('.action_content').html('Sending message...');
-                                t.queue_watch.add(r.shub_outbox_id, element_action, function(){
-                                    // successfully sent
-                                    element_action.find('.action_content').html('Message Sent!');
-                                }, function(){
-                                    // failed to send
-                                    element_action.find('.action_content').html('FAILED TO SEND MESSAGE');
-                                });
-                                if(element.is('div')){
-                                    element.slideUp();
-                                    element_action.slideDown();
+                            // this is for when we are in "inline" view and not when the message has been opened in a popup.
+
+                            // work out if we are in a popup.
+                            var test = jQuery(pt).parents('.shub_extension_message').first();
+                            if(test.length){
+                                // we are inline. slide this up and go for it.
+
+                                (function(){
+                                    var element = jQuery(pt).parents('.shub_extension_message').first();
+                                    var element_action = element.prev('.shub_extension_message_action').first();
+                                    element_action.find('.action_content').html('Sending message...');
+                                    t.queue_watch.add(r.shub_outbox_id, element_action, function(){
+                                        // successfully sent
+                                        element_action.find('.action_content').html('Message Sent!');
+                                    }, function(){
+                                        // failed to send
+                                        element_action.find('.action_content').html('FAILED TO SEND MESSAGE');
+                                    });
+                                    if(element.is('div')){
+                                        element.slideUp();
+                                        element_action.slideDown();
+                                    }else{
+                                        element.hide();
+                                        element_action.show();
+                                    }
+                                })();
+                            }else{
+                                // we are in popup. have to close modal and find this message on the page to see if we can slide it up.
+                                // otherwise it will just go away with
+                                var message_row = jQuery('[data-message-id='+post_data['message-id']+'].shub_extension_message');
+                                ucm.social.close_modal();
+                                if(message_row.length){
+                                    (function(){
+                                        var element = message_row; //jQuery(pt).parents('.shub_extension_message').first();
+                                        var element_action = element.prev('.shub_extension_message_action').first();
+                                        element_action.find('.action_content').html('Sending message...');
+                                        t.queue_watch.add(r.shub_outbox_id, element_action, function(){
+                                            // successfully sent
+                                            element_action.find('.action_content').html('Message Sent!');
+                                        }, function(){
+                                            // failed to send
+                                            element_action.find('.action_content').html('FAILED TO SEND MESSAGE');
+                                        });
+                                        if(element.is('div')){
+                                            element.slideUp();
+                                            element_action.slideDown();
+                                        }else{
+                                            element.hide();
+                                            element_action.show();
+                                        }
+                                    })();
                                 }else{
-                                    element.hide();
-                                    element_action.show();
+                                    // cant find it on the screen, must have opened a related message.
+                                    // do the queue watch anyway so we can update the outbox number
+                                    t.queue_watch.add(r.shub_outbox_id, false);
                                 }
-                            })();
+                            }
+
                         }else if(r && typeof r.message != 'undefined' && r.message.length > 0){
                             pt.html("Info: "+ r.message);
                         }else{
