@@ -124,8 +124,8 @@
 
             <label for="orderquery"><?php _e('Sort:','support_hub');?></label>
             <select id="orderquery" name="orderquery">
-                <option value="shub_column_time:asc"<?php echo isset($_REQUEST['orderquery']) && $_REQUEST['orderquery'] == 'shub_column_time:asc' ? ' selected' : '';?>><?php _e('Ascending','support_hub');?></option>
                 <option value="shub_column_time:desc"<?php echo isset($_REQUEST['orderquery']) && $_REQUEST['orderquery'] == 'shub_column_time:desc' ? ' selected' : '';?>><?php _e('Descending','support_hub');?></option>
+                <option value="shub_column_time:asc"<?php echo isset($_REQUEST['orderquery']) && $_REQUEST['orderquery'] == 'shub_column_time:asc' ? ' selected' : '';?>><?php _e('Ascending','support_hub');?></option>
             </select>
             </span>
             <span>

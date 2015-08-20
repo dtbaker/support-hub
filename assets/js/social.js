@@ -6,7 +6,7 @@ ucm.social = {
         var t = this;
         var menu_count = jQuery('#shub_menu_outbox_count');
         if(menu_count.get(0) && !menu_count.data('count')){
-            menu_count.parents('li').first().hide();
+            //menu_count.parents('li').first().hide();
         }
         jQuery('.support_hub_date_field').datepicker({ dateFormat: 'yy-mm-dd' });
         jQuery('.support_hub_time_field').timepicker();
@@ -208,7 +208,13 @@ ucm.social = {
             if(t.watching)return;
             t.watching = true;
             // update the menu UI
-            jQuery('#shub_menu_outbox_count').text(t.queue.length).parents('li').first().show();
+            var queue_length = 0;
+            for(var x = 0; x < t.queue.length; x++) {
+                if (typeof t.queue[x] != 'undefined') {
+                    queue_length++;
+                }
+            }
+            jQuery('#shub_menu_outbox_count').text(queue_length); // (t.queue.length); //.parents('li').first().show();
             var post_data = {
                 action: 'support_hub_queue-watch',
                 wp_nonce: support_hub.wp_nonce,
@@ -221,31 +227,33 @@ ucm.social = {
                 dataType: 'json',
                 success: function(r){
                     for(var x = 0; x < t.queue.length; x++){
-                        // find this shub_outbox_id in the queue response from server.
-                        var found = false;
-                        if(r && typeof r.outbox_ids != 'undefined'){
-                            for(var i in r.outbox_ids){
-                                if(r.outbox_ids.hasOwnProperty(i) && typeof r.outbox_ids[i] != 'undefined') {
-                                    if (r.outbox_ids[i].shub_outbox_id && t.queue[x].shub_outbox_id == r.outbox_ids[i].shub_outbox_id) {
-                                        found = true;
-                                        // has it errored?
-                                        if (r.outbox_ids[i].status == 2) {
-                                            if (typeof t.queue[x].fail_callback == 'function') {
-                                                t.queue[x].fail_callback();
-                                                delete(t.queue[x]);
+                        if(typeof t.queue[x] != 'undefined') {
+                            // find this shub_outbox_id in the queue response from server.
+                            var found = false;
+                            if (r && typeof r.outbox_ids != 'undefined') {
+                                for (var i in r.outbox_ids) {
+                                    if (r.outbox_ids.hasOwnProperty(i) && typeof r.outbox_ids[i] != 'undefined') {
+                                        if (r.outbox_ids[i].shub_outbox_id && t.queue[x].shub_outbox_id == r.outbox_ids[i].shub_outbox_id) {
+                                            found = true;
+                                            // has it errored?
+                                            if (r.outbox_ids[i].status == 2) {
+                                                if (typeof t.queue[x].fail_callback == 'function') {
+                                                    t.queue[x].fail_callback();
+                                                    delete(t.queue[x]);
+                                                }
                                             }
+                                            break;
                                         }
-                                        break;
                                     }
                                 }
                             }
-                        }
-                        if(!found){
-                            // it's no longer in the queue! yay!
-                            // fire off complete callback
-                            if(typeof t.queue[x].success_callback == 'function'){
-                                t.queue[x].success_callback();
-                                delete(t.queue[x]);
+                            if (!found) {
+                                // it's no longer in the queue! yay!
+                                // fire off complete callback
+                                if (typeof t.queue[x].success_callback == 'function') {
+                                    t.queue[x].success_callback();
+                                    delete(t.queue[x]);
+                                }
                             }
                         }
                     }

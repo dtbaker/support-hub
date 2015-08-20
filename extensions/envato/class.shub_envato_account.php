@@ -125,12 +125,7 @@ class shub_envato_account extends SupportHub_account{
         return new shub_envato_item($this, $shub_item_id);
     }
 
-
-    public function run_cron( $debug = false ){
-
-        // we pull in the buyer/sales API results so we can link these up with item comments to determine if a buyer has purchase the item or not
-        // this is the only reliable way to do this because no purchase information is available via the comments API search
-        // hopefully they include some "has purchased" or "is supported" information in the comments search so we can speed things up a little bit.
+    public function update_author_sale_history( $debug = false, $do_all = false ){
 
         $api = $this->get_api();
 
@@ -142,31 +137,38 @@ class shub_envato_account extends SupportHub_account{
         while(true){
             $recent_sales = $api->api('v2/market/author/sales?page='.$page,array(),true);
 //            echo "Recent sales are: ";print_r($recent_sales);exit;
+            if($debug){
+                echo "Page $page of sales data contained ".count($recent_sales)." results.<br>\n";
+            }
             $page++;
             if(!$recent_sales || !is_array($recent_sales)){
                 break;
             }
-            while($recent_sales){
-                $recent_sale = array_pop($recent_sales);
+            foreach($recent_sales as $recent_sale){
                 if($recent_sale && !empty($recent_sale['sold_at']) && !empty($recent_sale['code']) && !empty($recent_sale['item']['id'])) {
 //                    echo $recent_sale['sold_at']."<br>";
                     // add this to the database, or break if we already have this one in the db.
                     $sale_time = strtotime($recent_sale['sold_at']);
-                    if ($sale_time < $last_sale){
-                        // we might already have this one in our database
-                        // unless we are doing the intial seed
-                        $existing_purchase = shub_get_single('shub_envato_purchase', array(
-                            'purchase_code',
-                        ), array(
-                            $recent_sale['code'],
-                        ));
-                        if($existing_purchase){
-                            break;// exists already in the db, skip this batch
+                    // we might already have this one in our database
+                    // unless we are doing the intial seed
+                    $existing_purchase = shub_get_single('shub_envato_purchase', array(
+                        'purchase_code',
+                    ), array(
+                        $recent_sale['code'],
+                    ));
+                    if($existing_purchase){
+                        if(!$do_all){
+                            break; // stop processing once we reach one we've already saved
                         }
+                        continue;// exists already in the db, skip to next one.
                     }
                     $last_sale_in_this_batch = max($last_sale_in_this_batch,$sale_time);
 
                     // todo: check if they add username to the system, for now we use a 0 shub_user_id because we're unsure which user this purchase is related to (without doing another separate purchase call)
+
+                    if($debug){
+                        echo " - adding new sale to database ( ".shub_print_date($sale_time,true)." - ".$recent_sale['item']['name']." )...<br>\n";
+                    }
                     // for now we do all processing based on this purchase code. SLOW. but until we get usernames in the buyer result there is no other way.
 //                    echo "Query this code: ".$recent_sale['code'];exit;
                     SupportHub::getInstance()->message_managers['envato']->pull_purchase_code($api, $recent_sale['code'], $recent_sale);
@@ -277,6 +279,19 @@ class shub_envato_account extends SupportHub_account{
 
             }
         }
+    }
+
+    public function run_cron( $debug = false ){
+
+        // we pull in the buyer/sales API results so we can link these up with item comments to determine if a buyer has purchase the item or not
+        // this is the only reliable way to do this because no purchase information is available via the comments API search
+        // hopefully they include some "has purchased" or "is supported" information in the comments search so we can speed things up a little bit.
+
+
+        $this->update('last_checked',time());
+
+        $this->update_author_sale_history( $debug, false );
+
 
     }
 }

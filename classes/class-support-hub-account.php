@@ -184,13 +184,8 @@ class SupportHub_account{
         if(!$this->get('last_checked')){
             return false; // never checked this account, not active yet.
         }else{
-            // do we have a token?
-            if($this->get('envato_token')){
-                // assume we have access, we remove the token if we get a envato failure at any point.
-                return true;
-            }
+            return true;
         }
-        return false;
     }
 
     public function save_account_data($user_data){

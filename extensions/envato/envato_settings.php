@@ -10,21 +10,21 @@ if($current_account !== false){
     if($shub_envato_account->get('shub_extension') != 'envato')die('Wrong extension:' .$shub_envato_account->get('shub_extension'));
 	if(isset($_GET['manualrefresh'])){
 
-//		$api = $shub_envato_account->get_api();
-//		$comment_id = $api->post_comment('http://codecanyon.net/item/ultimate-client-manager-crm-pro-edition/2621629/comments','10076896','Great, glad this one is solved. :)');
-//		echo 'done with id: '.$comment_id;
-//		exit;
-
 		$network_key = isset( $_REQUEST['network_key'] ) ? (int) $_REQUEST['network_key'] : 0;
-		/* @var $items shub_item[] */
-		$items = $shub_envato_account->get( 'items' );
-		if ( ! $network_key || ! $items || ! isset( $items[ $network_key ] ) ) {
-			die( 'No items found to refresh' );
-		}
-		?>
-		Manually refreshing item data... please wait...
-		<?php
-		$items[ $network_key ]->run_cron( true );
+        if(!$network_key){
+            // assume we're update the account sales data.
+            $shub_envato_account->update_author_sale_history( true, true );
+        }else {
+            /* @var $items shub_item[] */
+            $items = $shub_envato_account->get('items');
+            if (!$network_key || !$items || !isset($items[$network_key])) {
+                die('No items found to refresh');
+            }
+            ?>
+            Manually refreshing item data... please wait...
+            <?php
+            $items[$network_key]->run_cron(true);
+        }
 
 	}else if(isset($_GET['do_connect'])){
 		// connect to envato.
@@ -150,6 +150,7 @@ if($current_account !== false){
 							</th>
 							<td class="">
 								<?php echo $shub_envato_account->get( 'last_checked' ) ? shub_print_date( $shub_envato_account->get( 'last_checked' ), true ) : __( 'N/A', 'support_hub' ); ?>
+                                <a href="<?php echo $shub_envato_account->link_refresh();?>" target="_blank">re-load sales data (takes a LONG time)</a>
 							</td>
 						</tr>
 						<tr>

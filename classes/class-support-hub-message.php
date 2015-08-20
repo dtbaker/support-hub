@@ -80,6 +80,10 @@ class SupportHub_message{
         return $this->shub_message_id;
     }
 
+    /**
+     * @param $field string the field name to return
+     * @return bool|string|int|array
+     */
     public function get($field){
         if(isset($this->{$field})){
             return $this->{$field};
