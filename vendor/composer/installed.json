@@ -1,0 +1,56 @@
+[
+    {
+        "name": "hieu-le/wordpress-xmlrpc-client",
+        "version": "2.4.2",
+        "version_normalized": "2.4.2.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/letrunghieu/wordpress-xmlrpc-client.git",
+            "reference": "07a1ad3f2fed562c01f00161c37f6ab2e276d272"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/letrunghieu/wordpress-xmlrpc-client/zipball/07a1ad3f2fed562c01f00161c37f6ab2e276d272",
+            "reference": "07a1ad3f2fed562c01f00161c37f6ab2e276d272",
+            "shasum": ""
+        },
+        "require": {
+            "ext-xmlrpc": "*",
+            "php": ">=5.3.0"
+        },
+        "require-dev": {
+            "illuminate/support": "~4.0",
+            "php-vcr/php-vcr": "dev-master",
+            "php-vcr/phpunit-testlistener-vcr": "*",
+            "phpunit/phpunit": "*",
+            "symfony/yaml": "2.*"
+        },
+        "time": "2015-05-29 03:17:43",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "HieuLe\\WordpressXmlrpcClient\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Hieu Le",
+                "email": "letrunghieu.cse09@gmail.com",
+                "homepage": "http://www.hieule.info"
+            }
+        ],
+        "description": "A PHP client for Wordpress websites that closely implement the XML-RPC WordPress API with full test suite built in",
+        "keywords": [
+            "api",
+            "client",
+            "remote",
+            "wordpress",
+            "xmlrpc"
+        ]
+    }
+]

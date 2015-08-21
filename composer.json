@@ -15,7 +15,6 @@
         }
       ],
     "require": {
-        "happyr/linkedin-api-client": "dev-master",
         "hieu-le/wordpress-xmlrpc-client":"~2.0"
     }
 }
