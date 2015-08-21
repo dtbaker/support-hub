@@ -236,6 +236,15 @@ tr.log_error{
     background: #FFF;
     border-radius: 10px;
 }
+@media (max-width: 600px) {
+    .shub_table_inline{
+        margin:10px -8px;
+        -webkit-border-radius: 0;
+        -moz-border-radius: 0;
+        border-radius: 0;
+        padding: 5px;
+    }
+}
 @media (min-width: 961px) {
     .shub_table_inline {
         width: 80%;
