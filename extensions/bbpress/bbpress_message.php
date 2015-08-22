@@ -1,22 +1,22 @@
 <?php
-if(!isset($shub_bbpress_id) || !isset($shub_bbpress_message_id)){
+if(!isset($shub_account_id) || !isset($shub_message_id)){
 	exit;
 } ?>
 
 	<?php
 
-if($shub_bbpress_id && $shub_bbpress_message_id){
-	$bbpress = new shub_bbpress_account($shub_bbpress_id);
-    if($shub_bbpress_id && $bbpress->get('shub_bbpress_id') == $shub_bbpress_id){
-	    $bbpress_message = new shub_bbpress_message( $bbpress, false, $shub_bbpress_message_id );
+if($shub_account_id && $shub_message_id){
+	$bbpress = new shub_bbpress_account($shub_account_id);
+    if($shub_account_id && $bbpress->get('shub_account_id') == $shub_account_id){
+	    $bbpress_message = new shub_bbpress_message( $bbpress, false, $shub_message_id );
         $bbpress_message->output_message_page('popup');
 
-	    /*if($shub_bbpress_message_id && $bbpress_message->get('shub_bbpress_message_id') == $shub_bbpress_message_id && $bbpress_message->get('shub_bbpress_id') == $shub_bbpress_id){
+	    /*if($shub_message_id && $bbpress_message->get('shub_message_id') == $shub_message_id && $bbpress_message->get('shub_account_id') == $shub_account_id){
 
 		    $comments         = $bbpress_message->get_comments();
 		    $bbpress_message->mark_as_read();
 
-		    $shub_product_id = $bbpress_message->get('bbpress_forum')->get('shub_product_id');
+		    $shub_product_id = $bbpress_message->get('item')->get('shub_product_id');
 		    $product_data = array();
 			if($shub_product_id) {
 				$shub_product = new SupportHubProduct();
@@ -33,13 +33,13 @@ if($shub_bbpress_id && $shub_bbpress_message_id){
 						    <a href="#" class="socialbbpress_message_action shub_message_action btn btn-default btn-xs button"
 						       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
 								'network' => 'bbpress',
-								'shub_bbpress_message_id' => $bbpress_message->get('shub_bbpress_message_id'),
+								'shub_message_id' => $bbpress_message->get('shub_message_id'),
 							)));?>"><?php _e( 'Inbox' ); ?></a>
 					    <?php }else{ ?>
 						    <a href="#" class="socialbbpress_message_action shub_message_action btn btn-default btn-xs button"
 						       data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
 								'network' => 'bbpress',
-								'shub_bbpress_message_id' => $bbpress_message->get('shub_bbpress_message_id'),
+								'shub_message_id' => $bbpress_message->get('shub_message_id'),
 							)));?>"><?php _e( 'Archive' ); ?></a>
 					    <?php } ?>
 					</header>
@@ -70,17 +70,17 @@ if($shub_bbpress_id && $shub_bbpress_message_id){
     }
 }
 
-if($shub_bbpress_id && !(int)$shub_bbpress_message_id){
-	$bbpress = new shub_bbpress_account($shub_bbpress_id);
-    if($shub_bbpress_id && $bbpress->get('shub_bbpress_id') == $shub_bbpress_id){
+if($shub_account_id && !(int)$shub_message_id){
+	$bbpress = new shub_bbpress_account($shub_account_id);
+    if($shub_account_id && $bbpress->get('shub_account_id') == $shub_account_id){
 
-	    /* @var $groups shub_bbpress_forum[] */
+	    /* @var $groups shub_item[] */
 	    $groups = $bbpress->get('groups');
 	    //print_r($groups);
 	    ?>
 	    <form action="" method="post" enctype="multipart/form-data">
 		    <input type="hidden" name="_process" value="send_bbpress_message">
-			<?php wp_nonce_field( 'send-bbpress' . (int) $bbpress->get( 'shub_bbpress_id' ) ); ?>
+			<?php wp_nonce_field( 'send-bbpress' . (int) $bbpress->get( 'shub_account_id' ) ); ?>
 		    <?php
 		    $fieldset_data = array(
 			    'heading' => array(
@@ -89,7 +89,7 @@ if($shub_bbpress_id && !(int)$shub_bbpress_message_id){
 				),
 			    'class' => 'tableclass tableclass_form tableclass_full',
 			    'elements' => array(
-			       'bbpress_forum' => array(
+			       'item' => array(
 			            'title' => __('bbpress Group', 'support_hub'),
 			            'fields' => array(),
 			        ),
@@ -227,11 +227,11 @@ if($shub_bbpress_id && !(int)$shub_bbpress_message_id){
 				    ),
 			    )
 			);
-		    foreach($groups as $bbpress_forum_id => $group){
-			    $fieldset_data['elements']['bbpress_forum']['fields'][] =
+		    foreach($groups as $item_id => $group){
+			    $fieldset_data['elements']['item']['fields'][] =
 				    '<div id="bbpress_compose_group_select">' .
-				    '<input type="checkbox" name="compose_group_id['.$bbpress_forum_id.']" value="1" checked> ' .
-				    '<img src="//graph.bbpress.com/'.$bbpress_forum_id.'/picture"> ' .
+				    '<input type="checkbox" name="compose_group_id['.$item_id.']" value="1" checked> ' .
+				    '<img src="//graph.bbpress.com/'.$item_id.'/picture"> ' .
 				    htmlspecialchars($group->get('forum_name')) .
 				    '</div>'
 			    ;

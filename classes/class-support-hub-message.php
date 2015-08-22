@@ -339,7 +339,19 @@ class SupportHub_message{
             <div class="message_edit_form" data-network="<?php echo $this->network;?>">
                 <section class="message_sidebar">
                     <nav>
-                        <a href="<?php echo $this->get_link(); ?>" class="social_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
+                        <?php if($this->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+                            <a href="#" class="shub_message_action btn btn-default btn-xs button"
+                               data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
+                                'network' => $this->network,
+                                'shub_message_id' => $message_id,
+                            )));?>"><?php _e( 'Inbox' ); ?></a>
+                        <?php }else{ ?>
+                            <a href="#" class="shub_message_action btn btn-default btn-xs button"
+                               data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
+                                'network' => $this->network,
+                                'shub_message_id' => $message_id,
+                            )));?>"><?php _e( 'Archive' ); ?></a>
+                        <?php } ?>
                         <a href="#" class="shub_view_full_message_sidebar btn btn-default btn-xs button alignright"><?php _e( 'Show More Details' ); ?></a>
                     </nav>
                     <header>

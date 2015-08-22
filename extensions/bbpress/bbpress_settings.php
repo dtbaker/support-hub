@@ -1,21 +1,21 @@
 <?php
 
-$current_account = isset($_REQUEST['shub_bbpress_id']) ? (int)$_REQUEST['shub_bbpress_id'] : false;
+$current_account = isset($_REQUEST['shub_account_id']) ? (int)$_REQUEST['shub_account_id'] : false;
 $shub_bbpress = new shub_bbpress();
 if($current_account !== false){
 	$shub_bbpress_account = new shub_bbpress_account($current_account);
 	if(isset($_GET['manualrefresh'])){
 
-		$bbpress_forum_id = isset( $_REQUEST['bbpress_forum_id'] ) ? (int) $_REQUEST['bbpress_forum_id'] : 0;
-		/* @var $forums shub_bbpress_forum[] */
+		$item_id = isset( $_REQUEST['item_id'] ) ? (int) $_REQUEST['item_id'] : 0;
+		/* @var $forums shub_item[] */
 		$forums = $shub_bbpress_account->get( 'forums' );
-		if ( ! $bbpress_forum_id || ! $forums || ! isset( $forums[ $bbpress_forum_id ] ) ) {
+		if ( ! $item_id || ! $forums || ! isset( $forums[ $item_id ] ) ) {
 			die( 'No forums found to refresh' );
 		}
 		?>
 		Manually refreshing forum data... please wait...
 		<?php
-		$forums[ $bbpress_forum_id ]->run_cron( true );
+		$forums[ $item_id ]->run_cron( true );
 
 	}else if(isset($_GET['bbpress_do_oauth_connect'])){
 		// connect to bbpress. and if that isnt' found
@@ -25,7 +25,7 @@ if($current_account !== false){
 				<?php _e( 'bbPress Account', 'support_hub' ); ?>
 			</h2>
 		<?php
-		if($shub_bbpress_account->get('shub_bbpress_id') && $shub_bbpress_account->get('shub_bbpress_id') == $current_account && $shub_bbpress_account->get( 'bbpress_wordpress_xmlrpc' ) && $shub_bbpress_account->get( 'bbpress_username' ) && $shub_bbpress_account->get( 'bbpress_password' )) {
+		if($shub_bbpress_account->get('shub_account_id') && $shub_bbpress_account->get('shub_account_id') == $current_account && $shub_bbpress_account->get( 'bbpress_wordpress_xmlrpc' ) && $shub_bbpress_account->get( 'bbpress_username' ) && $shub_bbpress_account->get( 'bbpress_password' )) {
 
             // now we load in a list of bbpress forums to manage and redirect the user back to the 'edit' screen where they can continue managing the account.
             $shub_bbpress_account->load_available_forums();
@@ -53,9 +53,9 @@ if($current_account !== false){
 
 			<form action="" method="post">
 				<input type="hidden" name="_process" value="save_bbpress">
-				<input type="hidden" name="shub_bbpress_id"
-				       value="<?php echo (int) $shub_bbpress_account->get( 'shub_bbpress_id' ); ?>">
-				<?php wp_nonce_field( 'save-bbpress' . (int) $shub_bbpress_account->get( 'shub_bbpress_id' ) ); ?>
+				<input type="hidden" name="shub_account_id"
+				       value="<?php echo (int) $shub_bbpress_account->get( 'shub_account_id' ); ?>">
+				<?php wp_nonce_field( 'save-bbpress' . (int) $shub_bbpress_account->get( 'shub_account_id' ) ); ?>
 
                 <p>Setup Instructions:</p>
                 <ul>
@@ -101,7 +101,7 @@ if($current_account !== false){
                             <input type="password" name="account_data[bbpress_password]" value="<?php echo $shub_bbpress_account->get( 'bbpress_password' ) ? _SUPPORT_HUB_PASSWORD_FIELD_FUZZ : ''; ?>">
                         </td>
                     </tr>
-					<?php if ( $shub_bbpress_account->get( 'shub_bbpress_id' ) ) { ?>
+					<?php if ( $shub_bbpress_account->get( 'shub_account_id' ) ) { ?>
 						<tr>
 							<th class="width1">
 								<?php _e( 'Last Checked', 'support_hub' ); ?>
@@ -115,12 +115,12 @@ if($current_account !== false){
 								<?php _e( 'Available bbPress Forums', 'support_hub' ); ?>
 							</th>
 							<td class="">
-								<input type="hidden" name="save_bbpress_forums" value="yep">
+								<input type="hidden" name="save_items" value="yep">
 								<strong><?php _e( 'Choose which bbPress forums you would like to manage:', 'support_hub' ); ?></strong><br>
 								<?php
-								$data = $shub_bbpress_account->get( 'bbpress_data' );
+								$data = $shub_bbpress_account->get( 'account_data' );
 								if ( $data && isset( $data['items'] ) && is_array( $data['items'] ) && count( $data['items'] ) > 0 ) {
-									$bbpress_forums = $shub_bbpress_account->get('items');
+									$items = $shub_bbpress_account->get('items');
 									?>
 									<div>
 										<input type="checkbox" name="all" value="1" class="bbpress_check_all"> - check all -
@@ -144,7 +144,7 @@ if($current_account !== false){
 											?>
 											<tr>
 												<td>
-													<input type="checkbox" name="item[<?php echo $forum_id; ?>]" class="check_bbpress_forum"
+													<input type="checkbox" name="item[<?php echo $forum_id; ?>]" class="check_item"
 													       value="1" <?php echo $shub_bbpress_account->is_item_active( $forum_id ) ? ' checked' : ''; ?>>
 												</td>
 												<td>
@@ -152,22 +152,22 @@ if($current_account !== false){
 												</td>
 												<td>
 													<?php shub_module_form::generate_form_element(array(
-														'name' => 'bbpress_forum_product['.$forum_id.']',
+														'name' => 'item_product['.$forum_id.']',
 														'type' => 'select',
 														'blank' => __('- None -','support_hub'),
-														'value' => $shub_bbpress_account->is_forum_active( $forum_id ) ? $bbpress_forums[ $forum_id ]->get( 'shub_product_id' ) : (isset($forum_data['shub_product_id']) ? $forum_data['shub_product_id'] : 0),
+														'value' => $shub_bbpress_account->is_forum_active( $forum_id ) ? $items[ $forum_id ]->get( 'shub_product_id' ) : (isset($forum_data['shub_product_id']) ? $forum_data['shub_product_id'] : 0),
 														'options' => $products,
 														'options_array_id' => 'product_name',
 														'class' => 'shub_product_dropdown',
 													)); ?>
 												</td>
 												<td>
-													<?php echo $shub_bbpress_account->is_forum_active( $forum_id ) && $bbpress_forums[ $forum_id ]->get( 'last_checked' ) ? shub_print_date( $bbpress_forums[ $forum_id ]->get( 'last_checked' ), true ): 'N/A';?>
+													<?php echo $shub_bbpress_account->is_forum_active( $forum_id ) && $items[ $forum_id ]->get( 'last_checked' ) ? shub_print_date( $items[ $forum_id ]->get( 'last_checked' ), true ): 'N/A';?>
 												</td>
 												<td>
 													<?php
 													if ( $shub_bbpress_account->is_forum_active( $forum_id ) ) {
-														echo '<a href="' . $bbpress_forums[ $forum_id ]->link_refresh() . '" target="_blank">re-load forum topics</a>';
+														echo '<a href="' . $items[ $forum_id ]->link_refresh() . '" target="_blank">re-load forum topics</a>';
 													} ?>
 												</td>
 											</tr>
@@ -188,7 +188,7 @@ if($current_account !== false){
 				</table>
 
 				<p class="submit">
-					<?php if ( $shub_bbpress_account->get( 'shub_bbpress_id' ) ) { ?>
+					<?php if ( $shub_bbpress_account->get( 'shub_account_id' ) ) { ?>
 						<input name="butt_save" type="submit" class="button-primary"
 						       value="<?php echo esc_attr( __( 'Save', 'support_hub' ) ); ?>"/>
 						<input name="butt_save_reconnect" type="submit" class="button"
@@ -212,7 +212,7 @@ if($current_account !== false){
 	$myListTable = new SupportHub_Account_Data_List_Table();
 	$accounts = $shub_bbpress->get_accounts();
 	foreach($accounts as $account_id => $account){
-		$a = new shub_bbpress_account($account['shub_bbpress_id']);
+		$a = new shub_bbpress_account($account['shub_account_id']);
 		$accounts[$account_id]['edit_link'] = $a->link_edit();
 		$accounts[$account_id]['title'] = $a->get('bbpress_name');
 		$accounts[$account_id]['last_checked'] = $a->get('last_checked') ? shub_print_date( $a->get('last_checked') ) : 'N/A';
@@ -223,7 +223,7 @@ if($current_account !== false){
 	<div class="wrap">
 		<h2>
 			<?php _e('bbPress Accounts','support_hub');?>
-			<a href="?page=<?php echo esc_attr($_GET['page']);?>&tab=<?php echo esc_attr($_GET['tab']);?>&shub_bbpress_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
+			<a href="?page=<?php echo esc_attr($_GET['page']);?>&tab=<?php echo esc_attr($_GET['tab']);?>&shub_account_id=new" class="add-new-h2"><?php _e('Add New','support_hub');?></a>
 		</h2>
 	    <?php
 	    //$myListTable->search_box( 'search', 'search_id' );

@@ -32,21 +32,21 @@ class shub_bbpress extends SupportHub_extension {
 		    _e('No accounts configured', 'support_hub');
 	    }
 		foreach ( $accounts as $account ) {
-			$bbpress_account = new shub_bbpress_account( $account['shub_bbpress_id'] );
+			$bbpress_account = new shub_bbpress_account( $account['shub_account_id'] );
 			echo '<div class="bbpress_compose_account_select">' .
-				     '<input type="checkbox" name="compose_bbpress_id[' . $account['shub_bbpress_id'] . '][share]" value="1"> ' .
+				     '<input type="checkbox" name="compose_bbpress_id[' . $account['shub_account_id'] . '][share]" value="1"> ' .
 				     ($bbpress_account->get_picture() ? '<img src="'.$bbpress_account->get_picture().'">' : '' ) .
 				     '<span>' . htmlspecialchars( $bbpress_account->get( 'bbpress_name' ) ) . ' (status update)</span>' .
 				     '</div>';
 			/*echo '<div class="bbpress_compose_account_select">' .
-				     '<input type="checkbox" name="compose_bbpress_id[' . $account['shub_bbpress_id'] . '][blog]" value="1"> ' .
+				     '<input type="checkbox" name="compose_bbpress_id[' . $account['shub_account_id'] . '][blog]" value="1"> ' .
 				     ($bbpress_account->get_picture() ? '<img src="'.$bbpress_account->get_picture().'">' : '' ) .
 				     '<span>' . htmlspecialchars( $bbpress_account->get( 'bbpress_name' ) ) . ' (blog post)</span>' .
 				     '</div>';*/
 			$forums            = $bbpress_account->get( 'forums' );
-			foreach ( $forums as $bbpress_forum_id => $forum ) {
+			foreach ( $forums as $item_id => $forum ) {
 				echo '<div class="bbpress_compose_account_select">' .
-				     '<input type="checkbox" name="compose_bbpress_id[' . $account['shub_bbpress_id'] . '][' . $bbpress_forum_id . ']" value="1"> ' .
+				     '<input type="checkbox" name="compose_bbpress_id[' . $account['shub_account_id'] . '][' . $item_id . ']" value="1"> ' .
 				     ($bbpress_account->get_picture() ? '<img src="'.$bbpress_account->get_picture().'">' : '' ) .
 				     '<span>' . htmlspecialchars( $forum->get( 'forum_name' ) ) . ' (forum)</span>' .
 				     '</div>';
@@ -121,20 +121,20 @@ class shub_bbpress extends SupportHub_extension {
 					$bbpress_accounts = isset($_POST['compose_bbpress_id']) && is_array($_POST['compose_bbpress_id']) ? $_POST['compose_bbpress_id'] : array();
 					foreach($bbpress_accounts as $bbpress_account_id => $send_forums){
 						$bbpress_account = new shub_bbpress_account($bbpress_account_id);
-						if($bbpress_account->get('shub_bbpress_id') == $bbpress_account_id){
-							/* @var $available_forums shub_bbpress_forum[] */
+						if($bbpress_account->get('shub_account_id') == $bbpress_account_id){
+							/* @var $available_forums shub_item[] */
 				            $available_forums = $bbpress_account->get('forums');
 							if($send_forums){
-							    foreach($send_forums as $bbpress_forum_id => $tf){
+							    foreach($send_forums as $item_id => $tf){
 								    if(!$tf)continue;// shouldnt happen
-								    switch($bbpress_forum_id){
+								    switch($item_id){
 									    case 'share':
 										    // doing a status update to this bbpress account
 											$bbpress_message = new shub_bbpress_message($bbpress_account, false, false);
 										    $bbpress_message->create_new();
-										    $bbpress_message->update('shub_bbpress_forum_id',0);
+										    $bbpress_message->update('shub_item_id',0);
 							                $bbpress_message->update('shub_message_id',$options['shub_message_id']);
-										    $bbpress_message->update('shub_bbpress_id',$bbpress_account->get('shub_bbpress_id'));
+										    $bbpress_message->update('shub_account_id',$bbpress_account->get('shub_account_id'));
 										    $bbpress_message->update('summary',isset($_POST['bbpress_message']) ? $_POST['bbpress_message'] : '');
 										    $bbpress_message->update('title',isset($_POST['bbpress_title']) ? $_POST['bbpress_title'] : '');
 										    $bbpress_message->update('link',isset($_POST['bbpress_link']) ? $_POST['bbpress_link'] : '');
@@ -178,13 +178,13 @@ class shub_bbpress extends SupportHub_extension {
 										    // posting to one of our available forums:
 
 										    // see if this is an available forum.
-										    if(isset($available_forums[$bbpress_forum_id])){
+										    if(isset($available_forums[$item_id])){
 											    // push to db! then send.
-											    $bbpress_message = new shub_bbpress_message($bbpress_account, $available_forums[$bbpress_forum_id], false);
+											    $bbpress_message = new shub_bbpress_message($bbpress_account, $available_forums[$item_id], false);
 											    $bbpress_message->create_new();
-											    $bbpress_message->update('shub_bbpress_forum_id',$available_forums[$bbpress_forum_id]->get('shub_bbpress_forum_id'));
+											    $bbpress_message->update('shub_item_id',$available_forums[$item_id]->get('shub_item_id'));
 								                $bbpress_message->update('shub_message_id',$options['shub_message_id']);
-											    $bbpress_message->update('shub_bbpress_id',$bbpress_account->get('shub_bbpress_id'));
+											    $bbpress_message->update('shub_account_id',$bbpress_account->get('shub_account_id'));
 											    $bbpress_message->update('summary',isset($_POST['bbpress_message']) ? $_POST['bbpress_message'] : '');
 											    $bbpress_message->update('title',isset($_POST['bbpress_title']) ? $_POST['bbpress_title'] : '');
 											    if(isset($_POST['track_links']) && $_POST['track_links']){
@@ -231,15 +231,15 @@ class shub_bbpress extends SupportHub_extension {
 				return $message_count;
 				break;
 			case 'save_bbpress':
-				$shub_bbpress_id = isset($_REQUEST['shub_bbpress_id']) ? (int)$_REQUEST['shub_bbpress_id'] : 0;
-				if(check_admin_referer( 'save-bbpress'.$shub_bbpress_id )) {
-					$bbpress = new shub_bbpress_account( $shub_bbpress_id );
+				$shub_account_id = isset($_REQUEST['shub_account_id']) ? (int)$_REQUEST['shub_account_id'] : 0;
+				if(check_admin_referer( 'save-bbpress'.$shub_account_id )) {
+					$bbpress = new shub_bbpress_account( $shub_account_id );
 					if ( isset( $_POST['butt_delete'] ) ) {
 						$bbpress->delete();
 						$redirect = 'admin.php?page=support_hub_settings&tab=bbpress';
 					} else {
 						$bbpress->save_data( $_POST );
-						$shub_bbpress_id = $bbpress->get( 'shub_bbpress_id' );
+						$shub_account_id = $bbpress->get( 'shub_account_id' );
 						if ( isset( $_POST['butt_save_reconnect'] ) ) {
 							$redirect = $bbpress->link_connect();
 						} else {
@@ -259,18 +259,18 @@ class shub_bbpress extends SupportHub_extension {
         return new shub_bbpress_account($shub_account_id);
     }
 
-	public function get_message($bbpress_account = false, $bbpress_forum = false, $shub_bbpress_message_id = false){
-		return new shub_bbpress_message($bbpress_account, $bbpress_forum, $shub_bbpress_message_id);
+	public function get_message($bbpress_account = false, $item = false, $shub_message_id = false){
+		return new shub_bbpress_message($bbpress_account, $item, $shub_message_id);
 	}
 
 	public function run_cron( $debug = false ){
 		if($debug)echo "Starting bbpress Cron Job \n";
 		$accounts = $this->get_accounts();
 		foreach($accounts as $account){
-			$shub_bbpress_account = new shub_bbpress_account( $account['shub_bbpress_id'] );
+			$shub_bbpress_account = new shub_bbpress_account( $account['shub_account_id'] );
 			$shub_bbpress_account->run_cron($debug);
 			$forums = $shub_bbpress_account->get('forums');
-			/* @var $forums shub_bbpress_forum[] */
+			/* @var $forums shub_item[] */
 			foreach($forums as $forum){
 				$forum->run_cron($debug);
 			}

@@ -6,7 +6,7 @@ ucm.social.bbpress = {
             f.show();
             f.find('textarea')[0].focus();
         }).delegate('.bbpress_check_all','change',function(){
-                jQuery('.check_bbpress_forum').prop('checked', !!jQuery(this).prop('checked'));
+                jQuery('.check_item').prop('checked', !!jQuery(this).prop('checked'));
 
             });
     }

@@ -8,7 +8,7 @@ function shub_managers_bbpress( $shub ){
 		require_once 'class.shub_bbpress.php';
 		require_once 'class.shub_bbpress_user.php';
 		require_once 'class.shub_bbpress_account.php';
-		require_once 'class.shub_bbpress_forum.php';
+		require_once 'class.shub_item.php';
 		require_once 'class.shub_bbpress_message.php';
 		$shub['bbpress'] = new shub_bbpress();
 	}else{
