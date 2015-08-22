@@ -253,51 +253,6 @@ class shub_envato extends SupportHub_extension {
 		return new shub_message($envato_account, $item, $shub_message_id);
 	}
 
-	public function handle_ajax($action, $support_hub_wp){
-		switch($action){
-			case 'request_extra_details':
-
-				if(isset($_REQUEST['network']) && $_REQUEST['network'] == 'envato'){
-					if (!headers_sent())header('Content-type: text/javascript');
-
-					$debug = isset( $_POST['debug'] ) && $_POST['debug'] ? $_POST['debug'] : false;
-					$response = array();
-					$extra_ids = isset($_REQUEST['extra_ids']) && is_array($_REQUEST['extra_ids']) ? $_REQUEST['extra_ids']  : array();
-					$account_id = isset($_REQUEST['accountId']) ? (int)$_REQUEST['accountId'] : (isset($_REQUEST['account-id']) ? (int)$_REQUEST['account-id'] : false);
-					$message_id = isset($_REQUEST['messageId']) ? (int)$_REQUEST['messageId'] : (isset($_REQUEST['message-id']) ? (int)$_REQUEST['message-id'] : false);
-					if(empty($extra_ids)){
-						$response['message'] = 'Please request at least one Extra Detail';
-					}else{
-
-						$shub_message = new shub_message( false, false, $message_id );
-						if($message_id && $shub_message->get('shub_message_id') == $message_id){
-							// build the message up
-							$message = SupportHubExtra::build_message(array(
-								'network' => 'envato',
-								'account_id' => $account_id,
-								'message_id' => $message_id,
-								'extra_ids' => $extra_ids,
-							));
-							$response['message'] = $message;
-//							if($debug)ob_start();
-//							$shub_message->send_reply( $shub_message->get('envato_id'), $message, $debug );
-//							if($debug){
-//								$response['message'] = ob_get_clean();
-//							}else {
-//								$response['redirect'] = 'admin.php?page=support_hub_main';
-//							}
-						}
-
-					}
-
-					echo json_encode($response);
-					exit;
-				}
-				break;
-		}
-		return false;
-	}
-
 
 	public function run_cron( $debug = false, $cron_timeout = false, $cron_start = false){
 		if($debug)echo "Starting envato Cron Job \n";
@@ -384,10 +339,11 @@ class shub_envato extends SupportHub_extension {
                         }
                     }
 
-                    $envato_codes = $shub_user->get_meta('envato_license_code');
+                    /*$envato_codes = $shub_user->get_meta('envato_license_code');
                     if(is_array($envato_codes)){
                         $details['user']['codes'] = $envato_codes;
-                    }
+                    }*/
+
                     /*$user_data = $shub_user->get('user_data');
                     if (isset($user_data['envato_codes'])) {
                         // these come in from bbPress (and hopefully other places)
@@ -401,26 +357,6 @@ class shub_envato extends SupportHub_extension {
                         $details['user']['products'] = implode(', ', $details['user']['products']);
                     }*/
 
-                    $comments = shub_get_multiple('shub_message_comment', array(
-                        'shub_user_id' => $shub_user_id
-                    ), 'shub_message_comment_id');
-                    if (is_array($comments)) {
-                        foreach ($comments as $comment) {
-                            if ($current_extension == 'envato' && $message_object->get('shub_message_id') == $comment['shub_message_id']) continue;
-                            if (!isset($details['messages']['envato' . $comment['shub_message_id']])) {
-						$other_message = new shub_message();
-						$other_message->load($comment['shub_message_id']);
-                                $details['messages']['envato' . $comment['shub_message_id']] = array(
-                                    'summary' => $comment['message_text'],
-                                    'time' => $comment['time'],
-                                    'network' => 'envato',
-                                    'message_id' => $comment['shub_message_id'],
-                                    'network_message_comment_id' => $comment['shub_message_comment_id'],
-							'message_status' => $other_message->get('status'),
-                                );
-                            }
-                        }
-                    }
                 }
             }
 		}

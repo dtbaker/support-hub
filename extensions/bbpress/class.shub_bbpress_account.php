@@ -1,78 +1,11 @@
 <?php
 
-class shub_bbpress_account{
+class shub_bbpress_account extends SupportHub_account{
 
-	public function __construct($shub_bbpress_id){
-		$this->load($shub_bbpress_id);
-	}
-
-	private $shub_bbpress_id = false; // the current user id in our system.
-    private $details = array();
-
-	/* @var $forums shub_bbpress_forum[] */
-    private $forums = array();
-
-
-	private $json_fields = array('bbpress_data');
-
-	private function reset(){
-		$this->shub_bbpress_id = false;
-		$this->details = array(
-			'shub_bbpress_id' => false,
-			'bbpress_name' => false,
-			'last_checked' => false,
-			'bbpress_data' => array(),
-			'bbpress_wordpress_xmlrpc' => false,
-			'bbpress_username' => false,
-			'bbpress_password' => false,
-		);
-	    $this->forums = array();
-		foreach($this->details as $field_id => $field_data){
-			$this->{$field_id} = $field_data;
-		}
-	}
-
-	public function create_new(){
-		$this->reset();
-		$this->shub_bbpress_id = shub_update_insert('shub_bbpress_id',false,'shub_bbpress',array(
-            'bbpress_name' => '',
-        ));
-		$this->load($this->shub_bbpress_id);
-	}
-
-    public function load($shub_bbpress_id = false){
-	    if(!$shub_bbpress_id)$shub_bbpress_id = $this->shub_bbpress_id;
-	    $this->reset();
-	    $this->shub_bbpress_id = (int)$shub_bbpress_id;
-        if($this->shub_bbpress_id){
-            $data = shub_get_single('shub_bbpress','shub_bbpress_id',$this->shub_bbpress_id);
-	        foreach($this->details as $key=>$val){
-		        $this->details[$key] = $data && isset($data[$key]) ? $data[$key] : $val;
-		        if(in_array($key,$this->json_fields)){
-			        $this->details[$key] = @json_decode($this->details[$key],true);
-			        if(!is_array($this->details[$key]))$this->details[$key] = array();
-		        }
-	        }
-	        if(!is_array($this->details) || $this->details['shub_bbpress_id'] != $this->shub_bbpress_id){
-		        $this->reset();
-		        return false;
-	        }
-        }
-        foreach($this->details as $key=>$val){
-            $this->{$key} = $val;
-        }
-	    $this->forums = array();
-	    if(!$this->shub_bbpress_id)return false;
-	    foreach(shub_get_multiple('shub_bbpress_forum',array('shub_bbpress_id'=>$this->shub_bbpress_id),'shub_bbpress_forum_id') as $forum){
-		    $forum = new shub_bbpress_forum($this, $forum['shub_bbpress_forum_id']);
-		    $this->forums[$forum->get('forum_id')] = $forum;
-	    }
-        return $this->shub_bbpress_id;
+    public function __construct($shub_account_id){
+        parent::__construct($shub_account_id);
+        $this->shub_extension = 'bbpress';
     }
-
-	public function get($field){
-		return isset($this->{$field}) ? $this->{$field} : false;
-	}
 
 	public function save_data($post_data){
 		if(!$this->get('shub_bbpress_id')){
@@ -125,64 +58,9 @@ class shub_bbpress_account{
 		$this->load();
 		return $this->get('shub_bbpress_id');
 	}
-    public function update($field,$value){
-	    // what fields to we allow? or not allow?
-	    if(in_array($field,array('shub_bbpress_id')))return;
-        if($this->shub_bbpress_id){
-            $this->{$field} = $value;
-	        if(in_array($field,$this->json_fields)){
-		        $value = json_encode($value);
-	        }
-            shub_update_insert('shub_bbpress_id',$this->shub_bbpress_id,'shub_bbpress',array(
-	            $field => $value,
-            ));
-        }
-    }
-	public function delete(){
-		if($this->shub_bbpress_id) {
-			// delete all the forums for this twitter account.
-			$forums = $this->get('forums');
-			foreach($forums as $forum){
-				$forum->delete();
-			}
-			shub_delete_from_db( 'shub_bbpress', 'shub_bbpress_id', $this->shub_bbpress_id );
-		}
-	}
 
-	public function is_active(){
-		// is there a 'last_checked' date?
-		if(!$this->get('last_checked')){
-			return false; // never checked this account, not active yet.
-		}else{
-			// do we have a token?
-			if($this->get('bbpress_token')){
-				// assume we have access, we remove the token if we get a bbpress failure at any point.
-				return true;
-			}
-		}
-		return false;
-	}
 
-	public function is_forum_active($bbpress_forum_id){
-		if(isset($this->forums[$bbpress_forum_id]) && $this->forums[$bbpress_forum_id]->get('forum_id') == $bbpress_forum_id){
-			return true;
-		}else{
-			return false;
-		}
-	}
-
-	public function save_account_data($user_data){
-		// serialise this result into bbpress_data.
-		if(is_array($user_data)){
-			// yes, this member has some forums, save these forums to the account ready for selection in the settings area.
-			$save_data = $this->get('bbpress_data');
-			if(!is_array($save_data))$save_data=array();
-			$save_data = array_merge($save_data,$user_data);
-			$this->update('bbpress_data',$save_data);
-		}
-	}
-
-	public function load_available_forums(){
+	public function load_available_items(){
 		// serialise this result into bbpress_data.
 
 		$api = $this->get_api();
@@ -225,7 +103,7 @@ class shub_bbpress_account{
 					$forums[$forum['post_id']] = $forum;
 				}
 				$this->save_account_data(array(
-					'forums' => $forums,
+					'items' => $forums,
 				));
 				return true;
 			}else{
@@ -234,7 +112,7 @@ class shub_bbpress_account{
 			}
 
 		}else{
-			echo 'Failed to find forums';
+			echo 'Failed to find any forums';
 			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'bbpress', 'Unable to find TOPIC and REPLY post types through the WP API, maybe bbPress is not installed?');
 			return false;
 		}
@@ -394,23 +272,5 @@ class shub_bbpress_account{
 		return $data && isset($data['pictureUrl']) && !empty($data['pictureUrl']) ? $data['pictureUrl'] : false;
 	}
 	
-
-	/**
-	 * Links for wordpress
-	 */
-	public function link_connect(){
-		return 'admin.php?page=support_hub_settings&tab=bbpress&bbpress_do_oauth_connect&shub_bbpress_id='.$this->get('shub_bbpress_id');
-	}
-	public function link_edit(){
-		return 'admin.php?page=support_hub_settings&tab=bbpress&shub_bbpress_id='.$this->get('shub_bbpress_id');
-	}
-	public function link_new_message(){
-		return 'admin.php?page=support_hub_main&shub_bbpress_id='.$this->get('shub_bbpress_id').'&shub_bbpress_message_id=new';
-	}
-
-
-	public function link_refresh(){
-		return 'admin.php?page=support_hub_settings&tab=bbpress&manualrefresh&shub_bbpress_id='.$this->get('shub_bbpress_id').'&bbpress_stream=true';
-	}
 
 }

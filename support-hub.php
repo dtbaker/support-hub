@@ -3,11 +3,12 @@
  * Plugin Name: Support Hub
  * Version: 1.1
  * Plugin URI: http://supporthub.co
+ * GitHub Plugin URI: dtbaker/support-hub
  * Description: Provide support from within WordPress
  * Author: dtbaker
  * Author URI: http://dtbaker.net
  * Requires at least: 4.2
- * Tested up to: 4.2
+ * Tested up to: 4.3
  *
  * Version 1.1 - 2015-05-15 - initial work
  *

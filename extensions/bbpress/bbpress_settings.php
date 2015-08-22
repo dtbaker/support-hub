@@ -72,7 +72,7 @@ if($current_account !== false){
 							<?php _e( 'Website Name', 'support_hub' ); ?>
 						</th>
 						<td class="">
-							<input type="text" name="bbpress_name" value="<?php echo esc_attr( $shub_bbpress_account->get( 'bbpress_name' ) ); ?>">
+							<input type="text" name="account_name" value="<?php echo esc_attr( $shub_bbpress_account->get( 'account_name' ) ); ?>">
 							(e.g. My Support Forum)
 						</td>
 					</tr>
@@ -81,7 +81,7 @@ if($current_account !== false){
                             <?php _e( 'WordPress XML-RPC URL', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="text" name="bbpress_wordpress_xmlrpc" value="<?php echo esc_attr($shub_bbpress_account->get( 'bbpress_wordpress_xmlrpc' )); ?>">
+                            <input type="text" name="account_data[bbpress_wordpress_xmlrpc]" value="<?php echo esc_attr($shub_bbpress_account->get( 'bbpress_wordpress_xmlrpc' )); ?>">
 	                        (e.g. http://mysite.com/xmlrpc.php)
                         </td>
                     </tr>
@@ -90,7 +90,7 @@ if($current_account !== false){
                             <?php _e( 'WordPress Username', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="text" name="bbpress_username" value="<?php echo esc_attr( $shub_bbpress_account->get( 'bbpress_username' ) ); ?>">
+                            <input type="text" name="account_data[bbpress_username]" value="<?php echo esc_attr( $shub_bbpress_account->get( 'bbpress_username' ) ); ?>">
                         </td>
                     </tr>
                     <tr>
@@ -98,7 +98,7 @@ if($current_account !== false){
                             <?php _e( 'WordPress Password', 'support_hub' ); ?>
                         </th>
                         <td class="">
-                            <input type="password" name="bbpress_password" value="<?php echo $shub_bbpress_account->get( 'bbpress_password' ) ? 'password' : ''; ?>">
+                            <input type="password" name="account_data[bbpress_password]" value="<?php echo $shub_bbpress_account->get( 'bbpress_password' ) ? _SUPPORT_HUB_PASSWORD_FIELD_FUZZ : ''; ?>">
                         </td>
                     </tr>
 					<?php if ( $shub_bbpress_account->get( 'shub_bbpress_id' ) ) { ?>
@@ -119,8 +119,8 @@ if($current_account !== false){
 								<strong><?php _e( 'Choose which bbPress forums you would like to manage:', 'support_hub' ); ?></strong><br>
 								<?php
 								$data = $shub_bbpress_account->get( 'bbpress_data' );
-								if ( $data && isset( $data['forums'] ) && is_array( $data['forums'] ) && count( $data['forums'] ) > 0 ) {
-									$bbpress_forums = $shub_bbpress_account->get('forums');
+								if ( $data && isset( $data['items'] ) && is_array( $data['items'] ) && count( $data['items'] ) > 0 ) {
+									$bbpress_forums = $shub_bbpress_account->get('items');
 									?>
 									<div>
 										<input type="checkbox" name="all" value="1" class="bbpress_check_all"> - check all -
@@ -144,8 +144,8 @@ if($current_account !== false){
 											?>
 											<tr>
 												<td>
-													<input type="checkbox" name="bbpress_forum[<?php echo $forum_id; ?>]" class="check_bbpress_forum"
-													       value="1" <?php echo $shub_bbpress_account->is_forum_active( $forum_id ) ? ' checked' : ''; ?>>
+													<input type="checkbox" name="item[<?php echo $forum_id; ?>]" class="check_bbpress_forum"
+													       value="1" <?php echo $shub_bbpress_account->is_item_active( $forum_id ) ? ' checked' : ''; ?>>
 												</td>
 												<td>
 													<?php echo htmlspecialchars( $forum_data['post_title'] ); ?>
