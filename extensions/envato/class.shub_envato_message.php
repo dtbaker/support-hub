@@ -238,7 +238,7 @@ class shub_message extends SupportHub_message{
             <?php
         }
 
-        /*$data = $this->get('data');
+        /*$data = $this->get('shub_data');
         if(!empty($data['buyer_and_author']) && $data['buyer_and_author'] && $data['buyer_and_author'] !== 'false'){
             // hmm - this doesn't seem to be a "purchased" flag.
             ?>

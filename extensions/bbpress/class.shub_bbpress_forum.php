@@ -63,6 +63,7 @@ class shub_bbpress_item extends SupportHub_item{
 
 		foreach($api_result_latest_topics as $forum_topic){
 			if($forum_topic['post_parent'] == $network_key){
+                $forum_topic['timestamp'] = $forum_topic['post_date']->timestamp;
 				// yay! this reply is part of a topic that is part of this forum. keep it.
 				if(!isset($forum_topics[$forum_topic['post_id']])){
 					$forum_topics[$forum_topic['post_id']] = $forum_topic;
@@ -70,7 +71,8 @@ class shub_bbpress_item extends SupportHub_item{
 				if(!isset($forum_topics[$forum_topic['post_id']]['replies'])){
 					$forum_topics[$forum_topic['post_id']]['replies'] = array();
 				}
-				$forum_topics[$forum_topic['post_id']]['timestamp'] = $forum_topic['post_date']->timestamp;
+                // we need to add our main forum_topic onto the replies array so that all messages go into the 'comments' database table.
+                $forum_topics[$forum_topic['post_id']]['replies'][] = $forum_topic;
 			}
 		}
 		foreach($api_result_latest_replies as $forum_reply){
@@ -93,6 +95,8 @@ class shub_bbpress_item extends SupportHub_item{
 			if($found_parent){
 				// found a parent post, check if it's part of this forum.
 				if($found_parent['post_parent'] == $network_key){
+                    $found_parent['timestamp'] = $found_parent['post_date']->timestamp;
+                    $forum_reply['timestamp'] = $forum_reply['post_date']->timestamp;
 					// yay! this reply is part of a topic that is part of this forum. keep it.
 					if(!isset($forum_topics[$found_parent['post_id']])){
 						$forum_topics[$found_parent['post_id']] = $found_parent;
@@ -100,9 +104,10 @@ class shub_bbpress_item extends SupportHub_item{
 					if(!isset($forum_topics[$found_parent['post_id']]['replies'])){
 						$forum_topics[$found_parent['post_id']]['replies'] = array();
 					}
+					$forum_topics[$found_parent['post_id']]['replies'][] = $found_parent;
 					$forum_topics[$found_parent['post_id']]['replies'][] = $forum_reply;
 					if(!isset($forum_topics[$found_parent['post_id']]['timestamp'])){
-						$forum_topics[$found_parent['post_id']]['timestamp'] = $found_parent['post_date']->timestamp;
+						$forum_topics[$found_parent['post_id']]['timestamp'] = $found_parent['timestamp'];
 					}
 					$forum_topics[$found_parent['post_id']]['timestamp'] = max($forum_reply['post_date']->timestamp,$forum_topics[$found_parent['post_id']]['timestamp']);
 				}

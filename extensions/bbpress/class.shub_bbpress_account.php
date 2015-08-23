@@ -7,58 +7,6 @@ class shub_bbpress_account extends SupportHub_account{
         $this->shub_extension = 'bbpress';
     }
 
-	public function save_data($post_data){
-		if(!$this->get('shub_account_id')){
-			$this->create_new();
-		}
-		if(is_array($post_data)){
-			foreach($this->details as $details_key => $details_val){
-				if(isset($post_data[$details_key])){
-					if(($details_key == 'bbpress_password') && $post_data[$details_key] == 'password')continue;
-					$this->update($details_key,$post_data[$details_key]);
-				}
-			}
-		}
-		if(!isset($post_data['import_stream'])){
-			$this->update('import_stream', 0);
-		}
-		// save the active bbpress forums.
-		if(isset($post_data['save_items']) && $post_data['save_items'] == 'yep') {
-			$currently_active_forums = $this->items;
-			$data = $this->get('account_data');
-			$available_forums = isset($data['forums']) && is_array($data['forums']) ? $data['forums'] : array();
-			if(isset($post_data['item']) && is_array($post_data['item'])){
-				foreach($post_data['item'] as $item_id => $yesno){
-					if(isset($currently_active_forums[$item_id])){
-						if(isset($post_data['item_product'][$item_id])){
-							$currently_active_forums[$item_id]->update('shub_product_id',$post_data['item_product'][$item_id]);
-						}
-						unset($currently_active_forums[$item_id]);
-					}
-					if($yesno && isset($available_forums[$item_id])){
-						// we are adding this forum to the list. check if it doesn't already exist.
-						if(!isset($this->items[$item_id])){
-							$forum = new shub_bbpress_item($this);
-							$forum->create_new();
-							$forum->update('shub_account_id', $this->shub_account_id);
-							$forum->update('bbpress_token', 'same'); // $available_forums[$item_id]['access_token']
-							$forum->update('item_name', $available_forums[$item_id]['post_title']);
-							$forum->update('forum_id', $item_id);
-							$forum->update('account_data', $available_forums[$item_id]);
-							$forum->update('shub_product_id', isset($post_data['item_product'][$item_id]) ? $post_data['item_product'][$item_id] : 0);
-						}
-					}
-				}
-			}
-			// remove any forums that are no longer active.
-			foreach($currently_active_forums as $forum){
-				$forum->delete();
-			}
-		}
-		$this->load();
-		return $this->get('shub_account_id');
-	}
-
 
 	public function load_available_items(){
 		// serialise this result into account_data.
@@ -271,6 +219,11 @@ class shub_bbpress_account extends SupportHub_account{
 		$data = $this->get('account_data');
 		return $data && isset($data['pictureUrl']) && !empty($data['pictureUrl']) ? $data['pictureUrl'] : false;
 	}
+
+
+    public function get_item($shub_item_id){
+        return new shub_bbpress_item($this, $shub_item_id);
+    }
 	
 
 }

@@ -1131,9 +1131,9 @@ CREATE TABLE {$wpdb->prefix}shub_message (
   last_active int(11) NOT NULL DEFAULT '0',
   comments text NOT NULL,
   shub_type varchar(20) NOT NULL,
-  link varchar(255) NOT NULL,
-  data text NOT NULL,
-  status tinyint(1) NOT NULL DEFAULT '0',
+  shub_link varchar(255) NOT NULL,
+  shub_data text NOT NULL,
+  shub_status tinyint(1) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
   shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_message_id (shub_message_id),
@@ -1141,10 +1141,10 @@ CREATE TABLE {$wpdb->prefix}shub_message (
   KEY last_active (last_active),
   KEY shub_item_id (shub_item_id),
   KEY shub_product_id (shub_product_id),
-  KEY network_id (network_id),
+  KEY network_key (network_key),
   KEY shub_user_id (shub_user_id),
   KEY post_id (post_id),
-  KEY status (status)
+  KEY shub_status (shub_status)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 
@@ -1204,10 +1204,10 @@ CREATE TABLE {$wpdb->prefix}shub_outbox (
   shub_message_id int(11) NOT NULL DEFAULT '0',
   shub_message_comment_id int(11) NOT NULL DEFAULT '0',
   queue_time int(11) NOT NULL DEFAULT '0',
-  status int(11) NOT NULL DEFAULT '0',
+  shub_status int(11) NOT NULL DEFAULT '0',
   message_data text NOT NULL,
   PRIMARY KEY  shub_outbox_id (shub_outbox_id),
-  KEY status (status),
+  KEY shub_status (shub_status),
   KEY shub_message_id (shub_message_id),
   KEY shub_account_id (shub_account_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
@@ -1321,11 +1321,67 @@ CREATE TABLE {$wpdb->prefix}shub_extra_data_rel (
   KEY shub_extra_id (shub_extra_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-
-
 EOT;
         $hash = md5($sql);
         if(get_option("support_hub_db_hash") != $hash){
+
+            // rename some table fields. opps!
+            $rename = array(
+                'shub_message' => array(
+                    "type"=>array(
+                        "shub_type",
+                        "varchar(20) NOT NULL DEFAULT ''",
+                    ),
+                    "status"=>array(
+                        "shub_status",
+                        "tinyint(1) NOT NULL DEFAULT '0'",
+                    ),
+                    "link"=>array(
+                        "shub_link",
+                        "varchar(255) NOT NULL DEFAULT ''",
+                    ),
+                    "data"=>array(
+                        "shub_data",
+                        "longtext NOT NULL",
+                    ),
+                ),
+                'shub_outbox' => array(
+                    "status"=>array(
+                        "shub_status",
+                        "tinyint(1) NOT NULL DEFAULT '0'",
+                    ),
+                ),
+            );
+
+            foreach($rename as $table_name => $fields_to_rename) {
+
+                $suppress = $wpdb->suppress_errors();
+                $tablefields = $wpdb->get_results("DESCRIBE {$wpdb->prefix}{$table_name};");
+                $wpdb->suppress_errors($suppress);
+
+                if ($tablefields) {
+                    foreach ($fields_to_rename as $rename_from => $rename_to_settings) {
+                        $rename_to = $rename_to_settings[0];
+                        $rename_args = $rename_to_settings[1];
+                        $rename_done = false;
+                        $field_exists = false;
+                        foreach ($tablefields as $tablefield) {
+                            if ($tablefield->Field == $rename_to) {
+                                $rename_done = true;
+                            }
+                            if ($tablefield->Field == $rename_from) {
+                                $field_exists = true;
+                            }
+                        }
+                        if (!$rename_done && $field_exists) {
+                            // do the rename.
+                            $change_sql = "ALTER TABLE {$wpdb->prefix}{$table_name} CHANGE COLUMN `{$rename_from}` `{$rename_to}` {$rename_args}";
+                            $wpdb->query($change_sql);
+                        }
+                    }
+                }
+            }
+
             $this->activation($sql);
             $this->log_data(0,'core','Ran SQL Update');
             update_option( "support_hub_db_hash", $hash );

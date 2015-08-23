@@ -1,21 +1,21 @@
 <?php
 
 $current_account = isset($_REQUEST['shub_account_id']) ? (int)$_REQUEST['shub_account_id'] : false;
-$shub_bbpress = new shub_bbpress();
+$shub_bbpress = SupportHub::getInstance()->message_managers['bbpress'];
 if($current_account !== false){
 	$shub_bbpress_account = new shub_bbpress_account($current_account);
 	if(isset($_GET['manualrefresh'])){
 
-		$item_id = isset( $_REQUEST['item_id'] ) ? (int) $_REQUEST['item_id'] : 0;
+        $network_key = isset( $_REQUEST['network_key'] ) ? (int) $_REQUEST['network_key'] : 0;
 		/* @var $forums shub_bbpress_item[] */
 		$items = $shub_bbpress_account->get( 'items' );
-		if ( ! $item_id || ! $items || ! isset( $items[ $item_id ] ) ) {
+		if ( ! $network_key || ! $items || ! isset( $items[ $network_key ] ) ) {
 			die( 'No items found to refresh' );
 		}
 		?>
 		Manually refreshing item data... please wait...
 		<?php
-		$items[ $item_id ]->run_cron( true );
+		$items[ $network_key ]->run_cron( true );
 
 	}else if(isset($_GET['do_connect'])){
 		// connect to bbpress. and if that isnt' found
@@ -127,6 +127,7 @@ if($current_account !== false){
 										<input type="checkbox" name="all" value="1" class="bbpress_check_all"> - check all -
 									</div>
 									<br/><br/>
+                                    <input type="hidden" name="save_account_items" value="yep">
 
 									<table class="wp-list-table widefat fixed striped">
 										<thead>
@@ -147,6 +148,7 @@ if($current_account !== false){
 												<td>
 													<input type="checkbox" name="item[<?php echo $forum_id; ?>]" class="check_item"
 													       value="1" <?php echo $shub_bbpress_account->is_item_active( $forum_id ) ? ' checked' : ''; ?>>
+                                                    <input type="hidden" name="item_name[<?php echo $forum_id;?>]" value="<?php echo esc_attr($forum_data['post_title']);?>">
 												</td>
 												<td>
 													<?php echo htmlspecialchars( $forum_data['post_title'] ); ?>

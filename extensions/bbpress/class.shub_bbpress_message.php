@@ -21,7 +21,73 @@ class shub_bbpress_message extends SupportHub_message{
 					}
 					$this->update('shub_account_id',$this->account->get('shub_account_id'));
 					$this->update('shub_item_id',$this->item->get('shub_item_id'));
+                    /* Array
+                    (
+                        [post_id] => 3549
+                        [post_title] => slider
+                        [post_date] => stdClass Object
+                            (
+                                [scalar] => 20150716T12:51:14
+                                [xmlrpc_type] => datetime
+                                [timestamp] => 1437051074
+                            )
+
+                        [post_date_gmt] => stdClass Object
+                            (
+                                [scalar] => 20150716T12:51:14
+                                [xmlrpc_type] => datetime
+                                [timestamp] => 1437051074
+                            )
+
+                        [post_modified] => stdClass Object
+                            (
+                                [scalar] => 20150716T12:51:14
+                                [xmlrpc_type] => datetime
+                                [timestamp] => 1437051074
+                            )
+
+                        [post_modified_gmt] => stdClass Object
+                            (
+                                [scalar] => 20150716T12:51:14
+                                [xmlrpc_type] => datetime
+                                [timestamp] => 1437051074
+                            )
+
+                        [post_status] => publish
+                        [post_type] => topic
+                        [post_name] => slider
+                        [post_author] => 1466
+                        [post_password] =>
+                        [post_excerpt] =>
+                        [post_content] => i would like to add the revolution slider to the top of the content on the home page but i am unsure where to paste the slider shortcode in the main theme php file
+                        [post_parent] => 2398
+                        [post_mime_type] =>
+                        [link] => http://dtbaker.net/forums/topic/slider/
+                        [guid] => http://dtbaker.net/forums/topic/slider/
+                        [menu_order] => 0
+                        [comment_status] => closed
+                        [ping_status] => closed
+                        [sticky] =>
+                        [post_thumbnail] => Array
+                            (
+                            )
+
+                        [post_format] => standard
+                        [terms] => Array
+                            (
+                         $comments   )
+
+                        [custom_fields] => Array */
 					$comments = $topic_data['replies'];
+                    foreach($comments as $id => $comment){
+                        if(empty($comment['post_id']))continue;
+                        $comments[$id]['id'] = $comment['post_id'];
+                        if(!empty($comment['post_author'])){
+                            $comments[$id]['shub_user_id'] = $this->account->get_api_user_to_id($comment['post_author']);
+                        }
+                        // timestamp is handled in forum class
+                        $comments[$id]['content'] = $comment['post_content'];
+                    }
 					$this->update('title',$topic_data['post_content']);
 					// latest comment goes in summary
 					$this->update('summary',isset($comments[0]) ? $comments[0]['post_content'] : $topic_data['post_content']);
@@ -145,7 +211,7 @@ class shub_bbpress_message extends SupportHub_message{
 					}
 					if(!$bbpress_id)$bbpress_id = $this->get('bbpress_id');
 
-					$bbpress_post_data = $this->get('data');
+					$bbpress_post_data = $this->get('shub_data');
 
 					if($debug)echo "Sending a reply to bbPress Topic ID: $bbpress_id <br>\n";
 					$api_result = false;
@@ -205,21 +271,7 @@ class shub_bbpress_message extends SupportHub_message{
 
 		}
 	}
-	public function get_comments($message_data = false) {
-		if($message_data){
-			$messages = $message_data;
-			if(!is_array($messages))$messages=array();
-			usort($messages,function($a,$b){
-				if(isset($a['id'])){
-					return $a['id'] > $b['id'];
-				}
-				return strtotime($a['created_at']) > strtotime($b['created_at']);
-			});
-		}else{
-			$messages = shub_get_multiple('shub_bbpress_message_comment',array('shub_message_id'=>$this->shub_message_id),'shub_message_comment_id','time'); //@json_decode($this->get('comments'),true);
-		}
-		return $messages;
-	}
+
 
 	public function get_type_pretty() {
 		$type = $this->get('shub_type');
@@ -249,29 +301,7 @@ class shub_bbpress_message extends SupportHub_message{
 		return array();
 	}
 
-	public function get_product_id(){
-		// if local product is id -1 (default) then we use the parent forum product id
-		// this allows individual products to be overrideen with new one
-		if($this->get('shub_product_id') >= 0){
-			return $this->get('shub_product_id');
-		}else{
-			return $this->item->get('shub_product_id');
-		}
-	}
 
-	public function save_product_id($new_product_id){
-		if($new_product_id == $this->item->get('shub_product_id')){
-			// setting it back to default.
-			$this->update('shub_product_id', -1);
-		}else{
-			$this->update('shub_product_id', $new_product_id);
-		}
-	}
-
-
-	public function link_open(){
-        return 'admin.php?page=support_hub_main&network=bbpress&message_id='.$this->shub_message_id;
-	}
 
     public function message_sidebar_data(){
 
@@ -317,7 +347,7 @@ class shub_bbpress_message extends SupportHub_message{
             <?php
         }
 
-        $data = $this->get('data');
+        $data = $this->get('shub_data');
         if(!empty($data['buyer_and_author']) && $data['buyer_and_author'] && $data['buyer_and_author'] !== 'false'){
             // hmm - this doesn't seem to be a "purchased" flag.
             /*?>

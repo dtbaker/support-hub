@@ -191,6 +191,8 @@ if($current_account !== false){
 												<td>
 													<input type="checkbox" name="item[<?php echo $item_id; ?>]" class="check_item"
 													       value="1" <?php echo $shub_envato_account->is_item_active( $item_id ) ? ' checked' : ''; ?>>
+
+                                                    <input type="hidden" name="item_name[<?php echo $item_id;?>]" value="<?php echo esc_attr($item_data['item']);?>">
 												</td>
 												<td>
 													<?php echo htmlspecialchars( $item_data['site'] ); ?>
