@@ -99,14 +99,14 @@ class SupportHub {
                     if(isset($_REQUEST['network']) && isset($_REQUEST['message_id']) && (int)$_REQUEST['message_id'] > 0) {
                         $network = isset($_GET['network']) ? $_GET['network'] : false;
                         $message_id = isset($_GET['message_id']) ? (int)$_GET['message_id'] : false;
-                        $network_message_comment_id = isset($_GET['network_message_comment_id']) ? (int)$_GET['network_message_comment_id'] : false;
+                        $message_comment_id = isset($_GET['message_comment_id']) ? (int)$_GET['message_comment_id'] : false;
                         if($network && isset($this->message_managers[$network]) && $message_id > 0){
                             $shub_extension_message = $this->message_managers[$network]->get_message( false, false, $message_id);
                             if($shub_extension_message->get('shub_message_id') == $message_id){
                                 extract(array(
                                     "shub_account_id" => $shub_extension_message->get('account')->get('shub_account_id'),
                                     "shub_message_id" => $message_id,
-                                    "shub_message_comment_id" => $network_message_comment_id,
+                                    "shub_message_comment_id" => $message_comment_id,
                                 ));
                                 include( trailingslashit( SupportHub::getInstance()->dir ) . 'extensions/'.$network.'/'.$network.'_message.php');
                             }else{
@@ -123,7 +123,7 @@ class SupportHub {
                     if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_message_id'])) {
                         $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_message_id']);
                         if ($shub_extension_message->get('shub_message_id') == $_REQUEST['shub_message_id']) {
-                            $shub_extension_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                            $shub_extension_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
                             if (!headers_sent())header('Content-type: text/javascript');
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
@@ -150,7 +150,7 @@ class SupportHub {
                     if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_message_id'])) {
                         $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_message_id']);
                         if ($shub_extension_message->get('shub_message_id') == $_REQUEST['shub_message_id']) {
-                            $shub_extension_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+                            $shub_extension_message->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);
                             if (!headers_sent())header('Content-type: text/javascript');
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
@@ -211,8 +211,8 @@ class SupportHub {
                                             $extra_data[substr($key, 6)] = $val;
                                         }
                                     }
-                                    $network_message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
-                                    if(!$network_message_comment_id){
+                                    $message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
+                                    if(!$message_comment_id){
                                         $return['message'] .= 'Failed to queue comment reply in database.';
                                         $return['error'] = true;
                                     }
@@ -226,7 +226,7 @@ class SupportHub {
                                         'shub_extension' => $_REQUEST['network'],
                                         'shub_account_id' => $account_id,
                                         'shub_message_id' => $_REQUEST['message-id'],
-                                        'shub_message_comment_id' => $network_message_comment_id,
+                                        'shub_message_comment_id' => $message_comment_id,
                                     ));
                                     $return['shub_outbox_id'] = $outbox->get('shub_outbox_id');
                                 }
@@ -249,17 +249,57 @@ class SupportHub {
                     foreach($pending as $message){
                         $return['outbox_ids'][] = array(
                             'shub_outbox_id' => $message['shub_outbox_id'],
-                            'status' => $message['status'],
+                            'shub_status' => $message['shub_status'],
                         );
                     }
                     foreach($failed as $message){
                         $return['outbox_ids'][] = array(
                             'shub_outbox_id' => $message['shub_outbox_id'],
-                            'status' => $message['status'],
+                            'shub_status' => $message['shub_status'],
                         );
                     }
                     echo json_encode( $return );
 
+                    break;
+
+                case 'request_extra_details':
+
+                    if(!empty($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']])){
+                        if (!headers_sent())header('Content-type: text/javascript');
+
+                        $debug = isset( $_POST['debug'] ) && $_POST['debug'] ? $_POST['debug'] : false;
+                        $response = array();
+                        $extra_ids = isset($_REQUEST['extra_ids']) && is_array($_REQUEST['extra_ids']) ? $_REQUEST['extra_ids']  : array();
+                        $account_id = isset($_REQUEST['accountId']) ? (int)$_REQUEST['accountId'] : (isset($_REQUEST['account-id']) ? (int)$_REQUEST['account-id'] : false);
+                        $message_id = isset($_REQUEST['messageId']) ? (int)$_REQUEST['messageId'] : (isset($_REQUEST['message-id']) ? (int)$_REQUEST['message-id'] : false);
+                        if(empty($extra_ids)){
+                            $response['message'] = 'Please request at least one Extra Detail';
+                        }else{
+
+                            $shub_message = new shub_message( false, false, $message_id );
+                            if($message_id && $shub_message->get('shub_message_id') == $message_id){
+                                // build the message up
+                                $message = SupportHubExtra::build_message(array(
+                                    'network' => $_REQUEST['network'],
+                                    'account_id' => $account_id,
+                                    'message_id' => $message_id,
+                                    'extra_ids' => $extra_ids,
+                                ));
+                                $response['message'] = $message;
+//							if($debug)ob_start();
+//							$shub_message->send_reply( $shub_message->get('envato_id'), $message, $debug );
+//							if($debug){
+//								$response['message'] = ob_get_clean();
+//							}else {
+//								$response['redirect'] = 'admin.php?page=support_hub_main';
+//							}
+                            }
+
+                        }
+
+                        echo json_encode($response);
+                        exit;
+                    }
                     break;
 			}
 			// pass off the ajax handling to our media managers:
@@ -765,6 +805,8 @@ class SupportHub {
             }
             foreach ($this->message_managers as $name => $message_manager) {
                 $details = $message_manager->find_other_user_details($this_user_hints, $current_extension, $message_object);
+
+
                 if ($details && isset($details['messages']) && is_array($details['messages'])) {
                     $other_messages = array_merge_recursive($other_messages, $details['messages']);
                 }
@@ -793,7 +835,7 @@ class SupportHub {
             $this_data = array();
             foreach($shub_user_ids as $shub_user_id) {
                 $this_extras = array();
-                foreach($extra->get_data($current_extension, $message_object->get('shub_' . $current_extension . '_id'), $message_object->get('shub_' . $current_extension . '_message_id'), $shub_user_id) as $this_extra){
+                foreach($extra->get_data($current_extension, $message_object->get('shub_account_id'), $message_object->get('shub_message_id'), $shub_user_id) as $this_extra){
                     if(!in_array($this_extra->get('extra_value'),$this_data)){
                         $this_extras[] = $this_extra;
                         $this_data[] = $this_extra->get('extra_value');
@@ -836,28 +878,83 @@ class SupportHub {
         if(!empty($user_hints['shub_user_id'])){
             foreach($user_hints['shub_user_id'] as $shub_user_id) {
                 $user = new SupportHubUser($shub_user_id);
-                if (!empty($user->details['user_fname'])) {
-                    $user_bits[] = array('FName',esc_html($user->details['user_fname']));
-                }
-                if (!empty($user->details['user_lname'])) {
-                    $user_bits[] = array('LName',esc_html($user->details['user_lname']));
-                }
-                if (!empty($user->details['user_username'])) {
-                    // add this code in here ( as well as below ) so we don't duplicate up on the 'username' field display
-                    if(isset($user_details['url']) && isset($user_details['username']) && $user->details['user_username'] == $user_details['username']){
-                        $user_bits[] = array('Username','<a href="'.esc_url($user_details['url']).'" target="_blank">' . esc_html($user_details['username']) . '</a>');
-                        unset($user_details['username']); // stop it displaying again below
-                    }else if(isset($user_details['username']) && $user->details['user_username'] == $user_details['username']){
-                        $user_bits[] =  array('Username',esc_html($user_details['username']));
-                        unset($user_details['username']); // stop it displaying again below
-                    }else{
-                        $user_bits[] = array('Username',esc_html($user->details['user_username']));
+                if($user->get('shub_user_id')) {
+
+                    // find messages and comments from this user
+                    /*$messages = shub_get_multiple('shub_message', array(
+                        'shub_user_id' => $shub_user_id
+                    ), 'shub_message_id');*/
+                    global $wpdb;
+                    $sql = "SELECT sm.*, sa.shub_extension FROM `" . _support_hub_DB_PREFIX . "shub_message` sm ";
+                    $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_account` sa USING (shub_account_id) WHERE 1 ";
+                    $sql .= " AND sm.`shub_user_id` = " . (int)$user->get('shub_user_id');
+                    $sql .= " AND sm.`shub_message_id` != " . (int)$message_object->get('shub_message_id');
+                    $sql .= ' ORDER BY shub_message_id';
+                    $messages = $wpdb->get_results($sql, ARRAY_A);
+
+                    if (is_array($messages)) {
+                        foreach ($messages as $message) {
+                            if (!isset($other_messages[$message['shub_message_id']])) {
+                                $other_messages[$message['shub_message_id']] = array(
+                                    'summary' => $message['title'],
+                                    'time' => $message['last_active'],
+                                    'network' => $message['shub_extension'],
+                                    'message_id' => $message['shub_message_id'],
+                                    'message_comment_id' => 0,
+                                );
+                            }
+                        }
                     }
+                    /*$comments = shub_get_multiple('shub_message_comment', array(
+                        'shub_user_id' => $shub_user_id
+                    ), 'shub_message_comment_id');*/
+
+                    $sql = "SELECT smc.*, sa.shub_extension FROM `" . _support_hub_DB_PREFIX . "shub_message_comment` smc ";
+                    $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_message` sm USING (shub_message_id) WHERE 1 ";
+                    $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_account` sa USING (shub_account_id) WHERE 1 ";
+                    $sql .= " AND smc.`shub_user_id` = " . (int)$user->get('shub_user_id');
+                    $sql .= " AND sm.`shub_message_id` != " . (int)$message_object->get('shub_message_id');
+                    $sql .= ' ORDER BY shub_message_comment_id';
+                    $comments = $wpdb->get_results($sql, ARRAY_A);
+
+                    if (is_array($comments)) {
+                        foreach ($comments as $comment) {
+                            if (!isset($other_messages[$comment['shub_message_id']])) {
+                                $other_messages[$comment['shub_message_id']] = array(
+                                    'summary' => $comment['message_text'],
+                                    'time' => $comment['time'],
+                                    'network' => $comment['shub_extension'],
+                                    'message_id' => $comment['shub_message_id'],
+                                    'message_comment_id' => $comment['shub_message_comment_id'],
+                                );
+                            }
+                        }
+                    }
+
+
+                    if (!empty($user->details['user_fname'])) {
+                        $user_bits[] = array('FName', esc_html($user->details['user_fname']));
+                    }
+                    if (!empty($user->details['user_lname'])) {
+                        $user_bits[] = array('LName', esc_html($user->details['user_lname']));
+                    }
+                    if (!empty($user->details['user_username'])) {
+                        // add this code in here ( as well as below ) so we don't duplicate up on the 'username' field display
+                        if (isset($user_details['url']) && isset($user_details['username']) && $user->details['user_username'] == $user_details['username']) {
+                            $user_bits[] = array('Username', '<a href="' . esc_url($user_details['url']) . '" target="_blank">' . esc_html($user_details['username']) . '</a>');
+                            unset($user_details['username']); // stop it displaying again below
+                        } else if (isset($user_details['username']) && $user->details['user_username'] == $user_details['username']) {
+                            $user_bits[] = array('Username', esc_html($user_details['username']));
+                            unset($user_details['username']); // stop it displaying again below
+                        } else {
+                            $user_bits[] = array('Username', esc_html($user->details['user_username']));
+                        }
+                    }
+                    if (!empty($user->details['user_email'])) {
+                        $user_bits[] = array('Email', '<a href="mailto:' . esc_html($user->details['user_email']) . '">' . esc_html($user->details['user_email']) . '</a>');
+                    }
+                    // todo - group user output together nicely (e.g. Name <email>) so it looks better when there are multiple linked user accounts
                 }
-                if (!empty($user->details['user_email'])) {
-                    $user_bits[] = array('Email','<a href="mailto:'.esc_html($user->details['user_email']).'">'.esc_html($user->details['user_email']).'</a>');
-                }
-                // todo - group user output together nicely (e.g. Name <email>) so it looks better when there are multiple linked user accounts
             }
         }
 		if(isset($user_details['url']) && isset($user_details['username'])){
@@ -910,7 +1007,7 @@ class SupportHub {
                         }
                     }
                     ?><br/>
-                    <a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-message_id="<?php echo (int)$other_message['message_id'];?>" data-network_message_comment_id="<?php echo isset($other_message['network_message_comment_id']) ? (int)$other_message['network_message_comment_id'] : '';?>" data-modaltitle="<?php echo esc_attr($other_message['summary']);?>"><?php echo esc_html($other_message['summary']);?></a>
+                    <a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-message_id="<?php echo (int)$other_message['message_id'];?>" data-message_comment_id="<?php echo isset($other_message['message_comment_id']) ? (int)$other_message['message_comment_id'] : '';?>" data-modaltitle="<?php echo esc_attr($other_message['summary']);?>"><?php echo esc_html($other_message['summary']);?></a>
                 </li>
                 <?php
             }
@@ -952,8 +1049,8 @@ class SupportHub {
         if(!empty($search['extension'])){
             $sql .= " AND sa.`shub_extension` = '".esc_sql($search['extension']) ."'";
         }
-        if(isset($search['status']) && $search['status'] !== false){
-            $sql .= " AND `status` = ".(int)$search['status'];
+        if(isset($search['shub_status']) && $search['shub_status'] !== false){
+            $sql .= " AND `shub_status` = ".(int)$search['shub_status'];
         }
         if(isset($search['shub_product_id']) && (int)$search['shub_product_id']){
             $sql .= " AND ( m.`shub_product_id` = ".(int)$search['shub_product_id'];
@@ -994,7 +1091,7 @@ class SupportHub {
         $sql = "SELECT count(*) AS `unread` FROM `"._support_hub_DB_PREFIX."shub_message` m ";
         $sql .= " WHERE 1 ";
         $sql .= " AND m.shub_message_id NOT IN (SELECT mr.shub_message_id FROM `"._support_hub_DB_PREFIX."shub_message_read` mr WHERE mr.user_id = '".(int)get_current_user_id()."' AND mr.shub_message_id = m.shub_message_id)";
-        $sql .= " AND m.`status` = "._shub_MESSAGE_STATUS_UNANSWERED;
+        $sql .= " AND m.`shub_status` = "._shub_MESSAGE_STATUS_UNANSWERED;
         $res = shub_qa1($sql);
         return $res ? $res['unread'] : 0;
     }
@@ -1019,13 +1116,6 @@ CREATE TABLE {$wpdb->prefix}shub_account (
   shub_user_id int(11) NOT NULL DEFAULT '0',
   last_checked int(11) NOT NULL DEFAULT '0',
   account_data longtext NOT NULL,
-  import_stream int(11) NOT NULL DEFAULT '0',
-  post_stream int(11) NOT NULL DEFAULT '0',
-  envato_token varchar(255) NOT NULL,
-  envato_cookie mediumtext NOT NULL,
-  envato_app_id varchar(255) NOT NULL,
-  envato_app_secret varchar(255) NOT NULL,
-  machine_id varchar(255) NOT NULL,
   PRIMARY KEY  shub_account_id (shub_account_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
@@ -1040,10 +1130,10 @@ CREATE TABLE {$wpdb->prefix}shub_message (
   title text NOT NULL,
   last_active int(11) NOT NULL DEFAULT '0',
   comments text NOT NULL,
-  type varchar(20) NOT NULL,
-  link varchar(255) NOT NULL,
-  data text NOT NULL,
-  status tinyint(1) NOT NULL DEFAULT '0',
+  shub_type varchar(20) NOT NULL,
+  shub_link varchar(255) NOT NULL,
+  shub_data text NOT NULL,
+  shub_status tinyint(1) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
   shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_message_id (shub_message_id),
@@ -1051,11 +1141,12 @@ CREATE TABLE {$wpdb->prefix}shub_message (
   KEY last_active (last_active),
   KEY shub_item_id (shub_item_id),
   KEY shub_product_id (shub_product_id),
-  KEY network_id (network_id),
+  KEY network_key (network_key),
   KEY shub_user_id (shub_user_id),
   KEY post_id (post_id),
-  KEY status (status)
+  KEY shub_status (shub_status)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
 
 
 CREATE TABLE {$wpdb->prefix}shub_message_read (
@@ -1113,10 +1204,10 @@ CREATE TABLE {$wpdb->prefix}shub_outbox (
   shub_message_id int(11) NOT NULL DEFAULT '0',
   shub_message_comment_id int(11) NOT NULL DEFAULT '0',
   queue_time int(11) NOT NULL DEFAULT '0',
-  status int(11) NOT NULL DEFAULT '0',
+  shub_status int(11) NOT NULL DEFAULT '0',
   message_data text NOT NULL,
   PRIMARY KEY  shub_outbox_id (shub_outbox_id),
-  KEY status (status),
+  KEY shub_status (shub_status),
   KEY shub_message_id (shub_message_id),
   KEY shub_account_id (shub_account_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
@@ -1230,11 +1321,67 @@ CREATE TABLE {$wpdb->prefix}shub_extra_data_rel (
   KEY shub_extra_id (shub_extra_id)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
-
-
 EOT;
         $hash = md5($sql);
         if(get_option("support_hub_db_hash") != $hash){
+
+            // rename some table fields. opps!
+            $rename = array(
+                'shub_message' => array(
+                    "type"=>array(
+                        "shub_type",
+                        "varchar(20) NOT NULL DEFAULT ''",
+                    ),
+                    "status"=>array(
+                        "shub_status",
+                        "tinyint(1) NOT NULL DEFAULT '0'",
+                    ),
+                    "link"=>array(
+                        "shub_link",
+                        "varchar(255) NOT NULL DEFAULT ''",
+                    ),
+                    "data"=>array(
+                        "shub_data",
+                        "longtext NOT NULL",
+                    ),
+                ),
+                'shub_outbox' => array(
+                    "status"=>array(
+                        "shub_status",
+                        "tinyint(1) NOT NULL DEFAULT '0'",
+                    ),
+                ),
+            );
+
+            foreach($rename as $table_name => $fields_to_rename) {
+
+                $suppress = $wpdb->suppress_errors();
+                $tablefields = $wpdb->get_results("DESCRIBE {$wpdb->prefix}{$table_name};");
+                $wpdb->suppress_errors($suppress);
+
+                if ($tablefields) {
+                    foreach ($fields_to_rename as $rename_from => $rename_to_settings) {
+                        $rename_to = $rename_to_settings[0];
+                        $rename_args = $rename_to_settings[1];
+                        $rename_done = false;
+                        $field_exists = false;
+                        foreach ($tablefields as $tablefield) {
+                            if ($tablefield->Field == $rename_to) {
+                                $rename_done = true;
+                            }
+                            if ($tablefield->Field == $rename_from) {
+                                $field_exists = true;
+                            }
+                        }
+                        if (!$rename_done && $field_exists) {
+                            // do the rename.
+                            $change_sql = "ALTER TABLE {$wpdb->prefix}{$table_name} CHANGE COLUMN `{$rename_from}` `{$rename_to}` {$rename_args}";
+                            $wpdb->query($change_sql);
+                        }
+                    }
+                }
+            }
+
             $this->activation($sql);
             $this->log_data(0,'core','Ran SQL Update');
             update_option( "support_hub_db_hash", $hash );

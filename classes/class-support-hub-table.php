@@ -186,7 +186,7 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                             foreach($message_ids as $message_id){
                                 $network_message = $shub->message_managers[$network]->get_message(false, false, $message_id);
                                 if($network_message && $network_message->get('shub_message_id') == $message_id){
-                                    $network_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                                    $network_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
                                     $change_count++;
                                 }
                             }
@@ -201,7 +201,7 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                             foreach($message_ids as $message_id){
                                 $network_message = $shub->message_managers[$network]->get_message(false, false, $message_id);
                                 if($network_message && $network_message->get('shub_message_id') == $message_id){
-                                    $network_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+                                    $network_message->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);
                                     $change_count++;
                                 }
                             }
@@ -216,7 +216,7 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                             foreach($message_ids as $message_id){
                                 $network_message = $shub->message_managers[$network]->get_message(false, false, $message_id);
                                 if($network_message && $network_message->get('shub_message_id') == $message_id){
-                                    $network_message->update('status',_shub_MESSAGE_STATUS_HIDDEN);
+                                    $network_message->update('shub_status',_shub_MESSAGE_STATUS_HIDDEN);
                                     $change_count++;
                                 }
                             }
@@ -549,7 +549,7 @@ class SupportHubSentList extends SupportHub_Account_Data_List_Table{
 		    case 'shub_column_time':
 				$column_data = '';
 				foreach($this->column_details[ $item['shub_message_id'] ] as $message_type => $data){
-					if(isset($data['message']) && $data['message']->get('status') == _shub_MESSAGE_STATUS_PENDINGSEND){
+					if(isset($data['message']) && $data['message']->get('shub_status') == _shub_MESSAGE_STATUS_PENDINGSEND){
 						$time = $data['message']->get('last_active');
 						if(!$time)$time = $data['message']->get('message_time');
 						$now = current_time('timestamp');

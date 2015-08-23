@@ -3,11 +3,12 @@
  * Plugin Name: Support Hub
  * Version: 1.1
  * Plugin URI: http://supporthub.co
+ * GitHub Plugin URI: dtbaker/support-hub
  * Description: Provide support from within WordPress
  * Author: dtbaker
  * Author URI: http://dtbaker.net
  * Requires at least: 4.2
- * Tested up to: 4.2
+ * Tested up to: 4.3
  *
  * Version 1.1 - 2015-05-15 - initial work
  *
@@ -52,13 +53,20 @@ require_once( 'vendor/autoload.php' );
 // include the different network plugins:
 // these plugins hook on 'shub_init' to add their instance to the global 'message_manager' variable
 // 3rd party plugins can hook into shub_init to add their own 'message_manager'
-require_once( 'extensions/facebook/init.facebook.php' );
-require_once( 'extensions/twitter/init.twitter.php' );
-require_once( 'extensions/google/init.google.php' );
-//require_once( 'extensions/linkedin/init.linkedin.php' ); // linkedin doesn't work any more - API has been restricted.
-require_once( 'extensions/envato/init.envato.php' );
-require_once( 'extensions/bbpress/init.bbpress.php' );
-require_once( 'extensions/ucm/init.ucm.php' );
+$base_extensions = array(
+    'envato',
+    'twitter',
+    'facebook',
+    'google',
+    'bbpress',
+    'ucm',
+);
+foreach($base_extensions as $base_extension){
+    if(file_exists(__DIR__.'/extensions/'.$base_extension.'/init.'.$base_extension.'.php')){
+        require_once __DIR__.'/extensions/'.$base_extension.'/init.'.$base_extension.'.php';
+    }
+}
+
 
 // commence the awesome:
 SupportHub::getInstance( _DTBAKER_SUPPORT_HUB_CORE_FILE_ );

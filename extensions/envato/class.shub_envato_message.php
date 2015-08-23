@@ -24,24 +24,24 @@ class shub_message extends SupportHub_message{
 					$this->update('title',$comments[0]['content']);
 					$this->update('summary',$comments[count($comments)-1]['content']);
 					$this->update('last_active',strtotime($message_data['last_comment_at']));
-					$this->update('type',$type);
-					$this->update('data',$message_data);
-					$this->update('link',$message_data['url'] . '/' . $message_data['id']);
+					$this->update('shub_type',$type);
+					$this->update('shub_data',$message_data);
+					$this->update('shub_link',$message_data['url'] . '/' . $message_data['id']);
 					$this->update('network_key', $network_key);
                     SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'envato','Updating message '.$network_key.' from API.',array(
-                        'Current Comment Count: ' => count($this->get('comments')),
+                        'Current Comment Count: ' => count($this->get_comments()),
                         'New Comment Count: ' => count($comments),
-                        'Current Status: ' => $this->get('status'),
+                        'Current Status: ' => $this->get('shub_status'),
                     ));
-                    if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN){
+                    if($this->get('shub_status')!=_shub_MESSAGE_STATUS_HIDDEN){
                         // we have to decide if we're updating the message status from answered to unanswered.
                         // if this message status is already answered and the existing comment count matches the new comment count then we don't update the status
                         // this is because we insert a placeholder "comment" into the db while the API does the push, and when we read again a few minutes later it overwrites this placeholder comment, so really it's not a new comment coming in just the one we posted through the API that takes a while to come back through.
-                        if($this->get('status') == _shub_MESSAGE_STATUS_ANSWERED && count($comments) == count($this->get('comments'))){
+                        if($this->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED && count($comments) == count($this->get_comments())){
                             // don't do anything
                         }else{
                             // comment count is different
-                            $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                            $this->update('shub_status', _shub_MESSAGE_STATUS_UNANSWERED);
                         }
                     }
 					$this->update('comments',$comments);
@@ -92,11 +92,11 @@ class shub_message extends SupportHub_message{
 		if($this->account && $this->shub_message_id) {
 			// send this message out to envato.
 			// this is run when user is composing a new message from the UI,
-			if ( $this->get( 'status' ) == _shub_MESSAGE_STATUS_SENDING )
+			if ( $this->get( 'shub_status' ) == _shub_MESSAGE_STATUS_SENDING )
 				return; // dont double up on cron.
 
 
-			switch($this->get('type')){
+			switch($this->get('shub_type')){
 				case 'item_post':
 
 
@@ -105,7 +105,7 @@ class shub_message extends SupportHub_message{
 						return false;
 					}
 
-					$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
+					$this->update( 'shub_status', _shub_MESSAGE_STATUS_SENDING );
 					$api = $this->account->get_api();
 					$item_id = $this->item->get('item_id');
 					if($debug)echo "Sending a new message to envato item ID: $item_id <br>\n";
@@ -122,7 +122,7 @@ class shub_message extends SupportHub_message{
 						$new_post_id = $matches[1];
 						$this->update('network_key',$new_post_id);
 						// reload this message and messages from the graph api.
-						$this->load_by_network_key($this->get('network_key'),false,$this->get('type'),$debug);
+						$this->load_by_network_key($this->get('network_key'),false,$this->get('shub_type'),$debug);
 					}else{
 						echo 'Failed to send message. Error was: '.var_export($result,true);
 						// remove from database.
@@ -131,11 +131,11 @@ class shub_message extends SupportHub_message{
 					}
 
 					// successfully sent, mark is as answered.
-					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
+					$this->update( 'shub_status', _shub_MESSAGE_STATUS_ANSWERED );
 					return true;
 
 				default:
-					if($debug)echo "Unknown post type: ".$this->get('type');
+					if($debug)echo "Unknown post type: ".$this->get('shub_type');
 			}
 
 		}
@@ -166,7 +166,7 @@ class shub_message extends SupportHub_message{
 
 
 	public function get_type_pretty() {
-		$type = $this->get('type');
+		$type = $this->get('shub_type');
 		switch($type){
 			case 'item_comment':
 				return 'Item Comment';
@@ -238,7 +238,7 @@ class shub_message extends SupportHub_message{
             <?php
         }
 
-        /*$data = $this->get('data');
+        /*$data = $this->get('shub_data');
         if(!empty($data['buyer_and_author']) && $data['buyer_and_author'] && $data['buyer_and_author'] !== 'false'){
             // hmm - this doesn't seem to be a "purchased" flag.
             ?>

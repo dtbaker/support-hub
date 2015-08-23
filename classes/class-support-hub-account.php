@@ -131,7 +131,7 @@ class SupportHub_account{
                             $item->create_new();
                             $item->update('shub_account_id', $this->shub_account_id);
                             //$item->update('envato_token', 'same'); // $available_items[$network_key]['access_token']
-                            $item->update('item_name', $available_items[$network_key]['item']);
+                            $item->update('item_name', $post_data['item_name'][$network_key]); //$available_items[$network_key]['item']);
                             $item->update('network_key', $network_key);
                             $item->update('item_data', $available_items[$network_key]);
                             $item->update('shub_product_id', isset($post_data['item_product'][$network_key]) ? $post_data['item_product'][$network_key] : 0);

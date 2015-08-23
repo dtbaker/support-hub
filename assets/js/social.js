@@ -206,7 +206,7 @@ ucm.social = {
         }).delegate('.swap_layout_type','click',function(){
             jQuery('#layout_type').val(jQuery(this).data('layout-type')).parents('form').get(0).submit();
             return false;
-        }).delegate('.shub_view_full_message_sudebar','click',function(){
+        }).delegate('.shub_view_full_message_sidebar','click',function(){
             var $s = jQuery(this).parents('section').first();
             $s.find('nav').hide();
             $s.find('header,aside').show();

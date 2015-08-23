@@ -171,7 +171,7 @@ class SupportHub_extension{
         ob_start();
         ?>
         <a href="<?php echo $extension_message->link_open();?>" class="socialmessage_open shub_modal button" data-modaltitle="<?php echo esc_attr($title);?>" data-network="<?php echo esc_attr($this->id);?>" data-message_id="<?php echo (int)$extension_message->get('shub_message_id');?>"><?php _e( 'Open' );?></a>
-        <?php if($extension_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+        <?php if($extension_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
             <a href="#" class="socialmessage_action shub_message_action button"
                data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                 'network' => $this->id,

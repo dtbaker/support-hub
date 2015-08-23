@@ -17,7 +17,7 @@ class SupportHub_message{
     public $shub_message_id = false; // the current user id in our system.
     public $details = array();
 
-    public $json_fields = array('data','comments');
+    public $json_fields = array('shub_data','comments');
 
     private function reset(){
         $this->shub_message_id = false;
@@ -30,10 +30,10 @@ class SupportHub_message{
             'summary' => '',
             'last_active' => '',
             'comments' => '',
-            'type' => '',
-            'link' => '',
-            'data' => '',
-            'status' => '',
+            'shub_type' => '',
+            'shub_link' => '',
+            'shub_data' => '',
+            'shub_status' => '',
             'user_id' => '',
             'shub_user_id' => 0,
         );
@@ -186,7 +186,9 @@ class SupportHub_message{
 
                     // create/update a user entry for this comments.
                     $shub_user_id = 0;
-                    if(!empty($message['username'])) {
+                    if(!empty($message['shub_user_id'])) {
+                        $shub_user_id = $message['shub_user_id'];
+                    }else if(!empty($message['username'])) {
                         $comment_user = new SupportHubUser_Envato();
                         $res = $comment_user->load_by( 'user_username', $message['username']);
                         if(!$res){
@@ -203,7 +205,7 @@ class SupportHub_message{
                     $shub_message_comment_id = shub_update_insert('shub_message_comment_id',$exists ? $exists['shub_message_comment_id'] : false,'shub_message_comment',array(
                         'shub_message_id' => $this->shub_message_id,
                         'network_key' => $message['id'],
-                        'time' => isset($message['created_at']) ? strtotime($message['created_at']) : 0,
+                        'time' => isset($message['created_at']) ? strtotime($message['created_at']) : (isset($message['timestamp']) ? $message['timestamp'] : 0),
                         'data' => json_encode($message),
                         'message_from' => isset($message['username']) ? json_encode(array("username"=>$message['username'],"profile_image_url"=>$message['profile_image_url'])) : '',
                         'message_to' => '',
@@ -224,7 +226,7 @@ class SupportHub_message{
                 if($account_user_data && isset($account_user_data['user']) && $last_message_user_name == $account_user_data['user']['username']){
                     // the last comment on this item was from the account owner.
                     // mark this item as resolves so it doesn;t show up in the inbox.
-                    $this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                    $this->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
 
                 }
             }
@@ -259,12 +261,12 @@ class SupportHub_message{
         if($this->account && $this->shub_message_id) {
 
 
-            if($debug)echo "Type: ".$this->get('type')." <br>\n";
-            switch($this->get('type')) {
+            if($debug)echo "Type: ".$this->get('shub_type')." <br>\n";
+            switch($this->get('shub_type')) {
                 case 'item_comment':
                     if(!$network_key)$network_key = $this->get('network_key');
 
-                    if($debug)echo "Sending a reply to Envato Comment ID: $network_key <br>\n";
+                    if($debug)echo "Sending a reply to Network Message ID: $network_key <br>\n";
 
                     $result = false;
                     // send via api
@@ -282,7 +284,7 @@ class SupportHub_message{
                             'message_text' => $message,
                             'user_id' => get_current_user_id(),
                         ));
-                        $this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                        $this->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
                         if($debug){
                             echo "Successfully added comment with id $shub_message_comment_id <br>\n";
                         }
@@ -323,8 +325,26 @@ class SupportHub_message{
     public function reply_actions(){ echo '';}
 
     public function get_product_id(){
-        return $this->get('shub_product_id');
+        // if local product is id -1 (default) then we use the parent forum product id
+        // this allows individual products to be overrideen with new one
+        if($this->get('shub_product_id') >= 0){
+            return $this->get('shub_product_id');
+        }else if($this->item){
+            return $this->item->get('shub_product_id');
+        }
+        return false;
     }
+
+    public function save_product_id($new_product_id){
+        if($this->item && $new_product_id && $new_product_id == $this->item->get('shub_product_id')){
+            // setting it back to default.
+            $this->update('shub_product_id', -1);
+        }else{
+            $this->update('shub_product_id', $new_product_id);
+        }
+    }
+
+
 
     public function output_message_page($type='inline'){
         $message_id = $this->get('shub_message_id');
@@ -339,12 +359,24 @@ class SupportHub_message{
             <div class="message_edit_form" data-network="<?php echo $this->network;?>">
                 <section class="message_sidebar">
                     <nav>
-                        <a href="<?php echo $this->get_link(); ?>" class="social_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
+                        <?php if($this->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+                            <a href="#" class="shub_message_action btn btn-default btn-xs button"
+                               data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
+                                'network' => $this->network,
+                                'shub_message_id' => $message_id,
+                            )));?>"><?php _e( 'Inbox' ); ?></a>
+                        <?php }else{ ?>
+                            <a href="#" class="shub_message_action btn btn-default btn-xs button"
+                               data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
+                                'network' => $this->network,
+                                'shub_message_id' => $message_id,
+                            )));?>"><?php _e( 'Archive' ); ?></a>
+                        <?php } ?>
                         <a href="#" class="shub_view_full_message_sidebar btn btn-default btn-xs button alignright"><?php _e( 'Show More Details' ); ?></a>
                     </nav>
                     <header>
                         <a href="<?php echo $this->get_link(); ?>" class="social_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
-                        <?php if($this->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+                        <?php if($this->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
                             <a href="#" class="shub_message_action btn btn-default btn-xs button"
                                data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
@@ -409,16 +441,21 @@ class SupportHub_message{
             $comment_status = '';
             if(!empty($comment['shub_outbox_id'])){
                 $shub_outbox = new SupportHubOutbox($comment['shub_outbox_id']);
-                switch($shub_outbox->get('status')){
-                    case _SHUB_OUTBOX_STATUS_QUEUED:
-                    case _SHUB_OUTBOX_STATUS_SENDING:
-                        $extra_class .= ' outbox_queued';
-                        $comment_status = 'Currently Sending....';
-                        break;
-                    case _SHUB_OUTBOX_STATUS_FAILED:
-                        $extra_class .= ' outbox_failed';
-                        $comment_status = 'Failed to send message! Please check logs.';
-                        break;
+                if($shub_outbox->get('shub_outbox_id') != $comment['shub_outbox_id']){
+                    // the outbox entry has been removed but this comment still references it
+                    // todo: update this comment entry to not contain an shub_outbox_id
+                }else {
+                    switch ($shub_outbox->get('shub_status')) {
+                        case _SHUB_OUTBOX_STATUS_QUEUED:
+                        case _SHUB_OUTBOX_STATUS_SENDING:
+                            $extra_class .= ' outbox_queued';
+                            $comment_status = 'Currently Sending....' . $shub_outbox->get('shub_status');
+                            break;
+                        case _SHUB_OUTBOX_STATUS_FAILED:
+                            $extra_class .= ' outbox_failed';
+                            $comment_status = 'Failed to send message! Please check logs.';
+                            break;
+                    }
                 }
             }
             if(!empty($comment['private'])){
