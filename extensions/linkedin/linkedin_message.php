@@ -20,7 +20,7 @@ if($shub_linkedin_id && $shub_linkedin_message_id){
 				<div id="linkedin_message_header">
 					<div style="float:right; text-align: right; margin-top:-4px;">
 						<small><?php echo shub_print_date( $linkedin_message->get('last_active'), true ); ?> </small><br/>
-					    <?php if($linkedin_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+					    <?php if($linkedin_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 						    <a href="#" class="sociallinkedin_message_action  btn btn-default btn-xs button"
 						       data-action="set-unanswered" data-id="<?php echo (int)$linkedin_message->get('shub_linkedin_message_id');?>"><?php _e( 'Inbox' ); ?></a>
 					    <?php }else{ ?>

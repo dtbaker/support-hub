@@ -29,7 +29,7 @@ if($shub_account_id && $shub_message_id){
 				<section class="message_sidebar">
 					<header>
 						<a href="<?php echo $bbpress_message->get('link');?>" class="socialbbpress_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Thread' ); ?></a>
-					    <?php if($bbpress_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+					    <?php if($bbpress_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 						    <a href="#" class="socialbbpress_message_action shub_message_action btn btn-default btn-xs button"
 						       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
 								'network' => 'bbpress',

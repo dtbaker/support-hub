@@ -5,7 +5,7 @@ class shub_bbpress_item extends SupportHub_item{
 	public function run_cron($debug = false){
 		// find all messages that haven't been sent yet.
 		/*$messages = $this->get_messages(array(
-			'status' => _shub_MESSAGE_STATUS_PENDINGSEND,
+			'shub_status' => _shub_MESSAGE_STATUS_PENDINGSEND,
 		));
 		$now = time();
 		foreach($messages as $message){

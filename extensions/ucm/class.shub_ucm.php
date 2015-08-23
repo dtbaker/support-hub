@@ -168,8 +168,8 @@ class shub_ucm extends SupportHub_extension {
 		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_ucm_message_read` mr ON ( m.shub_ucm_message_id = mr.shub_ucm_message_id AND mr.user_id = ".get_current_user_id()." )";
 		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_ucm_product` ei ON ( m.shub_ucm_product_id = ei.shub_ucm_product_id )";
 		$sql .= " WHERE 1 ";
-		if(isset($search['status']) && $search['status'] !== false){
-			$sql .= " AND m.`status` = ".(int)$search['status'];
+		if(isset($search['shub_status']) && $search['shub_status'] !== false){
+			$sql .= " AND m.`shub_status` = ".(int)$search['shub_status'];
 		}
 		if(isset($search['shub_ucm_product_id']) && $search['shub_ucm_product_id'] !== false){
 			$sql .= " AND m.`shub_ucm_product_id` = ".(int)$search['shub_ucm_product_id'];
@@ -263,7 +263,7 @@ class shub_ucm extends SupportHub_extension {
 		$sql = "SELECT count(*) AS `unread` FROM `"._support_hub_DB_PREFIX."shub_ucm_message` m ";
 		$sql .= " WHERE 1 ";
 		$sql .= " AND m.shub_ucm_message_id NOT IN (SELECT mr.shub_ucm_message_id FROM `"._support_hub_DB_PREFIX."shub_ucm_message_read` mr WHERE mr.user_id = '".(int)get_current_user_id()."' AND mr.shub_ucm_message_id = m.shub_ucm_message_id)";
-		$sql .= " AND m.`status` = "._shub_MESSAGE_STATUS_UNANSWERED;
+		$sql .= " AND m.`shub_status` = "._shub_MESSAGE_STATUS_UNANSWERED;
 		if(isset($search['shub_ucm_product_id']) && $search['shub_ucm_product_id'] !== false){
 			$sql .= " AND m.`shub_ucm_product_id` = ".(int)$search['shub_ucm_product_id'];
 		}
@@ -364,7 +364,7 @@ class shub_ucm extends SupportHub_extension {
 		ob_start();
 		?>
 		<a href="<?php echo $ucm_message->link_open();?>" class="socialucm_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($title);?>" data-network="ucm" data-message_id="<?php echo (int)$ucm_message->get('shub_ucm_message_id');?>"><?php _e( 'Open' );?></a>
-	    <?php if($ucm_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+	    <?php if($ucm_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 		    <a href="#" class="socialucm_message_action shub_message_action button"
 		       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                 'network' => 'ucm',
@@ -423,7 +423,7 @@ class shub_ucm extends SupportHub_extension {
 										    $ucm_message->update('data',json_encode($_POST));
 										    $ucm_message->update('user_id',get_current_user_id());
 										    // do we send this one now? or schedule it later.
-										    $ucm_message->update('status',_shub_MESSAGE_STATUS_PENDINGSEND);
+										    $ucm_message->update('shub_status',_shub_MESSAGE_STATUS_PENDINGSEND);
 										    if(isset($options['send_time']) && !empty($options['send_time'])){
 											    // schedule for sending at a different time (now or in the past)
 											    $ucm_message->update('last_active',$options['send_time']);
@@ -473,7 +473,7 @@ class shub_ucm extends SupportHub_extension {
 											    $ucm_message->update('data',json_encode($_POST));
 											    $ucm_message->update('user_id',get_current_user_id());
 											    // do we send this one now? or schedule it later.
-											    $ucm_message->update('status',_shub_MESSAGE_STATUS_PENDINGSEND);
+											    $ucm_message->update('shub_status',_shub_MESSAGE_STATUS_PENDINGSEND);
 											    if(isset($options['send_time']) && !empty($options['send_time'])){
 												    // schedule for sending at a different time (now or in the past)
 												    $ucm_message->update('last_active',$options['send_time']);
@@ -577,7 +577,7 @@ class shub_ucm extends SupportHub_extension {
                                     'network' => 'ucm',
                                     'message_id' => $message['shub_ucm_message_id'],
                                     'network_message_comment_id' => 0,
-//							'message_status' => $other_message->get('status'),
+//							'message_status' => $other_message->get('shub_status'),
                                 );
                             }
                         }

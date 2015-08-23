@@ -30,7 +30,7 @@ class shub_ucm_message{
 			'type' => '',
 			'link' => '',
 			'data' => '',
-			'status' => '',
+			'shub_status' => '',
 			'user_id' => '',
 			'shub_user_id' => 0,
 		);
@@ -89,7 +89,7 @@ class shub_ucm_message{
                         $this->update('data', json_encode($ticket));
                         $this->update('link', $ticket['url']);
                         $this->update('ucm_ticket_id', $ucm_ticket_id);
-                        if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                        if($this->get('shub_status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('shub_status', _shub_MESSAGE_STATUS_UNANSWERED);
                         $this->update('comments', json_encode($comments));
 
                         // add the extra fields from UCM into the ticket.
@@ -437,7 +437,7 @@ class shub_ucm_message{
 		if($this->ucm_account && $this->shub_ucm_message_id) {
 			// send this message out to ucm.
 			// this is run when user is composing a new message from the UI,
-			if ( $this->get( 'status' ) == _shub_MESSAGE_STATUS_SENDING )
+			if ( $this->get( 'shub_status' ) == _shub_MESSAGE_STATUS_SENDING )
 				return; // dont double up on cron.
 
 
@@ -450,7 +450,7 @@ class shub_ucm_message{
 						return false;
 					}
 
-					$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
+					$this->update( 'shub_status', _shub_MESSAGE_STATUS_SENDING );
 					$api = $this->ucm_account->get_api();
 					$ucm_product_id = $this->ucm_product->get('product_id');
 					if($debug)echo "Sending a new message to ucm product ID: $ucm_product_id <br>\n";
@@ -476,7 +476,7 @@ class shub_ucm_message{
 					}
 
 					// successfully sent, mark is as answered.
-					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
+					$this->update( 'shub_status', _shub_MESSAGE_STATUS_ANSWERED );
 					return true;
 
 					break;
@@ -551,7 +551,7 @@ class shub_ucm_message{
 									));
 								}
 							}
-							$this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+							$this->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
 						}
 
 					}

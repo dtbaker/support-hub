@@ -123,7 +123,7 @@ class SupportHub {
                     if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_message_id'])) {
                         $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_message_id']);
                         if ($shub_extension_message->get('shub_message_id') == $_REQUEST['shub_message_id']) {
-                            $shub_extension_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                            $shub_extension_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
                             if (!headers_sent())header('Content-type: text/javascript');
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
@@ -150,7 +150,7 @@ class SupportHub {
                     if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_message_id'])) {
                         $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_message_id']);
                         if ($shub_extension_message->get('shub_message_id') == $_REQUEST['shub_message_id']) {
-                            $shub_extension_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+                            $shub_extension_message->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);
                             if (!headers_sent())header('Content-type: text/javascript');
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
@@ -249,13 +249,13 @@ class SupportHub {
                     foreach($pending as $message){
                         $return['outbox_ids'][] = array(
                             'shub_outbox_id' => $message['shub_outbox_id'],
-                            'status' => $message['status'],
+                            'shub_status' => $message['shub_status'],
                         );
                     }
                     foreach($failed as $message){
                         $return['outbox_ids'][] = array(
                             'shub_outbox_id' => $message['shub_outbox_id'],
-                            'status' => $message['status'],
+                            'shub_status' => $message['shub_status'],
                         );
                     }
                     echo json_encode( $return );
@@ -1049,8 +1049,8 @@ class SupportHub {
         if(!empty($search['extension'])){
             $sql .= " AND sa.`shub_extension` = '".esc_sql($search['extension']) ."'";
         }
-        if(isset($search['status']) && $search['status'] !== false){
-            $sql .= " AND `status` = ".(int)$search['status'];
+        if(isset($search['shub_status']) && $search['shub_status'] !== false){
+            $sql .= " AND `shub_status` = ".(int)$search['shub_status'];
         }
         if(isset($search['shub_product_id']) && (int)$search['shub_product_id']){
             $sql .= " AND ( m.`shub_product_id` = ".(int)$search['shub_product_id'];
@@ -1091,7 +1091,7 @@ class SupportHub {
         $sql = "SELECT count(*) AS `unread` FROM `"._support_hub_DB_PREFIX."shub_message` m ";
         $sql .= " WHERE 1 ";
         $sql .= " AND m.shub_message_id NOT IN (SELECT mr.shub_message_id FROM `"._support_hub_DB_PREFIX."shub_message_read` mr WHERE mr.user_id = '".(int)get_current_user_id()."' AND mr.shub_message_id = m.shub_message_id)";
-        $sql .= " AND m.`status` = "._shub_MESSAGE_STATUS_UNANSWERED;
+        $sql .= " AND m.`shub_status` = "._shub_MESSAGE_STATUS_UNANSWERED;
         $res = shub_qa1($sql);
         return $res ? $res['unread'] : 0;
     }
@@ -1130,7 +1130,7 @@ CREATE TABLE {$wpdb->prefix}shub_message (
   title text NOT NULL,
   last_active int(11) NOT NULL DEFAULT '0',
   comments text NOT NULL,
-  type varchar(20) NOT NULL,
+  shub_type varchar(20) NOT NULL,
   link varchar(255) NOT NULL,
   data text NOT NULL,
   status tinyint(1) NOT NULL DEFAULT '0',
@@ -1146,6 +1146,7 @@ CREATE TABLE {$wpdb->prefix}shub_message (
   KEY post_id (post_id),
   KEY status (status)
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
 
 
 CREATE TABLE {$wpdb->prefix}shub_message_read (

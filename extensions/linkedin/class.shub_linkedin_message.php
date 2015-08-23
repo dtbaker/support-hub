@@ -29,7 +29,7 @@ class shub_linkedin_message{
 			'type' => '',
 			'link' => '',
 			'data' => '',
-			'status' => '',
+			'shub_status' => '',
 			'user_id' => '',
 		);
 		foreach($this->details as $key=>$val){
@@ -103,7 +103,7 @@ class shub_linkedin_message{
 					$this->update('data',json_encode($message_data));
 					$this->update('link',isset($message_data['updateContent']['person']['currentShare']['content']['submittedUrl']) ? $message_data['updateContent']['person']['currentShare']['content']['submittedUrl'] : '');
 					$this->update('linkedin_id', $message_data['updateKey']);
-					$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+					$this->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);
 					// find any comments.
 					$max_per_api_call = 20;
 					$api_result = $api->api('v1/people/~/network/updates/key='.$linkedin_id.'/update-comments' , array(
@@ -187,7 +187,7 @@ class shub_linkedin_message{
 							$this->update('link','http://www.linkedin.com/groupItem?view=&gid='.$matches[1].'&type=member&item='.$matches[2]);
 						}
 						$this->update('linkedin_id', $api_result['id']);
-						$this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+						$this->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);
 						// find any comments.
 						$max_per_api_call = 20;
 						$api_result = $api->api('v1/posts/'.$linkedin_id.'/comments' , array(
@@ -590,7 +590,7 @@ class shub_linkedin_message{
 		if($this->linkedin_account && $this->shub_linkedin_message_id) {
 			// send this message out to linkedin.
 			// this is run when user is composing a new message from the UI,
-			if ( $this->get( 'status' ) == _shub_MESSAGE_STATUS_SENDING )
+			if ( $this->get( 'shub_status' ) == _shub_MESSAGE_STATUS_SENDING )
 				return; // dont double up on cron.
 
 
@@ -603,7 +603,7 @@ class shub_linkedin_message{
 						return false;
 					}
 
-					$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
+					$this->update( 'shub_status', _shub_MESSAGE_STATUS_SENDING );
 					$api = $this->linkedin_account->get_api();
 					$linkedin_group_id = $this->linkedin_group->get('group_id');
 					if($debug)echo "Sending a new message to linkedin Group ID: $linkedin_group_id <br>\n";
@@ -629,13 +629,13 @@ class shub_linkedin_message{
 					}
 
 					// successfully sent, mark is as answered.
-					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
+					$this->update( 'shub_status', _shub_MESSAGE_STATUS_ANSWERED );
 					return true;
 
 					break;
 				case 'share':
 
-					$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
+					$this->update( 'shub_status', _shub_MESSAGE_STATUS_SENDING );
 					$api = $this->linkedin_account->get_api();
 					if($debug)echo "Sending a new share update to linkedin account: " . $this->linkedin_account->get('linkedin_name') ."<br>\n";
 					$result = false;
@@ -688,7 +688,7 @@ class shub_linkedin_message{
 					}
 
 					// successfully sent, mark is as answered.
-					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
+					$this->update( 'shub_status', _shub_MESSAGE_STATUS_ANSWERED );
 					return true;
 
 					break;

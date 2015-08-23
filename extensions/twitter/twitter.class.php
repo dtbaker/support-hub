@@ -153,8 +153,8 @@ class shub_twitter extends SupportHub_extension {
 		$sql = "SELECT m.*, mr.read_time FROM `"._support_hub_DB_PREFIX."shub_twitter_message` m ";
 		$sql .= " LEFT OUTER JOIN `"._support_hub_DB_PREFIX."shub_twitter_message_read` mr ON ( m.shub_twitter_message_id = mr.shub_twitter_message_id AND mr.user_id = ".get_current_user_id()." )";
 		$sql .= " WHERE 1 ";
-		if(isset($search['status']) && $search['status'] !== false){
-			$sql .= " AND `status` = ".(int)$search['status'];
+		if(isset($search['shub_status']) && $search['shub_status'] !== false){
+			$sql .= " AND `shub_status` = ".(int)$search['shub_status'];
 		}
 		if(isset($search['shub_message_id']) && $search['shub_message_id'] !== false){
 			$sql .= " AND `shub_message_id` = ".(int)$search['shub_message_id'];
@@ -165,7 +165,7 @@ class shub_twitter extends SupportHub_extension {
 		if(isset($search['generic']) && !empty($search['generic'])){
 			$sql .= " AND `summary` LIKE '%".esc_sql($search['generic'])."%'";
 		}else{
-			$sql .= " AND `type` != "._TWITTER_MESSAGE_TYPE_OTHERTWEET;
+			$sql .= " AND `shub_type` != "._TWITTER_MESSAGE_TYPE_OTHERTWEET;
 		}
         if(empty($order)){
             $sql .= " ORDER BY `message_time` ASC ";
@@ -241,11 +241,11 @@ class shub_twitter extends SupportHub_extension {
 		$sql = "SELECT count(*) AS `unread` FROM `"._support_hub_DB_PREFIX."shub_twitter_message` m ";
 		$sql .= " WHERE 1 ";
 		$sql .= " AND m.shub_twitter_message_id NOT IN (SELECT mr.shub_twitter_message_id FROM `"._support_hub_DB_PREFIX."shub_twitter_message_read` mr WHERE mr.user_id = '".(int)get_current_user_id()."' AND mr.shub_twitter_message_id = m.shub_twitter_message_id)";
-		$sql .= " AND m.`status` = "._shub_MESSAGE_STATUS_UNANSWERED;
+		$sql .= " AND m.`shub_status` = "._shub_MESSAGE_STATUS_UNANSWERED;
 		if(isset($search['shub_twitter_id']) && $search['shub_twitter_id'] !== false){
 			$sql .= " AND m.`shub_twitter_id` = ".(int)$search['shub_twitter_id'];
 		}
-		$sql .= " AND m.`type` != "._TWITTER_MESSAGE_TYPE_OTHERTWEET;
+		$sql .= " AND m.`shub_type` != "._TWITTER_MESSAGE_TYPE_OTHERTWEET;
 		$res = shub_qa1($sql);
 		return $res ? $res['unread'] : 0;
 	}
@@ -302,7 +302,7 @@ class shub_twitter extends SupportHub_extension {
 
 		        <a href="<?php echo $twitter_message->link_open();?>" class="socialtwitter_message_open shub_modal button" data-modaltitle="<?php echo __('Tweet','support_hub');?>" data-socialtwittermessageid="<?php echo (int)$twitter_message->get('shub_twitter_message_id');?>"><?php _e( 'Open' );?></a>
 
-			    <?php if($twitter_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+			    <?php if($twitter_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 				    <a href="#" class="socialtwitter_message_action button"
 				       data-action="set-unanswered" data-id="<?php echo (int)$twitter_message->get('shub_twitter_message_id');?>" data-shub_twitter_id="<?php echo (int)$twitter_message->get('shub_twitter_id');?>"><?php _e( 'Inbox' ); ?></a>
 			    <?php }else{ ?>
@@ -348,7 +348,7 @@ class shub_twitter extends SupportHub_extension {
 						    $twitter_message->update('data',json_encode($_POST));
 						    $twitter_message->update('user_id',get_current_user_id());
 						    // do we send this one now? or schedule it later.
-						    $twitter_message->update('status',_shub_MESSAGE_STATUS_PENDINGSEND);
+						    $twitter_message->update('shub_status',_shub_MESSAGE_STATUS_PENDINGSEND);
 						    if(isset($options['send_time']) && !empty($options['send_time'])){
 							    // schedule for sending at a different time (now or in the past)
 							    $twitter_message->update('message_time',$options['send_time']);
@@ -438,7 +438,7 @@ class shub_twitter extends SupportHub_extension {
 								$new_twitter_message->update( 'data', json_encode( $_POST ) );
 								$new_twitter_message->update( 'user_id', get_current_user_id() );
 								// do we send this one now? or schedule it later.
-								$new_twitter_message->update( 'status', _shub_MESSAGE_STATUS_PENDINGSEND );
+								$new_twitter_message->update( 'shub_status', _shub_MESSAGE_STATUS_PENDINGSEND );
 								if ( isset( $_FILES['twitter_picture']['tmp_name'] ) && is_uploaded_file( $_FILES['twitter_picture']['tmp_name'] ) ) {
 									$new_twitter_message->add_attachment( $_FILES['twitter_picture']['tmp_name'] );
 								}
@@ -479,7 +479,7 @@ class shub_twitter extends SupportHub_extension {
 				if(isset($_REQUEST['shub_twitter_message_id']) && (int)$_REQUEST['shub_twitter_message_id'] > 0){
 					$shub_twitter_message = new shub_twitter_message(false, $_REQUEST['shub_twitter_message_id']);
 					if($shub_twitter_message->get('shub_twitter_message_id') == $_REQUEST['shub_twitter_message_id']){
-						$shub_twitter_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+						$shub_twitter_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
 						?>
 						jQuery('.socialtwitter_message_action[data-id=<?php echo (int)$shub_twitter_message->get('shub_twitter_message_id'); ?>]').parents('tr').first().hide();
 						<?php
@@ -488,14 +488,14 @@ class shub_twitter extends SupportHub_extension {
 							$from = preg_replace('#[^0-9]#','',$shub_twitter_message->get('twitter_from_id'));
 							$to = preg_replace('#[^0-9]#','',$shub_twitter_message->get('twitter_to_id'));
 							if($from && $to) {
-								$sql      = "SELECT * FROM `" . _support_hub_DB_PREFIX . "shub_twitter_message` WHERE `type` = " . _TWITTER_MESSAGE_TYPE_DIRECT . " AND `status` = " . (int) _shub_MESSAGE_STATUS_UNANSWERED . " AND shub_twitter_id = " . (int) $shub_twitter_message->get('twitter_account')->get( 'shub_twitter_id' ) . " AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ";
+								$sql      = "SELECT * FROM `" . _support_hub_DB_PREFIX . "shub_twitter_message` WHERE `shub_type` = " . _TWITTER_MESSAGE_TYPE_DIRECT . " AND `shub_status` = " . (int) _shub_MESSAGE_STATUS_UNANSWERED . " AND shub_twitter_id = " . (int) $shub_twitter_message->get('twitter_account')->get( 'shub_twitter_id' ) . " AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ";
 								global $wpdb;
 								$others = $wpdb->get_results($sql, ARRAY_A);
 								if(count($others)){
 									foreach($others as $other_message){
 										$shub_twitter_message = new shub_twitter_message(false, $other_message['shub_twitter_message_id']);
 										if($shub_twitter_message->get('shub_twitter_message_id') == $other_message['shub_twitter_message_id']) {
-											$shub_twitter_message->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
+											$shub_twitter_message->update( 'shub_status', _shub_MESSAGE_STATUS_ANSWERED );
 											?>
 											jQuery('.socialtwitter_message_action[data-id=<?php echo (int) $shub_twitter_message->get( 'shub_twitter_message_id' ); ?>]').parents('tr').first().hide();
 										<?php
@@ -512,7 +512,7 @@ class shub_twitter extends SupportHub_extension {
 				if(isset($_REQUEST['shub_twitter_message_id']) && (int)$_REQUEST['shub_twitter_message_id'] > 0){
 					$shub_twitter_message = new shub_twitter_message(false, $_REQUEST['shub_twitter_message_id']);
 					if($shub_twitter_message->get('shub_twitter_message_id') == $_REQUEST['shub_twitter_message_id']){
-						$shub_twitter_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+						$shub_twitter_message->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);
 						?>
 						jQuery('.socialtwitter_message_action[data-id=<?php echo (int)$shub_twitter_message->get('shub_twitter_message_id'); ?>]').parents('tr').first().hide();
 						<?php
@@ -776,7 +776,7 @@ class shub_twitter_account{
 	public function run_cron($debug = false){
 		// find all messages that haven't been sent yet.
 		$messages = $this->get_messages(array(
-			'status' => _shub_MESSAGE_STATUS_PENDINGSEND,
+			'shub_status' => _shub_MESSAGE_STATUS_PENDINGSEND,
 		));
 		$now = time();
 		foreach($messages as $message){
@@ -813,7 +813,7 @@ class shub_twitter_account{
 
 		if ($code == 200){
 			$data = json_decode($tmhOAuth->response['response'], true);
-			if (isset($data['status'])) {
+			if (isset($data['shub_status'])) {
 				$this->update('twitter_data',json_encode($data));
 
 				if($debug) echo " Hello @".htmlspecialchars($data['screen_name']).", importing information...<br>\n";
@@ -1376,7 +1376,7 @@ class shub_twitter_message{
 				$from = preg_replace('#[^0-9]#','',$this->get('twitter_from_id'));
 				$to = preg_replace('#[^0-9]#','',$this->get('twitter_to_id'));
 				if($from && $to){
-					$sql = "SELECT * FROM `"._support_hub_DB_PREFIX."shub_twitter_message` WHERE `type` = "._TWITTER_MESSAGE_TYPE_DIRECT." AND message_time <= ".(int)$this->get('message_time')." AND shub_twitter_message_id != ".(int)$this->shub_twitter_message_id." AND shub_twitter_id = ".(int)$this->twitter_account->get('shub_twitter_id')." AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ORDER BY `message_time` DESC LIMIT 1";
+					$sql = "SELECT * FROM `"._support_hub_DB_PREFIX."shub_twitter_message` WHERE `shub_type` = "._TWITTER_MESSAGE_TYPE_DIRECT." AND message_time <= ".(int)$this->get('message_time')." AND shub_twitter_message_id != ".(int)$this->shub_twitter_message_id." AND shub_twitter_id = ".(int)$this->twitter_account->get('shub_twitter_id')." AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ORDER BY `message_time` DESC LIMIT 1";
 					$previous = shub_qa1($sql);
 					if($previous && $previous['shub_twitter_message_id']){
 						?>
@@ -1498,7 +1498,7 @@ class shub_twitter_message{
 				$from = preg_replace('#[^0-9]#','',$this->get('twitter_from_id'));
 				$to = preg_replace('#[^0-9]#','',$this->get('twitter_to_id'));
 				if($from && $to){
-					$sql = "SELECT * FROM `"._support_hub_DB_PREFIX."shub_twitter_message` WHERE `type` = "._TWITTER_MESSAGE_TYPE_DIRECT." AND message_time >= ".(int)$this->get('message_time')." AND shub_twitter_message_id != ".(int)$this->shub_twitter_message_id." AND shub_twitter_id = ".(int)$this->twitter_account->get('shub_twitter_id')." AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ORDER BY `message_time` ASC LIMIT 1";
+					$sql = "SELECT * FROM `"._support_hub_DB_PREFIX."shub_twitter_message` WHERE `shub_type` = "._TWITTER_MESSAGE_TYPE_DIRECT." AND message_time >= ".(int)$this->get('message_time')." AND shub_twitter_message_id != ".(int)$this->shub_twitter_message_id." AND shub_twitter_id = ".(int)$this->twitter_account->get('shub_twitter_id')." AND ( (`twitter_from_id` = '$from' AND `twitter_to_id` = '$to') OR (`twitter_from_id` = '$to' AND `twitter_to_id` = '$from') ) ORDER BY `message_time` ASC LIMIT 1";
 					$next = shub_qa1($sql);
 					if($next && $next['shub_twitter_message_id']){
 						?>
@@ -1607,9 +1607,9 @@ class shub_twitter_message{
 		if($this->twitter_account && $this->shub_twitter_message_id) {
 			// send this message out to twitter.
 			// this is run when user is composing a new message from the UI,
-			if ( $this->get( 'status' ) == _shub_MESSAGE_STATUS_SENDING )
+			if ( $this->get( 'shub_status' ) == _shub_MESSAGE_STATUS_SENDING )
 				return; // dont double up on cron.
-			$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
+			$this->update( 'shub_status', _shub_MESSAGE_STATUS_SENDING );
 
 			$user_post_data = @json_decode($this->get('data'),true);
 
@@ -1620,7 +1620,7 @@ class shub_twitter_message{
 
 
 			$post_data = array(
-				'status' => $this->get('summary'),
+				'shub_status' => $this->get('summary'),
 			);
 			$reply_message = false;
 			if($this->get('reply_to_id')){
@@ -1737,10 +1737,10 @@ class shub_twitter_message{
 			}
 
 			// successfully sent, mark is as answered.
-			$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
+			$this->update( 'shub_status', _shub_MESSAGE_STATUS_ANSWERED );
 			if($reply_message){
 				//archive the message we replied to as well
-				$reply_message->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
+				$reply_message->update( 'shub_status', _shub_MESSAGE_STATUS_ANSWERED );
 			}
 			return true;
 		}

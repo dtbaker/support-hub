@@ -17,7 +17,7 @@ if($shub_twitter_id && $shub_twitter_message_id){
 				<div id="twitter_message_header">
 					<div style="float:right; text-align: right; margin-top:-4px;">
 						<small><?php echo shub_print_date( $twitter_message->get('message_time'), true ); ?> </small><br/>
-						    <?php if($twitter_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+						    <?php if($twitter_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 							    <a href="#" class="socialtwitter_message_action btn btn-default btn-xs button"
 							       data-action="set-unanswered" data-id="<?php echo (int)$twitter_message->get('shub_twitter_message_id');?>" data-shub_twitter_id="<?php echo (int)$twitter_message->get('shub_twitter_id');?>"><?php _e( 'Inbox' ); ?></a>
 						    <?php }else{ ?>

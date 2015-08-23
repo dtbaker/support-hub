@@ -126,8 +126,8 @@ class shub_google extends SupportHub_extension {
 		$sql = "SELECT m.*, mr.read_time FROM `"._support_hub_DB_PREFIX."shub_google_message` m ";
 		$sql .= " LEFT OUTER JOIN `"._support_hub_DB_PREFIX."shub_google_message_read` mr ON ( m.shub_google_message_id = mr.shub_google_message_id AND mr.user_id = ".get_current_user_id()." )";
 		$sql .= " WHERE 1 ";
-		if(isset($search['status']) && $search['status'] !== false){
-			$sql .= " AND `status` = ".(int)$search['status'];
+		if(isset($search['shub_status']) && $search['shub_status'] !== false){
+			$sql .= " AND `shub_status` = ".(int)$search['shub_status'];
 		}
 		if(isset($search['shub_message_id']) && $search['shub_message_id'] !== false){
 			$sql .= " AND `shub_message_id` = ".(int)$search['shub_message_id'];
@@ -138,7 +138,7 @@ class shub_google extends SupportHub_extension {
 		if(isset($search['generic']) && !empty($search['generic'])){
 			$sql .= " AND `summary` LIKE '%".esc_sql($search['generic'])."%'";
 		}else{
-			//$sql .= " AND `type` != "._GOOGLE_MESSAGE_TYPE_OTHERTWEET;
+			//$sql .= " AND `shub_type` != "._GOOGLE_MESSAGE_TYPE_OTHERTWEET;
 		}
 
         if(empty($order)){
@@ -214,11 +214,11 @@ class shub_google extends SupportHub_extension {
 		$sql = "SELECT count(*) AS `unread` FROM `"._support_hub_DB_PREFIX."shub_google_message` m ";
 		$sql .= " WHERE 1 ";
 		$sql .= " AND m.shub_google_message_id NOT IN (SELECT mr.shub_google_message_id FROM `"._support_hub_DB_PREFIX."shub_google_message_read` mr WHERE mr.user_id = '".(int)get_current_user_id()."' AND mr.shub_google_message_id = m.shub_google_message_id)";
-		$sql .= " AND m.`status` = "._shub_MESSAGE_STATUS_UNANSWERED;
+		$sql .= " AND m.`shub_status` = "._shub_MESSAGE_STATUS_UNANSWERED;
 		if(isset($search['shub_google_id']) && $search['shub_google_id'] !== false){
 			$sql .= " AND m.`shub_google_id` = ".(int)$search['shub_google_id'];
 		}
-		//$sql .= " AND m.`type` != "._GOOGLE_MESSAGE_TYPE_OTHERTWEET;
+		//$sql .= " AND m.`shub_type` != "._GOOGLE_MESSAGE_TYPE_OTHERTWEET;
 		$res = shub_qa1($sql);
 		return $res ? $res['unread'] : 0;
 	}
@@ -275,7 +275,7 @@ class shub_google extends SupportHub_extension {
 
 		        <a href="<?php echo $google_message->link_open();?>" class="socialgoogle_message_open shub_modal button" data-modaltitle="<?php echo __('Google+','support_hub');?>" data-socialgooglemessageid="<?php echo (int)$google_message->get('shub_google_message_id');?>"><?php _e( 'Open' );?></a>
 
-			    <?php if($google_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+			    <?php if($google_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 				    <a href="#" class="socialgoogle_message_action button"
 				       data-action="set-unanswered" data-id="<?php echo (int)$google_message->get('shub_google_message_id');?>" data-shub_google_id="<?php echo (int)$google_message->get('shub_google_id');?>"><?php _e( 'Inbox' ); ?></a>
 			    <?php }else{ ?>
@@ -321,7 +321,7 @@ class shub_google extends SupportHub_extension {
 						    $google_message->update('data',json_encode($_POST));
 						    $google_message->update('user_id',get_current_user_id());
 						    // do we send this one now? or schedule it later.
-						    $google_message->update('status',_shub_MESSAGE_STATUS_PENDINGSEND);
+						    $google_message->update('shub_status',_shub_MESSAGE_STATUS_PENDINGSEND);
 						    if(isset($options['send_time']) && !empty($options['send_time'])){
 							    // schedule for sending at a different time (now or in the past)
 							    $google_message->update('message_time',$options['send_time']);
@@ -440,7 +440,7 @@ class shub_google extends SupportHub_extension {
 				if(isset($_REQUEST['shub_google_message_id']) && (int)$_REQUEST['shub_google_message_id'] > 0){
 					$shub_google_message = new shub_google_message(false, $_REQUEST['shub_google_message_id']);
 					if($shub_google_message->get('shub_google_message_id') == $_REQUEST['shub_google_message_id']){
-						$shub_google_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+						$shub_google_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
 						?>
 						jQuery('.socialgoogle_message_action[data-id=<?php echo (int)$shub_google_message->get('shub_google_message_id'); ?>]').parents('tr').first().hide();
 						<?php
@@ -452,7 +452,7 @@ class shub_google extends SupportHub_extension {
 				if(isset($_REQUEST['shub_google_message_id']) && (int)$_REQUEST['shub_google_message_id'] > 0){
 					$shub_google_message = new shub_google_message(false, $_REQUEST['shub_google_message_id']);
 					if($shub_google_message->get('shub_google_message_id') == $_REQUEST['shub_google_message_id']){
-						$shub_google_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+						$shub_google_message->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);
 						?>
 						jQuery('.socialgoogle_message_action[data-id=<?php echo (int)$shub_google_message->get('shub_google_message_id'); ?>]').parents('tr').first().hide();
 						<?php
@@ -1237,7 +1237,7 @@ class shub_google_account{
 		$this->api_get_page_comments($this->get('google_id'),$debug);
 		// find all messages that haven't been sent yet.
 		$messages = $this->get_messages(array(
-			'status' => _shub_MESSAGE_STATUS_PENDINGSEND,
+			'shub_status' => _shub_MESSAGE_STATUS_PENDINGSEND,
 		));
 		$now = time();
 		foreach($messages as $message){
@@ -1381,7 +1381,7 @@ class shub_google_message{
 							$this->message_time = $comment_time;
 							$this->update('message_time',$comment_time);
 
-                            if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('status',_shub_MESSAGE_STATUS_UNANSWERED);// move back to inbox as well if archived.
+                            if($this->get('shub_status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);// move back to inbox as well if archived.
 
 							$this->mark_as_unread();
 						}
@@ -1399,7 +1399,7 @@ class shub_google_message{
 			$worked = $this->google_account->api_post_comment_reply($this->google_message_id, $message, $debug);
 			$this->load_by_google_id($this->google_message_id, false, $debug, true );
 
-            if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN)$this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+            if($this->get('shub_status')!=_shub_MESSAGE_STATUS_HIDDEN)$this->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
 			return $worked;
 		}
 		return false;
@@ -1739,9 +1739,9 @@ class shub_google_message{
 		if($this->google_account && $this->shub_google_message_id) {
 			// send this message out to google.
 			// this is run when user is composing a new message from the UI,
-			if ( $this->get( 'status' ) == _shub_MESSAGE_STATUS_SENDING )
+			if ( $this->get( 'shub_status' ) == _shub_MESSAGE_STATUS_SENDING )
 				return; // dont double up on cron.
-			$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
+			$this->update( 'shub_status', _shub_MESSAGE_STATUS_SENDING );
 
 			$user_post_data = @json_decode($this->get('data'),true);
 
@@ -1777,7 +1777,7 @@ class shub_google_message{
 				return false;
 			}
 			// successfully sent, mark is as answered.
-			$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
+			$this->update( 'shub_status', _shub_MESSAGE_STATUS_ANSWERED );
 			return true;
 		}
 		return false;

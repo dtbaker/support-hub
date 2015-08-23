@@ -137,15 +137,15 @@ class shub_bbpress extends SupportHub_extension {
 										    $bbpress_message->update('shub_account_id',$bbpress_account->get('shub_account_id'));
 										    $bbpress_message->update('summary',isset($_POST['bbpress_message']) ? $_POST['bbpress_message'] : '');
 										    $bbpress_message->update('title',isset($_POST['bbpress_title']) ? $_POST['bbpress_title'] : '');
-										    $bbpress_message->update('link',isset($_POST['bbpress_link']) ? $_POST['bbpress_link'] : '');
+										    $bbpress_message->update('shub_link',isset($_POST['bbpress_link']) ? $_POST['bbpress_link'] : '');
 										    if(isset($_POST['track_links']) && $_POST['track_links']){
 												$bbpress_message->parse_links();
 											}
-										    $bbpress_message->update('type','share');
-										    $bbpress_message->update('data',json_encode($_POST));
+										    $bbpress_message->update('shub_type','share');
+										    $bbpress_message->update('shub_data',json_encode($_POST));
 										    $bbpress_message->update('user_id',get_current_user_id());
 										    // do we send this one now? or schedule it later.
-										    $bbpress_message->update('status',_shub_MESSAGE_STATUS_PENDINGSEND);
+										    $bbpress_message->update('shub_status',_shub_MESSAGE_STATUS_PENDINGSEND);
 										    if(isset($options['send_time']) && !empty($options['send_time'])){
 											    // schedule for sending at a different time (now or in the past)
 											    $bbpress_message->update('last_active',$options['send_time']);
@@ -190,12 +190,12 @@ class shub_bbpress extends SupportHub_extension {
 											    if(isset($_POST['track_links']) && $_POST['track_links']){
 													$bbpress_message->parse_links();
 												}
-											    $bbpress_message->update('type','forum_post');
-											    $bbpress_message->update('link',isset($_POST['link']) ? $_POST['link'] : '');
-											    $bbpress_message->update('data',json_encode($_POST));
+											    $bbpress_message->update('shub_type','forum_post');
+											    $bbpress_message->update('shub_link',isset($_POST['link']) ? $_POST['link'] : '');
+											    $bbpress_message->update('shub_data',json_encode($_POST));
 											    $bbpress_message->update('user_id',get_current_user_id());
 											    // do we send this one now? or schedule it later.
-											    $bbpress_message->update('status',_shub_MESSAGE_STATUS_PENDINGSEND);
+											    $bbpress_message->update('shub_status',_shub_MESSAGE_STATUS_PENDINGSEND);
 											    if(isset($options['send_time']) && !empty($options['send_time'])){
 												    // schedule for sending at a different time (now or in the past)
 												    $bbpress_message->update('last_active',$options['send_time']);

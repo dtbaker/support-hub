@@ -30,10 +30,10 @@ class SupportHub_message{
             'summary' => '',
             'last_active' => '',
             'comments' => '',
-            'type' => '',
-            'link' => '',
-            'data' => '',
-            'status' => '',
+            'shub_type' => '',
+            'shub_link' => '',
+            'shub_data' => '',
+            'shub_status' => '',
             'user_id' => '',
             'shub_user_id' => 0,
         );
@@ -224,7 +224,7 @@ class SupportHub_message{
                 if($account_user_data && isset($account_user_data['user']) && $last_message_user_name == $account_user_data['user']['username']){
                     // the last comment on this item was from the account owner.
                     // mark this item as resolves so it doesn;t show up in the inbox.
-                    $this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                    $this->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
 
                 }
             }
@@ -259,12 +259,12 @@ class SupportHub_message{
         if($this->account && $this->shub_message_id) {
 
 
-            if($debug)echo "Type: ".$this->get('type')." <br>\n";
-            switch($this->get('type')) {
+            if($debug)echo "Type: ".$this->get('shub_type')." <br>\n";
+            switch($this->get('shub_type')) {
                 case 'item_comment':
                     if(!$network_key)$network_key = $this->get('network_key');
 
-                    if($debug)echo "Sending a reply to Envato Comment ID: $network_key <br>\n";
+                    if($debug)echo "Sending a reply to Network Message ID: $network_key <br>\n";
 
                     $result = false;
                     // send via api
@@ -282,7 +282,7 @@ class SupportHub_message{
                             'message_text' => $message,
                             'user_id' => get_current_user_id(),
                         ));
-                        $this->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+                        $this->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
                         if($debug){
                             echo "Successfully added comment with id $shub_message_comment_id <br>\n";
                         }
@@ -339,7 +339,7 @@ class SupportHub_message{
             <div class="message_edit_form" data-network="<?php echo $this->network;?>">
                 <section class="message_sidebar">
                     <nav>
-                        <?php if($this->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+                        <?php if($this->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
                             <a href="#" class="shub_message_action btn btn-default btn-xs button"
                                data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
@@ -356,7 +356,7 @@ class SupportHub_message{
                     </nav>
                     <header>
                         <a href="<?php echo $this->get_link(); ?>" class="social_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
-                        <?php if($this->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+                        <?php if($this->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
                             <a href="#" class="shub_message_action btn btn-default btn-xs button"
                                data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
@@ -421,7 +421,7 @@ class SupportHub_message{
             $comment_status = '';
             if(!empty($comment['shub_outbox_id'])){
                 $shub_outbox = new SupportHubOutbox($comment['shub_outbox_id']);
-                switch($shub_outbox->get('status')){
+                switch($shub_outbox->get('shub_status')){
                     case _SHUB_OUTBOX_STATUS_QUEUED:
                     case _SHUB_OUTBOX_STATUS_SENDING:
                         $extra_class .= ' outbox_queued';

@@ -30,7 +30,7 @@ class shub_facebook_message{
 			'type' => '',
 			'link' => '',
 			'data' => '',
-			'status' => '',
+			'shub_status' => '',
 			'user_id' => '',
 		);
 		foreach($this->details as $key=>$val){
@@ -84,7 +84,7 @@ class shub_facebook_message{
 			$this->load($existing['shub_facebook_message_id']);
 		}else{
 			// ignore if status and feeds match a user
-			if($message_type == 'page' && isset($message_data['type']) && $message_data['type'] == 'status' && $message_data['from']['id'] == $this->facebook_page_or_group->get('page_id') && isset($message_data['story_tags']) && $message_data['story_tags']){
+			if($message_type == 'page' && isset($message_data['type']) && $message_data['type'] == 'shub_status' && $message_data['from']['id'] == $this->facebook_page_or_group->get('page_id') && isset($message_data['story_tags']) && $message_data['story_tags']){
 				$tags = current($message_data['story_tags']);
 				if($tags[0]['type'] == 'user'){
 					return false;
@@ -100,12 +100,12 @@ class shub_facebook_message{
 			$this->update('facebook_id', $message_data['id']);
 			$this->update('summary', $message_data['snippet']);
 			$this->update('comments', isset($message_data['messages']) ? json_encode( $message_data['messages'] ) : '');
-            if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) {
+            if($this->get('shub_status')!=_shub_MESSAGE_STATUS_HIDDEN) {
                 if (isset($message_data['messages']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $this->facebook_page_or_group->get('page_id')) {
                     // was the last comment from us?
-                    $this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+                    $this->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
                 } else {
-                    $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                    $this->update('shub_status', _shub_MESSAGE_STATUS_UNANSWERED);
                 }
             }
 			$this->update('data',json_encode($message_data));
@@ -132,37 +132,37 @@ class shub_facebook_message{
 			));
 			$comments = isset($data) ? $data : (isset($message_data['comments']) ? $message_data['comments'] : false);
 			$this->update('comments', json_encode($comments));
-            if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) {
+            if($this->get('shub_status')!=_shub_MESSAGE_STATUS_HIDDEN) {
                 if ($message_type == 'page') {
                     if (isset($message_data['comments']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['comments']['data'][0]['from']['id'] == $this->facebook_page_or_group->get('page_id')) {
                         // was the last comment from us?
-                        $this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+                        $this->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
                     } else {
-                        $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                        $this->update('shub_status', _shub_MESSAGE_STATUS_UNANSWERED);
                     }
                     if (isset($message_data['messages']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $this->facebook_page_or_group->get('page_id')) {
                         // was the last comment from us?
-                        $this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+                        $this->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
                     } else {
-                        $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                        $this->update('shub_status', _shub_MESSAGE_STATUS_UNANSWERED);
                     }
                 } else {
                     $me = @json_decode($this->facebook_account->get('facebook_data'), true);
                     if (is_array($me) && isset($me['me']['id'])) {
                         if (isset($message_data['comments']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['comments']['data'][0]['from']['id'] == $me['me']['id']) {
                             // was the last comment from us?
-                            $this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+                            $this->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
                         } else {
-                            $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                            $this->update('shub_status', _shub_MESSAGE_STATUS_UNANSWERED);
                         }
                         if (isset($message_data['messages']['data'][0]['from']['id']) && $this->facebook_page_or_group && $message_data['messages']['data'][0]['from']['id'] == $me['me']['id']) {
                             // was the last comment from us?
-                            $this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+                            $this->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
                         } else {
-                            $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                            $this->update('shub_status', _shub_MESSAGE_STATUS_UNANSWERED);
                         }
                     } else {
-                        $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                        $this->update('shub_status', _shub_MESSAGE_STATUS_UNANSWERED);
                     }
 
                 }
@@ -506,9 +506,9 @@ class shub_facebook_message{
 		if($this->facebook_account && $this->shub_facebook_message_id) {
 			// send this message out to facebook.
 			// this is run when user is composing a new message from the UI,
-			if ( $this->get( 'status' ) == _shub_MESSAGE_STATUS_SENDING )
+			if ( $this->get( 'shub_status' ) == _shub_MESSAGE_STATUS_SENDING )
 				return; // dont double up on cron.
-			$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
+			$this->update( 'shub_status', _shub_MESSAGE_STATUS_SENDING );
 
 			$access_token = $this->facebook_page_or_group && $this->facebook_page_or_group->get('facebook_token') ? $this->facebook_page_or_group->get('facebook_token') :$this->facebook_account->get('facebook_token');
 			// get the machine id from the parent facebook_account
@@ -803,7 +803,7 @@ class shub_facebook_message{
 			}
 
 			// successfully sent, mark is as answered.
-			$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
+			$this->update( 'shub_status', _shub_MESSAGE_STATUS_ANSWERED );
 			return true;
 		}
 		return false;

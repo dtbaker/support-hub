@@ -17,7 +17,7 @@ if($shub_google_id && $shub_google_message_id){
 				<div id="google_message_header">
 					<div style="float:right; text-align: right; margin-top:-4px;">
 						<small><?php echo shub_print_date( $google_message->get('message_time'), true ); ?> </small><br/>
-						    <?php if($google_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+						    <?php if($google_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 							    <a href="#" class="socialgoogle_message_action btn btn-default btn-xs button"
 							       data-action="set-unanswered" data-id="<?php echo (int)$google_message->get('shub_google_message_id');?>" data-shub_google_id="<?php echo (int)$google_message->get('shub_google_id');?>"><?php _e( 'Inbox' ); ?></a>
 						    <?php }else{ ?>

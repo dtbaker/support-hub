@@ -244,8 +244,8 @@ class shub_facebook extends SupportHub_extension {
 		$sql = "SELECT m.*, m.last_active AS `message_time`, mr.read_time FROM `"._support_hub_DB_PREFIX."shub_facebook_message` m ";
 		$sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_facebook_message_read` mr ON ( m.shub_facebook_message_id = mr.shub_facebook_message_id AND mr.user_id = ".get_current_user_id()." )";
 		$sql .= " WHERE 1 ";
-		if(isset($search['status']) && $search['status'] !== false){
-			$sql .= " AND `status` = ".(int)$search['status'];
+		if(isset($search['shub_status']) && $search['shub_status'] !== false){
+			$sql .= " AND `shub_status` = ".(int)$search['shub_status'];
 		}
 		if(isset($search['shub_facebook_page_id']) && $search['shub_facebook_page_id'] !== false){
 			$sql .= " AND `shub_facebook_page_id` = ".(int)$search['shub_facebook_page_id'];
@@ -334,7 +334,7 @@ class shub_facebook extends SupportHub_extension {
 		$sql = "SELECT count(*) AS `unread` FROM `"._support_hub_DB_PREFIX."shub_facebook_message` m ";
 		$sql .= " WHERE 1 ";
 		$sql .= " AND m.shub_facebook_message_id NOT IN (SELECT mr.shub_facebook_message_id FROM `"._support_hub_DB_PREFIX."shub_facebook_message_read` mr WHERE mr.user_id = '".(int)get_current_user_id()."' AND mr.shub_facebook_message_id = m.shub_facebook_message_id)";
-		$sql .= " AND m.`status` = "._shub_MESSAGE_STATUS_UNANSWERED;
+		$sql .= " AND m.`shub_status` = "._shub_MESSAGE_STATUS_UNANSWERED;
 		if(isset($search['shub_facebook_page_id']) && $search['shub_facebook_page_id'] !== false){
 			$sql .= " AND m.`shub_facebook_page_id` = ".(int)$search['shub_facebook_page_id'];
 		}
@@ -401,7 +401,7 @@ class shub_facebook extends SupportHub_extension {
 
 			        <a href="<?php echo $facebook_message->link_open();?>" class="socialfacebook_message_open shub_modal button" data-modaltitle="<?php echo htmlspecialchars($summary);?>" data-socialfacebookmessageid="<?php echo (int)$facebook_message->get('shub_facebook_message_id');?>"><?php _e( 'Open' );?></a>
 
-				    <?php if($facebook_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+				    <?php if($facebook_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 					    <a href="#" class="socialfacebook_message_action  button"
 					       data-action="set-unanswered" data-id="<?php echo (int)$facebook_message->get('shub_facebook_message_id');?>"><?php _e( 'Inbox' ); ?></a>
 				    <?php }else{ ?>
@@ -449,7 +449,7 @@ class shub_facebook extends SupportHub_extension {
 									$facebook_message->update( 'data', json_encode( $_POST ) );
 									$facebook_message->update( 'user_id', get_current_user_id() );
 									// do we send this one now? or schedule it later.
-									$facebook_message->update( 'status', _shub_MESSAGE_STATUS_PENDINGSEND );
+									$facebook_message->update( 'shub_status', _shub_MESSAGE_STATUS_PENDINGSEND );
 									if ( isset( $options['send_time'] ) && ! empty( $options['send_time'] ) ) {
 										// schedule for sending at a different time (now or in the past)
 										$facebook_message->update( 'last_active', $options['send_time'] );
@@ -498,7 +498,7 @@ class shub_facebook extends SupportHub_extension {
 												$facebook_message->update( 'data', json_encode( $_POST ) );
 												$facebook_message->update( 'user_id', get_current_user_id() );
 												// do we send this one now? or schedule it later.
-												$facebook_message->update( 'status', _shub_MESSAGE_STATUS_PENDINGSEND );
+												$facebook_message->update( 'shub_status', _shub_MESSAGE_STATUS_PENDINGSEND );
 												if ( isset( $options['send_time'] ) && ! empty( $options['send_time'] ) ) {
 													// schedule for sending at a different time (now or in the past)
 													$facebook_message->update( 'last_active', $options['send_time'] );
@@ -552,7 +552,7 @@ class shub_facebook extends SupportHub_extension {
 												$facebook_message->update( 'data', json_encode( $_POST ) );
 												$facebook_message->update( 'user_id', get_current_user_id() );
 												// do we send this one now? or schedule it later.
-												$facebook_message->update( 'status', _shub_MESSAGE_STATUS_PENDINGSEND );
+												$facebook_message->update( 'shub_status', _shub_MESSAGE_STATUS_PENDINGSEND );
 												if ( isset( $options['send_time'] ) && ! empty( $options['send_time'] ) ) {
 													// schedule for sending at a different time (now or in the past)
 													$facebook_message->update( 'last_active', $options['send_time'] );
@@ -678,7 +678,7 @@ class shub_facebook extends SupportHub_extension {
 				if(isset($_REQUEST['shub_facebook_message_id']) && (int)$_REQUEST['shub_facebook_message_id'] > 0){
 					$shub_facebook_message = new shub_facebook_message(false, false, $_REQUEST['shub_facebook_message_id']);
 					if($shub_facebook_message->get('shub_facebook_message_id') == $_REQUEST['shub_facebook_message_id']){
-						$shub_facebook_message->update('status',_shub_MESSAGE_STATUS_ANSWERED);
+						$shub_facebook_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
 						?>
 						jQuery('.socialfacebook_message_action[data-id=<?php echo (int)$shub_facebook_message->get('shub_facebook_message_id'); ?>]').parents('tr').first().hide();
 						<?php
@@ -690,7 +690,7 @@ class shub_facebook extends SupportHub_extension {
 				if(isset($_REQUEST['shub_facebook_message_id']) && (int)$_REQUEST['shub_facebook_message_id'] > 0){
 					$shub_facebook_message = new shub_facebook_message(false, false, $_REQUEST['shub_facebook_message_id']);
 					if($shub_facebook_message->get('shub_facebook_message_id') == $_REQUEST['shub_facebook_message_id']){
-						$shub_facebook_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+						$shub_facebook_message->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);
 						?>
 						jQuery('.socialfacebook_message_action[data-id=<?php echo (int)$shub_facebook_message->get('shub_facebook_message_id'); ?>]').parents('tr').first().hide();
 						<?php

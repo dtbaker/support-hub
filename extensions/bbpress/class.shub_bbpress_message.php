@@ -26,11 +26,11 @@ class shub_bbpress_message extends SupportHub_message{
 					// latest comment goes in summary
 					$this->update('summary',isset($comments[0]) ? $comments[0]['post_content'] : $topic_data['post_content']);
 					$this->update('last_active',!empty($topic_data['timestamp']) ? $topic_data['timestamp'] : (is_array($topic_data['post_date']) ? $topic_data['post_date']['timestamp'] : (isset($topic_data['post_date']->timestamp) ? $topic_data['post_date']->timestamp : 0)));
-					$this->update('type',$type);
-					$this->update('data',$topic_data);
-					$this->update('link',$topic_data['link'].'#post-'.(isset($comments[0]) ? $comments[0]['post_id'] : $topic_data['post_id']));
+					$this->update('shub_type',$type);
+					$this->update('shub_data',$topic_data);
+					$this->update('shub_link',$topic_data['link'].'#post-'.(isset($comments[0]) ? $comments[0]['post_id'] : $topic_data['post_id']));
 					$this->update('bbpress_id', $bbpress_id);
-                    if($this->get('status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('status', _shub_MESSAGE_STATUS_UNANSWERED);
+                    if($this->get('shub_status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('shub_status', _shub_MESSAGE_STATUS_UNANSWERED);
 					$this->update('comments',$comments);
 					// create/update a user entry for this comments.
 				    $shub_user_id = $this->account->get_api_user_to_id($topic_data['post_author']);
@@ -80,11 +80,11 @@ class shub_bbpress_message extends SupportHub_message{
 		if($this->account && $this->shub_message_id) {
 			// send this message out to bbpress.
 			// this is run when user is composing a new message from the UI,
-			if ( $this->get( 'status' ) == _shub_MESSAGE_STATUS_SENDING )
+			if ( $this->get( 'shub_status' ) == _shub_MESSAGE_STATUS_SENDING )
 				return; // dont double up on cron.
 
 
-			switch($this->get('type')){
+			switch($this->get('shub_type')){
 				case 'forum_post':
 
 
@@ -93,7 +93,7 @@ class shub_bbpress_message extends SupportHub_message{
 						return false;
 					}
 
-					$this->update( 'status', _shub_MESSAGE_STATUS_SENDING );
+					$this->update( 'shub_status', _shub_MESSAGE_STATUS_SENDING );
 					$api = $this->account->get_api();
 					$item_id = $this->item->get('forum_id');
 					if($debug)echo "Sending a new message to bbpress forum ID: $item_id <br>\n";
@@ -110,7 +110,7 @@ class shub_bbpress_message extends SupportHub_message{
 						$new_post_id = $matches[1];
 						$this->update('bbpress_id',$new_post_id);
 						// reload this message and messages from the graph api.
-						$this->load_by_bbpress_id($this->get('bbpress_id'),false,$this->get('type'),$debug);
+						$this->load_by_bbpress_id($this->get('bbpress_id'),false,$this->get('shub_type'),$debug);
 					}else{
 						echo 'Failed to send message. Error was: '.var_export($result,true);
 						// remove from database.
@@ -119,12 +119,12 @@ class shub_bbpress_message extends SupportHub_message{
 					}
 
 					// successfully sent, mark is as answered.
-					$this->update( 'status', _shub_MESSAGE_STATUS_ANSWERED );
+					$this->update( 'shub_status', _shub_MESSAGE_STATUS_ANSWERED );
 					return true;
 
 					break;
 				default:
-					if($debug)echo "Unknown post type: ".$this->get('type');
+					if($debug)echo "Unknown post type: ".$this->get('shub_type');
 			}
 
 		}
@@ -135,8 +135,8 @@ class shub_bbpress_message extends SupportHub_message{
 
 
 			$api = $this->account->get_api();
-			if($debug)echo "Type: ".$this->get('type')." <br>\n";
-			switch($this->get('type')) {
+			if($debug)echo "Type: ".$this->get('shub_type')." <br>\n";
+			switch($this->get('shub_type')) {
 				case 'forum_topic':
 
 					if(!$this->item){
@@ -185,7 +185,7 @@ class shub_bbpress_message extends SupportHub_message{
 							array_unshift($comments, $reply_post);
 							$parent_topic['replies'] = $comments;
 							// save this updated data to the db
-							$this->load_by_bbpress_id($this->get('bbpress_id'),$parent_topic,$this->get('type'),$debug);
+							$this->load_by_bbpress_id($this->get('bbpress_id'),$parent_topic,$this->get('shub_type'),$debug);
 							$existing_messages = $this->get_comments();
 							foreach($existing_messages as $existing_message){
 								if(!$existing_message['user_id'] && $existing_message['message_text'] == $message){
@@ -194,7 +194,7 @@ class shub_bbpress_message extends SupportHub_message{
 									));
 								}
 							}
-							$this->update('status', _shub_MESSAGE_STATUS_ANSWERED);
+							$this->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
 						}
 
 					}
@@ -222,7 +222,7 @@ class shub_bbpress_message extends SupportHub_message{
 	}
 
 	public function get_type_pretty() {
-		$type = $this->get('type');
+		$type = $this->get('shub_type');
 		switch($type){
 			case 'forum_topic':
 				return 'Forum Topic';

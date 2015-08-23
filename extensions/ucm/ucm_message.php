@@ -27,7 +27,7 @@ if($shub_ucm_id && $shub_ucm_message_id){
 				<section class="message_sidebar">
 					<header>
 						<a href="<?php echo $ucm_message->get('link');?>" class="socialucm_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Ticket' ); ?></a>
-					    <?php if($ucm_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+					    <?php if($ucm_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 						    <a href="#" class="socialucm_message_action shub_message_action btn btn-default btn-xs button"
 						       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
 								'network' => 'ucm',

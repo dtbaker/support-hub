@@ -148,15 +148,15 @@ class shub_envato extends SupportHub_extension {
 										    $envato_message->update('shub_account_id',$envato_account->get('shub_account_id'));
 										    $envato_message->update('summary',isset($_POST['envato_message']) ? $_POST['envato_message'] : '');
 										    $envato_message->update('title',isset($_POST['envato_title']) ? $_POST['envato_title'] : '');
-										    $envato_message->update('link',isset($_POST['envato_link']) ? $_POST['envato_link'] : '');
+										    $envato_message->update('shub_link',isset($_POST['envato_link']) ? $_POST['envato_link'] : '');
 										    if(isset($_POST['track_links']) && $_POST['track_links']){
 												$envato_message->parse_links();
 											}
-										    $envato_message->update('type','share');
-										    $envato_message->update('data',json_encode($_POST));
+										    $envato_message->update('shub_type','share');
+										    $envato_message->update('shub_data',json_encode($_POST));
 										    $envato_message->update('user_id',get_current_user_id());
 										    // do we send this one now? or schedule it later.
-										    $envato_message->update('status',_shub_MESSAGE_STATUS_PENDINGSEND);
+										    $envato_message->update('shub_status',_shub_MESSAGE_STATUS_PENDINGSEND);
 										    if(isset($options['send_time']) && !empty($options['send_time'])){
 											    // schedule for sending at a different time (now or in the past)
 											    $envato_message->update('last_active',$options['send_time']);
@@ -201,12 +201,12 @@ class shub_envato extends SupportHub_extension {
 											    if(isset($_POST['track_links']) && $_POST['track_links']){
 													$envato_message->parse_links();
 												}
-											    $envato_message->update('type','item_post');
-											    $envato_message->update('link',isset($_POST['link']) ? $_POST['link'] : '');
-											    $envato_message->update('data',json_encode($_POST));
+											    $envato_message->update('shub_type','item_post');
+											    $envato_message->update('shub_link',isset($_POST['link']) ? $_POST['link'] : '');
+											    $envato_message->update('shub_data',json_encode($_POST));
 											    $envato_message->update('user_id',get_current_user_id());
 											    // do we send this one now? or schedule it later.
-											    $envato_message->update('status',_shub_MESSAGE_STATUS_PENDINGSEND);
+											    $envato_message->update('shub_status',_shub_MESSAGE_STATUS_PENDINGSEND);
 											    if(isset($options['send_time']) && !empty($options['send_time'])){
 												    // schedule for sending at a different time (now or in the past)
 												    $envato_message->update('last_active',$options['send_time']);
@@ -837,7 +837,7 @@ class shub_envato extends SupportHub_extension {
 		    'shub_user_id' => !empty($_SESSION['shub_oauth_envato']['shub_user_id']) ? $_SESSION['shub_oauth_envato']['shub_user_id'] : $shub_message->get('shub_user_id'),
 	    ));
 		// mark the main message as unread so it appears at the top.
-		$shub_message->update('status',_shub_MESSAGE_STATUS_UNANSWERED);
+		$shub_message->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);
 		$shub_message->update('last_active',time());
 		// todo: update the 'summary' to reflect this latest message?
 		$shub_message->update('summary',$message);

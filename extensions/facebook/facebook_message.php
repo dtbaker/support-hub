@@ -20,7 +20,7 @@ if($shub_facebook_id && $shub_facebook_message_id){
 				<div id="facebook_message_header">
 					<div style="float:right; text-align: right; margin-top:-4px;">
 						<small><?php echo shub_print_date( $facebook_message->get('last_active'), true ); ?> </small><br/>
-					    <?php if($facebook_message->get('status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
+					    <?php if($facebook_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
 						    <a href="#" class="socialfacebook_message_action  btn btn-default btn-xs button"
 						       data-action="set-unanswered" data-id="<?php echo (int)$facebook_message->get('shub_facebook_message_id');?>"><?php _e( 'Inbox' ); ?></a>
 					    <?php }else{ ?>

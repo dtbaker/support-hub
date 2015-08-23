@@ -7,8 +7,8 @@
     // copy layout from UCM
 	// grab a mysql resource from all available social plugins (hardcoded for now - todo: hook)
 	$search = isset($_REQUEST['search']) && is_array($_REQUEST['search']) ? $_REQUEST['search'] : array();
-	if(!isset($search['status'])){
-		$search['status'] = _shub_MESSAGE_STATUS_UNANSWERED;
+	if(!isset($search['shub_status'])){
+		$search['shub_status'] = _shub_MESSAGE_STATUS_UNANSWERED;
 	}
 	$order = array();
 
@@ -87,8 +87,8 @@
 
 		<label for="simple_inbox-search-status"><?php _e('Status:','support_hub');?></label>
 		<select id="simple_inbox-search-status" name="search[status]">
-			<option value="<?php echo _shub_MESSAGE_STATUS_UNANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_UNANSWERED ? ' selected' : '';?>><?php _e('Inbox','support_hub');?></option>
-			<option value="<?php echo _shub_MESSAGE_STATUS_ANSWERED;?>"<?php echo isset($search['status']) && $search['status'] == _shub_MESSAGE_STATUS_ANSWERED ? ' selected' : '';?>><?php _e('Archived','support_hub');?></option>
+			<option value="<?php echo _shub_MESSAGE_STATUS_UNANSWERED;?>"<?php echo isset($search['shub_status']) && $search['shub_status'] == _shub_MESSAGE_STATUS_UNANSWERED ? ' selected' : '';?>><?php _e('Inbox','support_hub');?></option>
+			<option value="<?php echo _shub_MESSAGE_STATUS_ANSWERED;?>"<?php echo isset($search['shub_status']) && $search['shub_status'] == _shub_MESSAGE_STATUS_ANSWERED ? ' selected' : '';?>><?php _e('Archived','support_hub');?></option>
 		</select>
 
 		<input type="submit" name="" id="search-submit" class="button" value="<?php _e('Search','support_hub');?>"></p>
