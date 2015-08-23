@@ -74,7 +74,7 @@ if($shub_account_id && !(int)$shub_message_id){
 	$bbpress = new shub_bbpress_account($shub_account_id);
     if($shub_account_id && $bbpress->get('shub_account_id') == $shub_account_id){
 
-	    /* @var $groups shub_item[] */
+	    /* @var $groups shub_bbpress_item[] */
 	    $groups = $bbpress->get('groups');
 	    //print_r($groups);
 	    ?>
@@ -232,7 +232,7 @@ if($shub_account_id && !(int)$shub_message_id){
 				    '<div id="bbpress_compose_group_select">' .
 				    '<input type="checkbox" name="compose_group_id['.$item_id.']" value="1" checked> ' .
 				    '<img src="//graph.bbpress.com/'.$item_id.'/picture"> ' .
-				    htmlspecialchars($group->get('forum_name')) .
+				    htmlspecialchars($group->get('item_name')) .
 				    '</div>'
 			    ;
 		    }

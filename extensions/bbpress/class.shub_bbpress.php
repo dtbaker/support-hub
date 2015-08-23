@@ -43,12 +43,12 @@ class shub_bbpress extends SupportHub_extension {
 				     ($bbpress_account->get_picture() ? '<img src="'.$bbpress_account->get_picture().'">' : '' ) .
 				     '<span>' . htmlspecialchars( $bbpress_account->get( 'bbpress_name' ) ) . ' (blog post)</span>' .
 				     '</div>';*/
-			$forums            = $bbpress_account->get( 'forums' );
+			$forums            = $bbpress_account->get( 'items' );
 			foreach ( $forums as $item_id => $forum ) {
 				echo '<div class="bbpress_compose_account_select">' .
 				     '<input type="checkbox" name="compose_bbpress_id[' . $account['shub_account_id'] . '][' . $item_id . ']" value="1"> ' .
 				     ($bbpress_account->get_picture() ? '<img src="'.$bbpress_account->get_picture().'">' : '' ) .
-				     '<span>' . htmlspecialchars( $forum->get( 'forum_name' ) ) . ' (forum)</span>' .
+				     '<span>' . htmlspecialchars( $forum->get( 'item_name' ) ) . ' (forum)</span>' .
 				     '</div>';
 			}
 		}
@@ -122,8 +122,8 @@ class shub_bbpress extends SupportHub_extension {
 					foreach($bbpress_accounts as $bbpress_account_id => $send_forums){
 						$bbpress_account = new shub_bbpress_account($bbpress_account_id);
 						if($bbpress_account->get('shub_account_id') == $bbpress_account_id){
-							/* @var $available_forums shub_item[] */
-				            $available_forums = $bbpress_account->get('forums');
+							/* @var $available_forums shub_bbpress_item[] */
+				            $available_forums = $bbpress_account->get('items');
 							if($send_forums){
 							    foreach($send_forums as $item_id => $tf){
 								    if(!$tf)continue;// shouldnt happen
@@ -230,28 +230,8 @@ class shub_bbpress extends SupportHub_extension {
 				}
 				return $message_count;
 				break;
-			case 'save_bbpress':
-				$shub_account_id = isset($_REQUEST['shub_account_id']) ? (int)$_REQUEST['shub_account_id'] : 0;
-				if(check_admin_referer( 'save-bbpress'.$shub_account_id )) {
-					$bbpress = new shub_bbpress_account( $shub_account_id );
-					if ( isset( $_POST['butt_delete'] ) ) {
-						$bbpress->delete();
-						$redirect = 'admin.php?page=support_hub_settings&tab=bbpress';
-					} else {
-						$bbpress->save_data( $_POST );
-						$shub_account_id = $bbpress->get( 'shub_account_id' );
-						if ( isset( $_POST['butt_save_reconnect'] ) ) {
-							$redirect = $bbpress->link_connect();
-						} else {
-							$redirect = $bbpress->link_edit();
-						}
-					}
-					header( "Location: $redirect" );
-					exit;
-				}
-
-				break;
 		}
+        parent::handle_process($process, $options);
 	}
 
 
@@ -269,8 +249,8 @@ class shub_bbpress extends SupportHub_extension {
 		foreach($accounts as $account){
 			$shub_bbpress_account = new shub_bbpress_account( $account['shub_account_id'] );
 			$shub_bbpress_account->run_cron($debug);
-			$forums = $shub_bbpress_account->get('forums');
-			/* @var $forums shub_item[] */
+			$forums = $shub_bbpress_account->get('items');
+			/* @var $forums shub_bbpress_item[] */
 			foreach($forums as $forum){
 				$forum->run_cron($debug);
 			}

@@ -282,7 +282,7 @@ class shub_bbpress_message extends SupportHub_message{
         $bbpress_item = $this->get('bbpress_item');
         if(!$shub_product_id && $bbpress_item){
             $shub_product_id = $bbpress_item->get('shub_product_id');
-            $bbpress_item_data = $bbpress_item->get('item_data');
+            $bbpress_item_data = $bbpress_item->get('item_dat/a');
             if(!is_array($bbpress_item_data))$bbpress_item_data = array();
         }
         if($shub_product_id) {

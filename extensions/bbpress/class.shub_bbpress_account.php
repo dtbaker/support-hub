@@ -24,7 +24,7 @@ class shub_bbpress_account extends SupportHub_account{
 		}
 		// save the active bbpress forums.
 		if(isset($post_data['save_items']) && $post_data['save_items'] == 'yep') {
-			$currently_active_forums = $this->forums;
+			$currently_active_forums = $this->items;
 			$data = $this->get('account_data');
 			$available_forums = isset($data['forums']) && is_array($data['forums']) ? $data['forums'] : array();
 			if(isset($post_data['item']) && is_array($post_data['item'])){
@@ -37,12 +37,12 @@ class shub_bbpress_account extends SupportHub_account{
 					}
 					if($yesno && isset($available_forums[$item_id])){
 						// we are adding this forum to the list. check if it doesn't already exist.
-						if(!isset($this->forums[$item_id])){
-							$forum = new shub_item($this);
+						if(!isset($this->items[$item_id])){
+							$forum = new shub_bbpress_item($this);
 							$forum->create_new();
 							$forum->update('shub_account_id', $this->shub_account_id);
 							$forum->update('bbpress_token', 'same'); // $available_forums[$item_id]['access_token']
-							$forum->update('forum_name', $available_forums[$item_id]['post_title']);
+							$forum->update('item_name', $available_forums[$item_id]['post_title']);
 							$forum->update('forum_id', $item_id);
 							$forum->update('account_data', $available_forums[$item_id]);
 							$forum->update('shub_product_id', isset($post_data['item_product'][$item_id]) ? $post_data['item_product'][$item_id] : 0);

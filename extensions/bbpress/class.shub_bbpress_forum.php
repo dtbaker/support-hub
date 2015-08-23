@@ -1,6 +1,6 @@
 <?php
 
-class shub_item extends SupportHub_item{
+class shub_bbpress_item extends SupportHub_item{
 
 	public function run_cron($debug = false){
 		// find all messages that haven't been sent yet.
@@ -15,7 +15,7 @@ class shub_item extends SupportHub_item{
 			}
 		}*/
 
-        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'bbpress','Starting bbPress Cron for Forum: '.$this->get('forum_name'));
+        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'bbpress','Starting bbPress Cron for Forum: '.$this->get('item_name'));
 		$this->load_latest_item_data($debug);
 	}
 
