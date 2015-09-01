@@ -79,7 +79,7 @@ if($current_account !== false){
 				<?php wp_nonce_field( 'save-account' . (int) $shub_envato_account->get( 'shub_account_id' ) ); ?>
 
                 <p>Setup Instructions:</p>
-                <ul>
+                <ol>
                     <li>Go to <a href="http://build.envato.com/" target="_blank">http://build.envato.com/</a> </li>
                     <li>Click My Apps at the top</li>
                     <li>Login using your existing Envato Account</li>
@@ -98,7 +98,7 @@ if($current_account !== false){
 	                <li>Copy this token and paste it into the box below</li>
 					<li>Enter the Session Cookie as per the <a href="http://supporthub.co/documentation/envato/" target="_blank">help documentation</a> (required for posting item comments) </li>
                     <li>Click the Save and Connect to Envato button below</li>
-                </ul>
+                </ol>
 				<table class="form-table">
 					<tbody>
 					<tr>
