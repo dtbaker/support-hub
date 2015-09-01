@@ -45,7 +45,24 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 (or jpg, jpeg, gif).
 2. This is the second screen shot
 
+
+== Upgrade Notice ==
+
+= 1.1 =
+Major re-write and speed improvements
+
+= 1.0 =
+Initial Release
+
+
+
 == Changelog ==
+
+= 1.1 =
+* Major core re-write
+* Speed improvements
+* Currently re-writing all extensions to be compatible with new framework
+* Envato extension working
 
 = 1.0 =
 * Initial release
