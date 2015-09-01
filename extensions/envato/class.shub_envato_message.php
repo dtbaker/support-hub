@@ -176,7 +176,25 @@ class shub_message extends SupportHub_message{
 		}
 	}
 
-	public function get_from() {
+    public function get_from() {
+        if($this->shub_message_id){
+            $from = array();
+            if($this->get('shub_user_id')){
+                $from[$this->get('shub_user_id')] = new SupportHubUser_Envato($this->get('shub_user_id'));
+            }
+            $messages = $this->get_comments();
+            foreach($messages as $message){
+                if($message['shub_user_id'] && !isset($from[$message['shub_user_id']])){
+                    $from[$message['shub_user_id']] = new SupportHubUser_Envato($message['shub_user_id']);
+                }
+            }
+            return $from;
+        }
+        return array();
+    }
+
+
+    public function get_from2() {
 		if($this->shub_message_id){
 			$from = array();
 			$messages = $this->get_comments(); //shub_get_multiple('shub_message_comment',array('shub_message_id'=>$this->shub_message_id),'shub_message_comment_id');

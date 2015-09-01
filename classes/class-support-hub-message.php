@@ -567,6 +567,12 @@ class SupportHub_message{
                     if(!empty($data['envato_item_data']['item'])){
                         $return['purchased'] = true;
                         $support = shub_get_single('shub_envato_support','shub_envato_purchase_id',$purchase['shub_envato_purchase_id']);
+                        if($support && !empty($support['end_time']) && $support['end_time'] <= time()){
+                            // WHOPPS. I got this wrong in the DB initially. Hack to double check purchase happened before new support terms
+                            if(strtotime($purchase['purchase_time']) < strtotime("2015-09-01")){
+                                $support['end_time'] = strtotime("+6 months", strtotime("2015-09-01"));
+                            }
+                        }
                         if($support && !empty($support['end_time']) && $support['end_time'] > time()){
                             $return['supported'] = true;
                         }

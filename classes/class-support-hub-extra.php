@@ -118,17 +118,17 @@ class SupportHubExtra{
 	}
 
 	// find out if there is any data saved against this particular extra field and message.
-	public function get_data($shub_extension, $shub_extension_account_id, $shub_extension_message_id, $shub_user_id){
+	public function get_data($shub_extension, $shub_account_id, $shub_message_id, $shub_user_id){
 
 		$return = array();
 
 		// find any data items that are linked to this particular support message:
-		if($shub_extension && $shub_extension_account_id && $shub_extension_message_id) {
+		if($shub_extension && $shub_account_id && $shub_message_id) {
 			$data = shub_get_multiple( 'shub_extra_data_rel', array(
 				'shub_extra_id'           => $this->shub_extra_id,
 				'shub_extension'            => $shub_extension,
-				'shub_extension_account_id' => $shub_extension_account_id,
-				'shub_extension_message_id' => $shub_extension_message_id
+				'shub_account_id' => $shub_account_id,
+				'shub_message_id' => $shub_message_id
 			), 'shub_extra_data_id' );
 			foreach ( $data as $d ) {
 				$return[ $d['shub_extra_data_id'] ] = new SupportHubExtraData( $d['shub_extra_data_id'] );
@@ -151,14 +151,14 @@ class SupportHubExtra{
     /**
      * @param $data array('extra_value'=>'SOMETHING', 'extra_data'=>array(SOMETHING))
      * @param $shub_extension
-     * @param $shub_extension_account_id
-     * @param $shub_extension_message_id
+     * @param $shub_account_id
+     * @param $shub_message_id
      * @param $shub_user_id
      *
      * This method will save a set of extra data against a message/user
      *
      */
-	public function save_and_link($data, $shub_extension, $shub_extension_account_id, $shub_extension_message_id, $shub_user_id ){
+	public function save_and_link($data, $shub_extension, $shub_account_id, $shub_message_id, $shub_user_id ){
 		// find if this data exists already in the table.
 		$shub_extra_data_ids = shub_get_multiple('shub_extra_data',array(
 			'shub_extra_id' => $this->shub_extra_id,
@@ -184,8 +184,8 @@ class SupportHubExtra{
 		$existing_linked = shub_get_multiple('shub_extra_data_rel', array(
 			'shub_extra_id' => $this->shub_extra_id,
 			'shub_extension' => $shub_extension,
-			'shub_extension_account_id' => $shub_extension_account_id,
-			'shub_extension_message_id' => $shub_extension_message_id
+			'shub_account_id' => $shub_account_id,
+			'shub_message_id' => $shub_message_id
 		), 'shub_extra_data_id');
 		foreach($shub_extra_data_ids as $shub_extra_data_id => $tf){
 			if(!isset($existing_linked[$shub_extra_data_id])){
@@ -195,8 +195,8 @@ class SupportHubExtra{
 					'shub_extra_data_id' => $shub_extra_data_id,
 					'shub_extra_id' => $this->get('shub_extra_id'),
 					'shub_extension' => $shub_extension,
-					'shub_extension_account_id' => $shub_extension_account_id,
-					'shub_extension_message_id' => $shub_extension_message_id,
+					'shub_account_id' => $shub_account_id,
+					'shub_message_id' => $shub_message_id,
 				));
 				// shweet. should all be linked up.
 			}
@@ -240,6 +240,9 @@ class SupportHubExtra{
 	public static function form_request_extra($data=array()){
 		$extras = self::get_all_extras();
         $done_actions = false;
+        ?>
+        <p><strong>Note: this feature is still early beta, it may not work.</strong></p>
+        <?php
         foreach($extras as $extra){
             $field_settings = $extra->get('field_settings');
             if(!empty($field_settings['is_action'])){
@@ -464,8 +467,8 @@ class SupportHubExtraData {
 			'shub_extra_data_id'     => '',
 			'shub_extra_id'     => '',
 			'shub_extension'        => '',
-			'shub_extension_account_id'        => 0,
-			'shub_extension_message_id'        => 0,
+			'shub_account_id'        => 0,
+			'shub_message_id'        => 0,
 			'extra_value' => '',
 			'extra_data' => '',
 			'shub_user_id'       => 0,

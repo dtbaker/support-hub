@@ -912,6 +912,7 @@ class SupportHub {
                                     'network' => $message['shub_extension'],
                                     'message_id' => $message['shub_message_id'],
                                     'message_comment_id' => 0,
+                                    'message_status' => $message['shub_status'],
                                 );
                             }
                         }
@@ -920,8 +921,8 @@ class SupportHub {
                         'shub_user_id' => $shub_user_id
                     ), 'shub_message_comment_id');*/
 
-                    $sql = "SELECT smc.*, sa.shub_extension FROM `" . _support_hub_DB_PREFIX . "shub_message_comment` smc ";
-                    $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_message` sm USING (shub_message_id) WHERE 1 ";
+                    $sql = "SELECT smc.*, sa.shub_extension, sm.shub_status FROM `" . _support_hub_DB_PREFIX . "shub_message_comment` smc ";
+                    $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_message` sm USING (shub_message_id)  ";
                     $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_account` sa USING (shub_account_id) WHERE 1 ";
                     $sql .= " AND smc.`shub_user_id` = " . (int)$user->get('shub_user_id');
                     $sql .= " AND sm.`shub_message_id` != " . (int)$message_object->get('shub_message_id');
@@ -937,6 +938,7 @@ class SupportHub {
                                     'network' => $comment['shub_extension'],
                                     'message_id' => $comment['shub_message_id'],
                                     'message_comment_id' => $comment['shub_message_comment_id'],
+                                    'message_status' => $comment['shub_status'],
                                 );
                             }
                         }
@@ -1008,23 +1010,29 @@ class SupportHub {
             foreach($other_messages as $other_message){
                 ?>
                 <li>
-                    <?php echo shub_print_date($other_message['time']);?> - <?php
+                    <span class="other_message_time"><?php echo shub_pretty_date($other_message['time']);?></span>
+                    <span class="other_message_status"><?php
                     if(isset($other_message['message_status'])) {
                         switch ($other_message['message_status']) {
                             case _shub_MESSAGE_STATUS_ANSWERED:
-                                echo 'Archived';
+                                echo '<span class="message_status_archived">Archived</span>';
                                 break;
                             case _shub_MESSAGE_STATUS_UNANSWERED:
-                                echo 'Inbox';
+                                echo '<span class="message_status_inbox">Inbox</span>';
                                 break;
                             case _shub_MESSAGE_STATUS_HIDDEN:
-                                echo 'Hidden';
+                                echo '<span class="message_status_hidden">Hidden</span>';
                                 break;
                             default:
-                                echo 'Other?';
+                                echo 'UNKNOWN?';
                         }
                     }
-                    ?><br/>
+                    ?>
+                    </span>
+                    <span class="other_message_network">
+                        <?php echo $this->message_managers[$other_message['network']]->get_friendly_icon();?>
+                    </span>
+                    <br/>
                     <a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-message_id="<?php echo (int)$other_message['message_id'];?>" data-message_comment_id="<?php echo isset($other_message['message_comment_id']) ? (int)$other_message['message_comment_id'] : '';?>" data-modaltitle="<?php echo esc_attr($other_message['summary']);?>"><?php echo esc_html($other_message['summary']);?></a>
                 </li>
                 <?php

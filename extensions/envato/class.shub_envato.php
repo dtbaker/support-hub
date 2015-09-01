@@ -727,7 +727,11 @@ class shub_envato extends SupportHub_extension {
                 if ($shub_envato_purchase_id) {
 
                     // support expiry time is 6 months from the purchase date, or as specified by the api result.
-                    $support_expiry_time = strtotime("+6 months", strtotime($result['verify-purchase']['created_at']));
+                    if(strtotime($result['verify-purchase']['created_at']) < strtotime("2015-09-01")){
+                        $support_expiry_time = strtotime("+6 months", strtotime("2015-09-01"));
+                    }else{
+                        $support_expiry_time = strtotime("+6 months", strtotime($result['verify-purchase']['created_at']));
+                    }
                     if (!empty($result['verify-purchase']['supported_until'])) {
                         $support_expiry_time = strtotime($result['verify-purchase']['supported_until']);
                     }
@@ -880,22 +884,22 @@ class shub_envato extends SupportHub_extension {
                             $purchase_product = new SupportHubProduct($purchase['shub_product_id']);
                             $data = $purchase_product->get('product_data');
                             if(!empty($data['envato_item_data']['item'])){
-                                if(!isset($GLOBALS['envato_item_purchase'])){
-                                    $GLOBALS['envato_item_purchase'] = array();
-                                }
-                                if(!isset($GLOBALS['envato_item_purchase'][$shub_user_id])){
-                                    $GLOBALS['envato_item_purchase'][$shub_user_id] = array();
-                                }
-                                $GLOBALS['envato_item_purchase'][$shub_user_id][$purchase['shub_product_id']] = array(
-                                    'purchased' => true,
-                                    'supported' => false,
-                                );
-                                $support_text = '<strong>EXPIRED</strong>';
+                                $support_text = '<span class="buyer_status_badges">';
                                 $support = shub_get_single('shub_envato_support','shub_envato_purchase_id',$purchase['shub_envato_purchase_id']);
-                                if($support && !empty($support['end_time']) && $support['end_time'] > time()){
-                                    $support_text = shub_print_date($support['end_time']);
-                                    $GLOBALS['envato_item_purchase'][$shub_user_id][$purchase['shub_product_id']]['supported'] = true;
+                                if($support && !empty($support['end_time']) && $support['end_time'] <= time()){
+                                    // WHOPPS. I got this wrong in the DB initially. Hack to double check purchase happened before new support terms
+                                    if(strtotime($purchase['purchase_time']) < strtotime("2015-09-01")){
+                                        $support['end_time'] = strtotime("+6 months", strtotime("2015-09-01"));
+                                    }
                                 }
+                                if($support && !empty($support['end_time']) && $support['end_time'] > time()){
+                                    $support_text .= '<span class="buyer_badge supported">'.shub_print_date($support['end_time']).'</span>';
+                                }else if($support && !empty($support['end_time'])){
+                                    $support_text .= '<span class="buyer_badge unsupported">'.shub_print_date($support['end_time']).'</span>';
+                                }else{
+                                    $support_text .= '<span class="buyer_badge unsupported">Unknown</span>';
+                                }
+                                $support_text .= '</span>';
                                 $user_bits[] = array(
                                     'Purchase',
                                     esc_html($data['envato_item_data']['item']).' on '.shub_print_date($purchase['purchase_time']) .
