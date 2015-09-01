@@ -161,6 +161,10 @@ class shub_bbpress_account extends SupportHub_account{
                     }
 			    }
 			    if(!$comment_user->get('shub_user_id')) {
+                    // find one based on wordpress user id meta. should never reach here though
+                    $comment_user->load_by_meta('wordpress_user_id',$wordpress_user['user_id']);
+                }
+			    if(!$comment_user->get('shub_user_id')) {
 				    $comment_user->create_new();
 			    }
                 // now we add/update various meta/values of the user if anything is missing.

@@ -633,13 +633,19 @@ class shub_envato extends SupportHub_extension {
                 $envato_username = $result['verify-purchase']['buyer'];
                 // find this user in our system.
                 $shub_user = new SupportHubUser_Envato();
-                $shub_user->load_by_meta('envato_username', $envato_username);
+                $shub_user->load_by_meta('envato_username', strtolower($envato_username));
+                if(strtolower($envato_username) == 'TESTINGUSERNAME'){
+                    echo "Trying to find a user with username ".$envato_username." and got this result:";
+                    var_export($shub_user->get('shub_user_id'));
+                    exit;
+                }
+
                 if (!$shub_user->get('shub_user_id')) {
                     // no users exists in our system with this username.
                     // add a new one.
                     $shub_user->create_new();
                     $shub_user->update('user_username', $envato_username);
-                    $shub_user->add_meta('envato_username', $envato_username);
+                    $shub_user->add_meta('envato_username', strtolower($envato_username));
                 }
                 // find out which product this purchase code is relating to
                 $existing_products = SupportHub::getInstance()->get_products();
@@ -704,11 +710,11 @@ class shub_envato extends SupportHub_extension {
                 } else {
                     // we do have an existing purchase.
                     $shub_envato_purchase_id = $existing_purchase['shub_envato_purchase_id'];
-                    if (empty($existing_purchase['shub_user_id'])) {
+//                    if (empty($existing_purchase['shub_user_id'])) {
                         shub_update_insert('shub_envato_purchase_id', $shub_envato_purchase_id, 'shub_envato_purchase', array(
                             'shub_user_id' => $shub_user->get('shub_user_id'),
                         ));
-                    }
+//                    }
                 }
                 if (!$shub_envato_purchase_id) {
                     // add new one
