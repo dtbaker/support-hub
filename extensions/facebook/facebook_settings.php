@@ -95,7 +95,8 @@ if($current_account !== false){
                         $access_token = $facebook->getAccessToken();;
                         //echo 'Current access token is: '.$access_token.'<br>';
                         if($access_token){
-                            $shub_facebook_account->update( 'facebook_token', $access_token );
+                            //$shub_facebook_account->update( 'facebook_token', $access_token );
+                            $shub_facebook_account->update( 'account_data', array('facebook_token' => $access_token) );
                             // success!
 
                             // now we load in a list of facebook pages to manage and redirect the user back to the 'edit' screen where they can continue managing the account.

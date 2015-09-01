@@ -12,7 +12,7 @@ class SupportHubExtra{
 
 	private $shub_extra_id = false; // the current extra id in our system.
     private $details = array();
-	private $json_fields = array();
+	private $json_fields = array('field_settings');
 
 	public $edit_link = ''; // for the table
 
@@ -25,6 +25,7 @@ class SupportHubExtra{
 			'extra_order' => 0,
 			'extra_required' => 0,
 			'field_type' => 'text',
+			'field_settings' => array(),
 		);
 		foreach($this->details as $field_id => $field_data){
 			$this->{$field_id} = $field_data;
@@ -238,15 +239,48 @@ class SupportHubExtra{
 	}
 	public static function form_request_extra($data=array()){
 		$extras = self::get_all_extras();
-		?>
+        $done_actions = false;
+        foreach($extras as $extra){
+            $field_settings = $extra->get('field_settings');
+            if(!empty($field_settings['is_action'])){
+                if(!$done_actions){
+                    $done_actions = true;
+                    ?>
+                    <div>
+                        <?php _e('Actions:','shub'); ?>
+                    </div>
+                    <ul>
+                    <?php
+                }
+                $id = 'extra_request_' . (isset($data['message-id']) ? (int)$data['message-id'] : 0) . '_'.$extra->get('shub_extra_id');
+                ?>
+                <li>
+                    <input type="checkbox" name="extra" class="request_extra" id="<?php echo $id;?>" data-extra-id="<?php echo $extra->get('shub_extra_id');?>" />
+                    <label for="<?php echo $id;?>"><?php echo htmlspecialchars($extra->get('extra_name'));?></label>
+                </li>
+                <?php
+            }
+        }
+        if($done_actions){
+            ?>
+            </ul>
+            <?php
+        }
+        ?>
 		<div>
 			<?php _e('Request Extra Details:','shub'); ?>
 		</div>
 		<ul>
-			<?php foreach($extras as $extra){ ?>
+			<?php foreach($extras as $extra){
+                $field_settings = $extra->get('field_settings');
+                if(!empty($field_settings['is_action'])){
+                    continue;// already done these above
+                }
+                $id = 'extra_request_' . (isset($data['message-id']) ? (int)$data['message-id'] : 0) . '_'.$extra->get('shub_extra_id');
+                ?>
 			<li>
-				<input type="checkbox" name="extra" class="request_extra" id="extra_request_<?php echo $extra->get('shub_extra_id');?>" data-extra-id="<?php echo $extra->get('shub_extra_id');?>" />
-				<label for="extra_request_<?php echo $extra->get('shub_extra_id');?>"><?php echo htmlspecialchars($extra->get('extra_name'));?></label>
+				<input type="checkbox" name="extra" class="request_extra" id="<?php echo $id;?>" data-extra-id="<?php echo $extra->get('shub_extra_id');?>" />
+				<label for="<?php echo $id;?>"><?php echo htmlspecialchars($extra->get('extra_name'));?></label>
 			</li>
 			<?php } ?>
 		</ul>

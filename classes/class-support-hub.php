@@ -564,19 +564,19 @@ class SupportHub {
 		$message_count = $this->get_unread_count();;
 		$menu_label = sprintf( __( 'Support Hub %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . (int)$message_count . "</span></span>" : '');
 
-        add_menu_page( __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages', 'support_hub_main', array($this, 'show_inbox'), 'dashicons-format-chat', "21.1" );
-
-		// hack to rmeove default submenu
-		$menu_label = sprintf( __( 'Inbox %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . number_format_i18n($message_count) . "</span></span>" : '' );
+        add_menu_page( __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages', 'support_hub_main', array($this, 'show_dashboard'), 'dashicons-format-chat', "21.1" );
 
 
-		$page = add_submenu_page('support_hub_main', __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_main' , array($this, 'show_inbox'));
+        $page = add_submenu_page('support_hub_main', __( 'Dashboard', 'support_hub' ), __('Dashboard' ,'support_hub'), 'edit_pages',  'support_hub_main' , array($this, 'show_dashboard'));
+        add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
+
+        // hack to rmeove default submenu
+        $menu_label = sprintf( __( 'Inbox %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . number_format_i18n($message_count) . "</span></span>" : '' );
+		$page = add_submenu_page('support_hub_main', __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_inbox' , array($this, 'show_inbox'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
         add_action("load-$page", array( $this, 'screen_options' ));
 
 
-		//$page = add_submenu_page('support_hub_main', __( 'Interactions', 'support_hub' ), __('Interactions' ,'support_hub'), 'edit_pages',  'support_hub_interactions' , array($this, 'show_interactions'));
-		//add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
 		//$page = add_submenu_page('support_hub_main', __( 'Compose', 'support_hub' ), __('Compose' ,'support_hub'), 'edit_pages',  'support_hub_compose' , array($this, 'show_compose'));
 		//add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
@@ -624,6 +624,13 @@ class SupportHub {
             }else{
                 include( trailingslashit( $this->dir ) . 'pages/inbox.php');
             }
+		}else{
+			include( trailingslashit( $this->dir ) . 'pages/setup.php');
+		}
+	}
+	public function show_dashboard(){
+		if($this->is_setup()){
+            include( trailingslashit( $this->dir ) . 'pages/dashboard.php');
 		}else{
 			include( trailingslashit( $this->dir ) . 'pages/setup.php');
 		}

@@ -89,6 +89,8 @@ class SupportHub_message{
             return $this->{$field};
         }else if(isset($this->data) && is_array($this->data) && isset($this->data[$field])){
             return $this->data[$field];
+        }else if(isset($this->shub_data) && is_array($this->shub_data) && isset($this->shub_data[$field])){
+            return $this->shub_data[$field];
         }
         return false;
     }
@@ -327,7 +329,7 @@ class SupportHub_message{
     public function get_product_id(){
         // if local product is id -1 (default) then we use the parent forum product id
         // this allows individual products to be overrideen with new one
-        if($this->get('shub_product_id') >= 0){
+        if($this->get('shub_product_id') > 0){
             return $this->get('shub_product_id');
         }else if($this->item){
             return $this->item->get('shub_product_id');
@@ -392,9 +394,9 @@ class SupportHub_message{
                     </header>
                     <aside class="message_sidebar">
 
-                        <?php $this->message_sidebar_data(); ?>
-
                         <?php
+
+                        $this->message_sidebar_data();
                         // find out the user details, purchases and if they have any other open messages.
                         $user_hints = array(
                             'shub_user_id' => array()
@@ -472,19 +474,40 @@ class SupportHub_message{
                     <?php } ?>
                     <?php echo $from_user->get_full_link(); ?>
                     <span>
-                                            <?php if($time){ ?>
-                                                <span class="time" data-time="<?php echo esc_attr($time);?>" data-date="<?php echo esc_attr(shub_print_date($time,true));?>"><?php echo shub_pretty_date($time);?></span>
-                                            <?php } ?>
+                        <?php if($time){ ?>
+                            <span class="time" data-time="<?php echo esc_attr($time);?>" data-date="<?php echo esc_attr(shub_print_date($time,true));?>"><?php echo shub_pretty_date($time);?></span>
+                        <?php } ?>
                         <span class="wp_user">
-                                            <?php
-                                            // todo - better this! don't call on every message, load list in main loop and pass through all results.
-                                            if ( isset( $envato_data['user_id'] ) && $envato_data['user_id'] ) {
-                                                $user_info = get_userdata($envato_data['user_id']);
-                                                echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
-                                            }
-                                            ?>
-                                            </span>
-                                        </span>
+                        <?php
+                            // todo - better this! don't call on every message, load list in main loop and pass through all results.
+                            if ( isset( $envato_data['user_id'] ) && $envato_data['user_id'] ) {
+                                $user_info = get_userdata($envato_data['user_id']);
+                                echo ' (sent by ' . htmlspecialchars($user_info->display_name) . ')';
+                            }
+                            ?>
+                        </span>
+                        <span class="buyer_status_badges">
+                            <?php
+                            // work out of this buyer has bought something via the envato module.
+                            // first we have to find out what item this is:
+                            //echo "user:".$comment['shub_user_id']."<br>product:".$this->get_product_id()."<br>";
+                            // todo: store these as a flag in the message database so we can run stats on them and display a graph on the dashboard.
+                            $buyer_status = $this->get_buyer_status($comment['shub_user_id']);
+                            if(!empty($buyer_status['purchased'])){
+                                echo '<span class="buyer_badge purchased">Purchased</span> ';
+                            }
+                            if(!empty($buyer_status['supported'])){
+                                echo '<span class="buyer_badge supported">Supported</span> ';
+                            }
+                            if(!empty($buyer_status['unsupported'])){
+                                echo '<span class="buyer_badge unsupported">Unsupported</span> ';
+                            }
+                            if(!empty($buyer_status['presale'])){
+                                echo '<span class="buyer_badge presale">Pre-sale</span> ';
+                            }
+                            ?>
+                        </span>
+                    </span>
                 </div>
                 <div class="shub_message_body">
                     <div>
@@ -539,6 +562,37 @@ class SupportHub_message{
             </div>
             <?php
         }
+    }
+
+    public function get_buyer_status($shub_user_id){
+        $return = array();
+        if($shub_product_id = $this->get_product_id()){
+            // thid is a duplicate of the code in class.shub_envato.php to determine if a user has purchased a product
+            // todo: try to make them both use the same cached data.
+            $purchases = shub_get_multiple('shub_envato_purchase',array('shub_user_id'=>$shub_user_id,'shub_product_id'=>$shub_product_id));
+            foreach($purchases as $purchase){
+                if($purchase['shub_product_id']){
+                    $purchase_product = new SupportHubProduct($purchase['shub_product_id']);
+                    $data = $purchase_product->get('product_data');
+                    if(!empty($data['envato_item_data']['item'])){
+                        $return['purchased'] = true;
+                        $support = shub_get_single('shub_envato_support','shub_envato_purchase_id',$purchase['shub_envato_purchase_id']);
+                        if($support && !empty($support['end_time']) && $support['end_time'] > time()){
+                            $return['supported'] = true;
+                        }
+                    }
+                }
+            }
+            if(empty($return['purchased'])){
+                $return['presale'] = true;
+            }
+            if(empty($return['supported']) && empty($return['presale'])){
+                $return['unsupported'] = true;
+            }
+        }else{
+            $return['unknown'] = true;
+        }
+        return $return;
     }
 
 }

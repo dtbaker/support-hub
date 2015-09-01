@@ -147,11 +147,11 @@ class shub_bbpress_item extends SupportHub_item{
 			$bbpress_message = new shub_bbpress_message($this->account, $this, false);
 			$bbpress_message -> load_by_bbpress_id($forum_topic['post_id'], $forum_topic, 'forum_topic', $debug);
 			$count++;
-            SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'bbpress','Imported forum topic ID '.$bbpress_message->get( 'bbpress_id' )." with ".count($forum_topic['replies']).' replies');
+            SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'bbpress','Imported forum topic ID '.$bbpress_message->get( 'network_key' )." with ".count($forum_topic['replies']).' replies');
 			if($debug) {
 				?>
 				<div>
-				<pre> Imported forum topic ID: <?php echo $bbpress_message->get( 'bbpress_id' ); ?> with <?php echo count($forum_topic['replies']);?> replies. </pre>
+				<pre> Imported forum topic ID: <?php echo $bbpress_message->get( 'network_key' ); ?> with <?php echo count($forum_topic['replies']);?> replies. </pre>
 				</div>
 			<?php
 			}

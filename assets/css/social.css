@@ -383,3 +383,24 @@ p.shub_search_box span{
 p.shub_search_box #search-submit{
     float: right;
 }
+
+.shub_message_header span.buyer_badge{
+    border-radius: 3px;
+    display: inline-block;
+    color:#FFF;
+    font-size: 0.8em;
+    padding: 2px 5px;
+    font-weight: bold;
+}
+.buyer_badge.purchased{
+    background: #98bd45;
+}
+.buyer_badge.supported{
+    background: #e3e128;
+}
+.buyer_badge.unsupported{
+    background: #bd0b02;
+}
+.buyer_badge.presale{
+    background: #bd6716;
+}

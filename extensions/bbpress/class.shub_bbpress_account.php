@@ -95,6 +95,8 @@ class shub_bbpress_account extends SupportHub_account{
 		}
 		return $this->api;
 	}
+
+    // todo: move this into the bbpress_user class.
 	public function get_api_user_to_id($wp_user_id){
 		if((int)$wp_user_id > 0) {
 		    $wordpress_user = $this->get_api_user($wp_user_id);
@@ -104,7 +106,24 @@ class shub_bbpress_account extends SupportHub_account{
                 $envato_username = false;
                 if(!empty($wordpress_user['envato_codes'])){
                     foreach ($wordpress_user['envato_codes'] as $code => $purchase_data) {
-                        if(!empty($purchase_data['buyer'])){
+                        // check if this code is legit with the envato module
+                        // only if the envato module is active
+                        if(isset(SupportHub::getInstance()->message_managers['envato'])){
+                            $result = SupportHub::getInstance()->message_managers['envato']->pull_purchase_code(false, $code, array());
+                            if($result && !empty($result['shub_user_id'])){
+                                $comment_user->load($result['shub_user_id']);
+                                SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'Found a user based on envato code.', array(
+                                    'code' => $code,
+                                    'found_user_id' => $comment_user->get('shub_user_id'),
+                                ));
+                                break;
+                            }else{
+                                SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'DIDNT Find a user based on envato username.', array(
+                                    'code' => $code,
+                                ));
+                            }
+                        }
+                        /*if(!empty($purchase_data['buyer'])){
                             $envato_username = trim(strtolower($purchase_data['buyer']));
                         }
                         if ($comment_user->load_by_meta('envato_license_code', strtolower($code))) {
@@ -114,7 +133,7 @@ class shub_bbpress_account extends SupportHub_account{
                                 'found_user_id' => $comment_user->get('shub_user_id'),
                             ));
                             break;
-                        }
+                        }*/
                     }
                     if(!$comment_user->get('shub_user_id')){
                         // didn't find one yet.
@@ -129,8 +148,8 @@ class shub_bbpress_account extends SupportHub_account{
                             }
                         }
                     }
-                    if(!isset($user_data['envato_codes']))$user_data['envato_codes']=array();
-                    $user_data['envato_codes'] = array_merge($user_data['envato_codes'], $wordpress_user['envato_codes']);
+                    //if(!isset($user_data['envato_codes']))$user_data['envato_codes']=array();
+                    //$user_data['envato_codes'] = array_merge($user_data['envato_codes'], $wordpress_user['envato_codes']);
                 }
 			    $wordpress_user['email'] = trim(strtolower($wordpress_user['email']));
 			    if(!empty($wordpress_user['email'])){
@@ -151,16 +170,19 @@ class shub_bbpress_account extends SupportHub_account{
                 if($envato_username && !$comment_user->get_meta('envato_username',$envato_username)){
                     $comment_user->add_meta('envato_username', $envato_username);
                 }
-                if(!empty($wordpress_user['envato_codes'])) {
+                $comment_user->add_unique_meta('wordpress_user_id',$wordpress_user['user_id']);
+                /*if(!empty($wordpress_user['envato_codes'])) {
                     foreach ($wordpress_user['envato_codes'] as $code => $purchase_data) {
                         if(!$comment_user->get_meta('envato_license_code', strtolower($code))){
                             $comment_user->add_meta('envato_license_code', strtolower($code));
                         }
                     }
-                }
+                }*/
                 if ( ! $comment_user->get( 'user_username' ) && !empty($wordpress_user['username']) ) {
                     $comment_user->update( 'user_username', $wordpress_user['username'] );
                 }
+
+                $comment_user->update_user_data(array('wordpress'=>$wordpress_user));
 
 			    /*$user_data['source'] = array_merge(isset($user_data['source']) ? $user_data['source'] : array(), array(
 				    'bbpress'
