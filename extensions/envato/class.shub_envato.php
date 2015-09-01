@@ -634,11 +634,6 @@ class shub_envato extends SupportHub_extension {
                 // find this user in our system.
                 $shub_user = new SupportHubUser_Envato();
                 $shub_user->load_by_meta('envato_username', strtolower($envato_username));
-                if(strtolower($envato_username) == 'TESTINGUSERNAME'){
-                    echo "Trying to find a user with username ".$envato_username." and got this result:";
-                    var_export($shub_user->get('shub_user_id'));
-                    exit;
-                }
 
                 if (!$shub_user->get('shub_user_id')) {
                     // no users exists in our system with this username.

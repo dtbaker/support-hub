@@ -196,7 +196,93 @@ class shub_bbpress_message extends SupportHub_message{
 		}
 		return false;
 	}
-	public function send_reply($bbpress_id, $message, $debug = false, $extra_data = array()){
+
+
+    public function send_queued_comment_reply($bbpress_message_comment_id, $shub_outbox, $debug = false){
+        $comments = $this->get_comments();
+        if(isset($comments[$bbpress_message_comment_id]) && !empty($comments[$bbpress_message_comment_id]['message_text'])){
+            $api = $this->account->get_api();
+            //$item_data = $this->get('item')->get('item_data');
+
+            $bbpress_post_data = $this->get('shub_data');
+            $bbpress_id = $this->get('network_key');
+
+            if($debug)echo "Sending a reply to bbPress Topic ID: $bbpress_id <br>\n";
+
+            $outbox_data = $shub_outbox->get('message_data');
+            if(isset($outbox_data['extra']) && is_array($outbox_data['extra'])){
+                $extra_data = $outbox_data['extra'];
+            }else{
+                $extra_data = array();
+            }
+            $api_result = false;
+            try{
+                $extra_data['api'] = 1;
+                $api_result = $api->newPost('Reply to: '.((isset($bbpress_post_data['post_title'])) ? $bbpress_post_data['post_title'] : 'Post'),$comments[$bbpress_message_comment_id]['message_text'],array(
+                    'post_type' => 'reply',
+                    'post_parent' => $bbpress_id,
+                    'custom_fields' => array(
+                        array(
+                            'key' => 'support_hub',
+                            'value' => json_encode($extra_data),
+                        )
+                    )
+                ));
+                SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
+            }catch(Exception $e){
+                SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'bbpress', 'API Error: ', $e);
+                if($debug){
+                    echo "API Error: ".$e;
+                }
+            }
+            if((int) $api_result > 0){
+                shub_update_insert('shub_message_comment_id', $bbpress_message_comment_id, 'shub_message_comment', array(
+                    'network_key' => $api_result,
+                    'time' => time(),
+                ));
+                return true;
+            }else{
+                echo "Failed to send comment, check debug log.";
+                return false;
+            }
+            /*if((int) $api_result > 0){
+                // we have a post id for our reply!
+                // add this reply to the 'comments' array of our existing 'message' object.
+
+                // grab the updated post details for both the parent topic and the newly created reply:
+                $parent_topic = $api->getPost($this->get('network_key'));
+                SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
+                $reply_post = $api->getPost($api_result);
+                SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
+
+                if($parent_topic && $parent_topic['post_id'] == $this->get('network_key') && $reply_post && $reply_post['post_id'] == $api_result && $reply_post['post_parent'] == $this->get('network_key')){
+                    // all looks hunky dory
+                    $comments = $this->get('comments');
+                    if(!is_array($comments))$comments = array();
+                    array_unshift($comments, $reply_post);
+                    $parent_topic['replies'] = $comments;
+                    // save this updated data to the db
+                    $this->load_by_bbpress_id($this->get('network_key'),$parent_topic,$this->get('shub_type'),$debug);
+                    $existing_messages = $this->get_comments();
+                    foreach($existing_messages as $existing_message){
+                        if(!$existing_message['user_id'] && $existing_message['message_text'] == $comments[$bbpress_message_comment_id]['message_text']){
+                            shub_update_insert('shub_message_comment_id',$existing_message['shub_message_comment_id'],'shub_message_comment',array(
+                                'user_id' => get_current_user_id(),
+                            ));
+                        }
+                    }
+                    $this->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
+                }
+
+            }*/
+
+        }
+        return false;
+    }
+
+
+    
+    public function send_reply($bbpress_id, $message, $debug = false, $extra_data = array()){
 		if($this->account && $this->shub_message_id) {
 
 
@@ -211,59 +297,7 @@ class shub_bbpress_message extends SupportHub_message{
 					}
 					if(!$bbpress_id)$bbpress_id = $this->get('network_key');
 
-					$bbpress_post_data = $this->get('shub_data');
 
-					if($debug)echo "Sending a reply to bbPress Topic ID: $bbpress_id <br>\n";
-					$api_result = false;
-					try{
-						$extra_data['api'] = 1;
-						$api_result = $api->newPost('Reply to: '.((isset($bbpress_post_data['post_title'])) ? $bbpress_post_data['post_title'] : 'Post'),$message,array(
-							'post_type' => 'reply',
-							'post_parent' => $bbpress_id,
-							'custom_fields' => array(
-								array(
-									'key' => 'support_hub',
-									'value' => json_encode($extra_data),
-								)
-							)
-						));
-						SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
-					}catch(Exception $e){
-						SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'bbpress', 'API Error: ', $e);
-						if($debug){
-							echo "API Error: ".$e;
-						}
-					}
-					if((int) $api_result > 0){
-						// we have a post id for our reply!
-						// add this reply to the 'comments' array of our existing 'message' object.
-
-						// grab the updated post details for both the parent topic and the newly created reply:
-						$parent_topic = $api->getPost($this->get('network_key'));
-						SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
-						$reply_post = $api->getPost($api_result);
-						SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'bbpress', 'API Result: ', $api_result);
-
-						if($parent_topic && $parent_topic['post_id'] == $this->get('network_key') && $reply_post && $reply_post['post_id'] == $api_result && $reply_post['post_parent'] == $this->get('network_key')){
-							// all looks hunky dory
-							$comments = $this->get('comments');
-							if(!is_array($comments))$comments = array();
-							array_unshift($comments, $reply_post);
-							$parent_topic['replies'] = $comments;
-							// save this updated data to the db
-							$this->load_by_bbpress_id($this->get('network_key'),$parent_topic,$this->get('shub_type'),$debug);
-							$existing_messages = $this->get_comments();
-							foreach($existing_messages as $existing_message){
-								if(!$existing_message['user_id'] && $existing_message['message_text'] == $message){
-									shub_update_insert('shub_message_comment_id',$existing_message['shub_message_comment_id'],'shub_message_comment',array(
-										'user_id' => get_current_user_id(),
-									));
-								}
-							}
-							$this->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
-						}
-
-					}
 					break;
 			}
 

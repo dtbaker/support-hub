@@ -264,39 +264,29 @@ class SupportHub_message{
 
 
             if($debug)echo "Type: ".$this->get('shub_type')." <br>\n";
-            switch($this->get('shub_type')) {
-                case 'item_comment':
-                    if(!$network_key)$network_key = $this->get('network_key');
+            if(!$network_key)$network_key = $this->get('network_key');
 
-                    if($debug)echo "Sending a reply to Network Message ID: $network_key <br>\n";
-
-                    $result = false;
-                    // send via api
-                    $item_data = $this->get('item')->get('item_data');
-                    if($item_data && $item_data['url']){
-
-                        $reply_user = $this->get_reply_user();
-                        // add a placeholder in the comments table, next time the cron runs it should pick this up and fill in all the details correctly from the API
-                        $shub_message_comment_id = shub_update_insert('shub_message_comment_id',false,'shub_message_comment',array(
-                            'shub_message_id' => $this->shub_message_id,
-                            'shub_user_id' => $reply_user->get('shub_user_id'), // we get the main shub user id for sending messages from this account.
-                            'shub_outbox_id' => $shub_outbox_id,
-                            'network_key' => '',
-                            'time' => time(),
-                            'message_text' => $message,
-                            'user_id' => get_current_user_id(),
-                        ));
-                        $this->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
-                        if($debug){
-                            echo "Successfully added comment with id $shub_message_comment_id <br>\n";
-                        }
-                        return $shub_message_comment_id;
+            if($debug)echo "Sending a reply to Network Message ID: $network_key <br>\n";
 
 
-                    }
-
-                    break;
+            $reply_user = $this->get_reply_user();
+            // add a placeholder in the comments table, next time the cron runs it should pick this up and fill in all the details correctly from the API
+            $shub_message_comment_id = shub_update_insert('shub_message_comment_id',false,'shub_message_comment',array(
+                'shub_message_id' => $this->shub_message_id,
+                'shub_user_id' => $reply_user ? $reply_user->get('shub_user_id') : 0, // we get the main shub user id for sending messages from this account.
+                'shub_outbox_id' => $shub_outbox_id,
+                'network_key' => '',
+                'time' => time(),
+                'message_text' => $message,
+                'user_id' => get_current_user_id(),
+            ));
+            $this->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
+            if($debug){
+                echo "Successfully added comment with id $shub_message_comment_id <br>\n";
             }
+            return $shub_message_comment_id;
+
+
         }
         return false;
     }

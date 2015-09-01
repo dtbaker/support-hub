@@ -24,6 +24,7 @@ class shub_bbpress_account extends SupportHub_account{
 			// this api_result will contain additional actions that we presentto the user when composing messages
             // for example ( mark thread as resolved )
 			$api_result['shub_user_id'] = $this->get_api_user_to_id($api_result['user_id']);
+            $this->update('shub_user_id',$api_result['shub_user_id']);
 			$this->save_account_data(array(
 				'user' => $api_result,
                 'reply_options' => isset($api_result['support_hub']['reply_options']) ? $api_result['support_hub']['reply_options'] : array()

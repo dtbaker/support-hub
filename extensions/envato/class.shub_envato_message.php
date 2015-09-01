@@ -141,7 +141,7 @@ class shub_message extends SupportHub_message{
 		}
 		return false;
 	}
-	public function send_queued_comment_reply($envato_message_comment_id){
+	public function send_queued_comment_reply($envato_message_comment_id, $shub_outbox, $debug = false){
         $comments = $this->get_comments();
         if(isset($comments[$envato_message_comment_id]) && !empty($comments[$envato_message_comment_id]['message_text'])){
             $api = $this->account->get_api();

@@ -59,13 +59,14 @@ if($current_account !== false){
 				<?php wp_nonce_field( 'save-account' . (int) $shub_bbpress_account->get( 'shub_account_id' ) ); ?>
 
                 <p>Setup Instructions:</p>
-                <ul>
+                <ol>
+                    <li>Ensure bbPress is compatible with Support Hub, see <a href="http://supporthub.co/documentation/bbpress/" target="_blank">here</a> for instructions. </li>
                     <li>Login to your WordPress website</li>
                     <li>Create a new WordPress user, set the "Role" as "Administrator", and the "Forum Role" as "Keymaster". (if running a WP Network install, you may need to grant this user Super Admin privileges, as edit_user capability is needed)</li>
                     <li>Type in your WordPress XML-PRC url below (usually http://yourwebsite.com/xmlrpc.php)</li>
                     <li>Type in your new WordPress username and password below (the one you just created)</li>
                     <li>Click "Save and Connect to bbPress"</li>
-                </ul>
+                </ol>
 				<table class="form-table">
 					<tbody>
 					<tr>

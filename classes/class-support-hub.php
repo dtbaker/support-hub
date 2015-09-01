@@ -211,6 +211,10 @@ class SupportHub {
                                             $extra_data[substr($key, 6)] = $val;
                                         }
                                     }
+                                    $outbox->update_outbox_data(array(
+                                        'debug' => $debug,
+                                        'extra' => $extra_data,
+                                    ));
                                     $message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
                                     if(!$message_comment_id){
                                         $return['message'] .= 'Failed to queue comment reply in database.';
@@ -965,9 +969,16 @@ class SupportHub {
             }
         }
 		if(isset($user_details['url']) && isset($user_details['username'])){
-            $user_bits[] = array('Username','<a href="'.esc_url($user_details['url']).'" target="_blank">' . esc_html($user_details['username']) . '</a>');
+            if(!is_array($user_details['url']))$user_details['url'] = array($user_details['url']);
+            if(!is_array($user_details['username']))$user_details['username'] = array($user_details['username']);
+            foreach($user_details['url'] as $key => $url){
+                $user_bits[] = array('Username','<a href="'.esc_url($url).'" target="_blank">' . esc_html(isset($user_details['username'][$key]) ? $user_details['username'][$key] : 'N/A') . '</a>');
+            }
 		}else if(isset($user_details['username'])){
-            $user_bits[] =  array('Username',esc_html($user_details['username']));
+            if(!is_array($user_details['username']))$user_details['username'] = array($user_details['username']);
+            foreach($user_details['username'] as $key => $username){
+                $user_bits[] =  array('Username',esc_html($username));
+            }
 		}
         /*
         if(isset($user_details['codes'])){
