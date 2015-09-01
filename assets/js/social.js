@@ -108,6 +108,8 @@ ucm.social = {
                     success: function(r){
                         if(r && typeof r.redirect != 'undefined') {
                             window.location = r.redirect;
+                        }else if(r && typeof r.error != 'undefined' && r.error){
+                            pt.html("Error: "+ r.message);
                         }else if(r && typeof r.shub_outbox_id != 'undefined' && r.shub_outbox_id){
                             // successfully queued the message reply for sending.
                             // slide up this window and show a "queued" message, similar to archiving a message.

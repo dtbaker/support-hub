@@ -383,3 +383,54 @@ p.shub_search_box span{
 p.shub_search_box #search-submit{
     float: right;
 }
+
+span.buyer_badge,
+.shub_message_header span.buyer_badge{
+    border-radius: 3px;
+    display: inline-block;
+    color:#FFF;
+    font-size: 0.8em;
+    padding: 2px 5px;
+    font-weight: bold;
+}
+.buyer_badge.purchased{
+    background: #98bd45;
+}
+.buyer_badge.supported{
+    background: #e3e128;
+}
+.buyer_badge.unsupported{
+    background: #bd0b02;
+}
+.buyer_badge.presale{
+    background: #bd6716;
+}
+.other_message_status span{
+    border-radius: 3px;
+    display: inline-block;
+    color:#FFF;
+    font-size: 0.8em;
+    padding: 0px 5px;
+    font-weight: bold;
+}
+.other_message_status .message_status_archived{
+    background: #4f83bd;
+}
+.other_message_status .message_status_inbox{
+    background: #98bd45;
+}
+.other_message_status .message_status_hidden{
+    background: #951100;
+}
+.other_message_network .shub_friendly_icon {
+    max-height: 19px;
+    vertical-align: top;
+}
+.shub_other_messages ul li{
+    background: #f5f5f5;
+    border-radius: 4px;
+    max-height: 73px;
+    padding: 4px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}

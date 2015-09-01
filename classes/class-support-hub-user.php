@@ -62,12 +62,20 @@ class SupportHubUser{
 	}
 	public function load_by_meta($meta_key, $meta_val){
 		$this->reset();
-		if(!empty($meta_key) && !empty($meta_val)){
+		if($meta_key && $meta_val){
 			$data = shub_get_single($this->db_table_meta,array('meta_key','meta_val'),array($meta_key,$meta_val));
-			if($data && isset($data['meta_key']) && isset($data['meta_val']) && $data['meta_key'] == $meta_key && $data['meta_val'] == $meta_val){
+			if($data && !empty($data['meta_key']) && !empty($data['meta_val']) && $data['meta_key'] == $meta_key && (int)$data[$this->db_primary_key] > 0){
 				$this->load($data[$this->db_primary_key]);
+                if(!$this->get('shub_user_id')){
+                    // todo: ran into this error where I cleared the user table without clearing the meta table/
+                    // it tries to load a user that doesn't exist
+                    shub_delete_from_db($this->db_table_meta,'shub_user_id',$data[$this->db_primary_key]);
+                    return false;
+                }
 				return true;
-			}
+            }else{
+//                echo 'No match'; print_r($data);
+            }
 		}
 		return false;
 	}

@@ -132,7 +132,7 @@ class SupportHub_extension{
                 foreach($from as $id => $from_data){
                     ?>
                     <div>
-                        <a href="<?php echo esc_url($from_data['link']);?>" target="_blank"><img src="<?php echo esc_attr($from_data['image']);?>" class="shub_from_picture"></a> <?php echo htmlspecialchars($from_data['name']); ?>
+                        <a href="<?php echo esc_url($from_data->get_link());?>" target="_blank"><img src="<?php echo esc_attr($from_data->get_image());?>" class="shub_from_picture"></a> <?php echo htmlspecialchars($from_data->get_name()); ?>
                     </div>
                     <?php
                 } ?>
@@ -140,7 +140,7 @@ class SupportHub_extension{
             <?php
             reset($from);
             if(isset($from_data)) {
-                echo '<a href="' . $from_data['link'] . '" target="_blank">' . '<img src="' . esc_attr($from_data['image']) . '" class="shub_from_picture"></a> ';
+                echo '<a href="' . $from_data->get_link() . '" target="_blank">' . '<img src="' . esc_attr($from_data->get_image()) . '" class="shub_from_picture"></a> ';
                 echo '<span class="shub_from_count">';
                 if ( count( $from ) > 1 ) {
                     echo '+' . ( count( $from ) - 1 );

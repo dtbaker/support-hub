@@ -137,7 +137,7 @@ class SupportHubOutbox{
                         $this->update('shub_status', _SHUB_OUTBOX_STATUS_SENDING);
                         // sweet! we're here, send the reply.
                         ob_start();
-                        $status = $message->send_queued_comment_reply($this->shub_message_comment_id);
+                        $status = $message->send_queued_comment_reply($this->shub_message_comment_id,$this);
                         $errors = ob_get_clean();
                         if($status){
                             // success! it worked! flag it as sent.
@@ -148,12 +148,14 @@ class SupportHubOutbox{
                             SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'sending','Failed to Send: '.$this->shub_message_id.': error: '.$errors);
                         }
                         SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'sending','Finished Send: '.$this->shub_message_id);
+                        return $errors;
 
 
                     }
                 }
             }
         }
+        return false;
     }
 
     public static function get_pending(){

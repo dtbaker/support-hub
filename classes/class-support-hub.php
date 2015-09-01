@@ -211,6 +211,10 @@ class SupportHub {
                                             $extra_data[substr($key, 6)] = $val;
                                         }
                                     }
+                                    $outbox->update_outbox_data(array(
+                                        'debug' => $debug,
+                                        'extra' => $extra_data,
+                                    ));
                                     $message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
                                     if(!$message_comment_id){
                                         $return['message'] .= 'Failed to queue comment reply in database.';
@@ -564,19 +568,19 @@ class SupportHub {
 		$message_count = $this->get_unread_count();;
 		$menu_label = sprintf( __( 'Support Hub %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . (int)$message_count . "</span></span>" : '');
 
-        add_menu_page( __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages', 'support_hub_main', array($this, 'show_inbox'), 'dashicons-format-chat', "21.1" );
-
-		// hack to rmeove default submenu
-		$menu_label = sprintf( __( 'Inbox %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . number_format_i18n($message_count) . "</span></span>" : '' );
+        add_menu_page( __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages', 'support_hub_main', array($this, 'show_dashboard'), 'dashicons-format-chat', "21.1" );
 
 
-		$page = add_submenu_page('support_hub_main', __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_main' , array($this, 'show_inbox'));
+        $page = add_submenu_page('support_hub_main', __( 'Dashboard', 'support_hub' ), __('Dashboard' ,'support_hub'), 'edit_pages',  'support_hub_main' , array($this, 'show_dashboard'));
+        add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
+
+        // hack to rmeove default submenu
+        $menu_label = sprintf( __( 'Inbox %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . number_format_i18n($message_count) . "</span></span>" : '' );
+		$page = add_submenu_page('support_hub_main', __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_inbox' , array($this, 'show_inbox'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
         add_action("load-$page", array( $this, 'screen_options' ));
 
 
-		//$page = add_submenu_page('support_hub_main', __( 'Interactions', 'support_hub' ), __('Interactions' ,'support_hub'), 'edit_pages',  'support_hub_interactions' , array($this, 'show_interactions'));
-		//add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
 		//$page = add_submenu_page('support_hub_main', __( 'Compose', 'support_hub' ), __('Compose' ,'support_hub'), 'edit_pages',  'support_hub_compose' , array($this, 'show_compose'));
 		//add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
@@ -624,6 +628,13 @@ class SupportHub {
             }else{
                 include( trailingslashit( $this->dir ) . 'pages/inbox.php');
             }
+		}else{
+			include( trailingslashit( $this->dir ) . 'pages/setup.php');
+		}
+	}
+	public function show_dashboard(){
+		if($this->is_setup()){
+            include( trailingslashit( $this->dir ) . 'pages/dashboard.php');
 		}else{
 			include( trailingslashit( $this->dir ) . 'pages/setup.php');
 		}
@@ -901,6 +912,7 @@ class SupportHub {
                                     'network' => $message['shub_extension'],
                                     'message_id' => $message['shub_message_id'],
                                     'message_comment_id' => 0,
+                                    'message_status' => $message['shub_status'],
                                 );
                             }
                         }
@@ -909,8 +921,8 @@ class SupportHub {
                         'shub_user_id' => $shub_user_id
                     ), 'shub_message_comment_id');*/
 
-                    $sql = "SELECT smc.*, sa.shub_extension FROM `" . _support_hub_DB_PREFIX . "shub_message_comment` smc ";
-                    $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_message` sm USING (shub_message_id) WHERE 1 ";
+                    $sql = "SELECT smc.*, sa.shub_extension, sm.shub_status FROM `" . _support_hub_DB_PREFIX . "shub_message_comment` smc ";
+                    $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_message` sm USING (shub_message_id)  ";
                     $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_account` sa USING (shub_account_id) WHERE 1 ";
                     $sql .= " AND smc.`shub_user_id` = " . (int)$user->get('shub_user_id');
                     $sql .= " AND sm.`shub_message_id` != " . (int)$message_object->get('shub_message_id');
@@ -926,6 +938,7 @@ class SupportHub {
                                     'network' => $comment['shub_extension'],
                                     'message_id' => $comment['shub_message_id'],
                                     'message_comment_id' => $comment['shub_message_comment_id'],
+                                    'message_status' => $comment['shub_status'],
                                 );
                             }
                         }
@@ -958,9 +971,16 @@ class SupportHub {
             }
         }
 		if(isset($user_details['url']) && isset($user_details['username'])){
-            $user_bits[] = array('Username','<a href="'.esc_url($user_details['url']).'" target="_blank">' . esc_html($user_details['username']) . '</a>');
+            if(!is_array($user_details['url']))$user_details['url'] = array($user_details['url']);
+            if(!is_array($user_details['username']))$user_details['username'] = array($user_details['username']);
+            foreach($user_details['url'] as $key => $url){
+                $user_bits[] = array('Username','<a href="'.esc_url($url).'" target="_blank">' . esc_html(isset($user_details['username'][$key]) ? $user_details['username'][$key] : 'N/A') . '</a>');
+            }
 		}else if(isset($user_details['username'])){
-            $user_bits[] =  array('Username',esc_html($user_details['username']));
+            if(!is_array($user_details['username']))$user_details['username'] = array($user_details['username']);
+            foreach($user_details['username'] as $key => $username){
+                $user_bits[] =  array('Username',esc_html($username));
+            }
 		}
         /*
         if(isset($user_details['codes'])){
@@ -990,23 +1010,29 @@ class SupportHub {
             foreach($other_messages as $other_message){
                 ?>
                 <li>
-                    <?php echo shub_print_date($other_message['time']);?> - <?php
+                    <span class="other_message_time"><?php echo shub_pretty_date($other_message['time']);?></span>
+                    <span class="other_message_status"><?php
                     if(isset($other_message['message_status'])) {
                         switch ($other_message['message_status']) {
                             case _shub_MESSAGE_STATUS_ANSWERED:
-                                echo 'Archived';
+                                echo '<span class="message_status_archived">Archived</span>';
                                 break;
                             case _shub_MESSAGE_STATUS_UNANSWERED:
-                                echo 'Inbox';
+                                echo '<span class="message_status_inbox">Inbox</span>';
                                 break;
                             case _shub_MESSAGE_STATUS_HIDDEN:
-                                echo 'Hidden';
+                                echo '<span class="message_status_hidden">Hidden</span>';
                                 break;
                             default:
-                                echo 'Other?';
+                                echo 'UNKNOWN?';
                         }
                     }
-                    ?><br/>
+                    ?>
+                    </span>
+                    <span class="other_message_network">
+                        <?php echo $this->message_managers[$other_message['network']]->get_friendly_icon();?>
+                    </span>
+                    <br/>
                     <a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-message_id="<?php echo (int)$other_message['message_id'];?>" data-message_comment_id="<?php echo isset($other_message['message_comment_id']) ? (int)$other_message['message_comment_id'] : '';?>" data-modaltitle="<?php echo esc_attr($other_message['summary']);?>"><?php echo esc_html($other_message['summary']);?></a>
                 </li>
                 <?php
