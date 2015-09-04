@@ -50,6 +50,8 @@ class SupportHub {
 		add_action( 'wp_ajax_support_hub_fb_url_info' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_request_extra_details' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_queue-watch' , array( $this, 'admin_ajax' ) );
+		add_action( 'wp_ajax_support_hub_resend_outbox_message' , array( $this, 'admin_ajax' ) );
+		add_action( 'wp_ajax_support_hub_delete_outbox_message' , array( $this, 'admin_ajax' ) );
 
         add_filter('set-screen-option', array( $this, 'set_screen_options' ), 10, 3);
 
@@ -264,6 +266,40 @@ class SupportHub {
                     }
                     echo json_encode( $return );
 
+                    break;
+                case 'resend_outbox_message':
+                    $shub_outbox_id = !empty($_REQUEST['shub_outbox_id']) ? (int)$_REQUEST['shub_outbox_id'] : false;
+                    if($shub_outbox_id){
+                        if (!headers_sent())header('Content-type: text/javascript');
+                        $pending = new SupportHubOutbox($shub_outbox_id);
+                        if($pending->get('shub_outbox_id') == $shub_outbox_id) {
+                            ob_start();
+                            echo $pending->send_queued(true);
+                            $return = array(
+                                'message' => 'Message Resent. Please refresh the page. ' . ob_get_clean()
+                            );
+                            echo json_encode($return);
+                        }
+                        exit;
+
+                    }
+                    break;
+                case 'delete_outbox_message':
+                    $shub_outbox_id = !empty($_REQUEST['shub_outbox_id']) ? (int)$_REQUEST['shub_outbox_id'] : false;
+                    if($shub_outbox_id){
+                        if (!headers_sent())header('Content-type: text/javascript');
+                        // remove the comment from the database.
+                        $pending = new SupportHubOutbox($shub_outbox_id);
+                        if($pending->get('shub_outbox_id') == $shub_outbox_id) {
+                            shub_delete_from_db('shub_message_comment', 'shub_message_comment_id', $pending->get('shub_message_comment_id'));
+                            $pending->delete();
+                            $return = array(
+                                'message' => 'Deleted Successfully. Please re-load the page.'
+                            );
+                            echo json_encode($return);
+                        }
+                        exit;
+                    }
                     break;
 
                 case 'request_extra_details':

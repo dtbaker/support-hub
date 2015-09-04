@@ -434,3 +434,9 @@ span.buyer_badge,
     overflow: hidden;
     margin-bottom: 5px;
 }
+.shub_has_message_text .shub_hide_when_no_message{
+    display: inherit !important;
+}
+.shub_hide_when_no_message{
+    display: none !important;
+}

@@ -62,16 +62,52 @@ ucm.social = {
             });
             return false;
         }).delegate('.shub_message_reply textarea','keyup',function(){
-            var a = this;
-            if (!jQuery(a).prop('scrollTop')) {
+            var a = jQuery(this);
+            if (!a.prop('scrollTop')) {
                 do {
-                    var b = jQuery(a).prop('scrollHeight');
-                    var h = jQuery(a).height();
-                    jQuery(a).height(h - 5);
+                    var b = a.prop('scrollHeight');
+                    var h = a.height();
+                    a.height(h - 5);
                 }
-                while (b && (b != jQuery(a).prop('scrollHeight')));
+                while (b && (b != a.prop('scrollHeight')));
             }
-            jQuery(a).height(jQuery(a).prop('scrollHeight') + 10);
+            // show the reply buttons and actions if we have content.
+            var txt = a.val();
+            var $replybox = a.parents('.shub_message_reply').first();
+            if(txt.length > 0){
+                $replybox.addClass('shub_has_message_text');
+            }else{
+                $replybox.removeClass('shub_has_message_text');
+            }
+
+            a.height(a.prop('scrollHeight') + 10);
+        }).delegate('.shub_message_action_button','click',function(){
+            var pt = jQuery(this).parents('.shub_message_actions').first();
+            var post_data = {
+                action: 'support_hub_message-actions',
+                wp_nonce: support_hub.wp_nonce,
+                form_auth_key: ucm.form_auth_key
+            };
+            var button_post = jQuery(this).data('post');
+            for(var i in button_post){
+                if(button_post.hasOwnProperty(i)){
+                    post_data[i] = button_post[i];
+                }
+            }
+            jQuery.ajax({
+                url: ajaxurl,
+                method: 'POST',
+                data: post_data,
+                dataType: 'json',
+                success: function(r){
+                    if(r && typeof r.message != 'undefined' && r.message.length > 0){
+                        pt.append("<div>" + r.message + "</div>");
+                    }else{
+                        pt.append("<div>Unknown error, please check logs. " + r+ "</div>");
+                    }
+                }
+            });
+            return false;
         }).delegate('.shub_send_message_reply_button','click',function(){
             // send a message!
             var pt = jQuery(this).parents('.shub_message_reply_box').first();

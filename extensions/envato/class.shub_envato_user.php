@@ -130,7 +130,6 @@ class SupportHubUser_Envato extends SupportHubUser{
             }
 
             $api_result_purchase_history = $api->api('v2/market/buyer/purchases', array(), false);
-//                                echo 'her';print_r($api_result_purchase_history);exit;
             // store this purchase history in our db for later use.
             if($api_result_purchase_history && !empty($api_result_purchase_history['buyer']['id']) && !empty($api_result_purchase_history['buyer']['username']) && $api_result_purchase_history['buyer']['username'] == $api_result['username']) {
                 // we have the buyer ID! yay! this is better than a username.

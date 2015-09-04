@@ -243,6 +243,7 @@ class shub_bbpress_message extends SupportHub_message{
                 return true;
             }else{
                 echo "Failed to send comment, check debug log.";
+                print_r($api_result);
                 return false;
             }
             /*if((int) $api_result > 0){

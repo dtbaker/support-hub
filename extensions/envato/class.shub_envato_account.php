@@ -127,6 +127,7 @@ class shub_envato_account extends SupportHub_account{
 
     public function update_author_sale_history( $debug = false, $do_all = false ){
 
+        return; // todo: save sale history in db with no username/api key just for stats
         $api = $this->get_api();
 
         // how many days do we want to go back? maybe 60 days to start with?

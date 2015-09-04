@@ -301,7 +301,7 @@ class SupportHub_message{
                 return strtotime($a['created_at']) > strtotime($b['created_at']);
             });
         }else{
-            $messages = shub_get_multiple('shub_message_comment',array('shub_message_id'=>$this->shub_message_id),'shub_message_comment_id'); //@json_decode($this->get('comments'),true);
+            $messages = shub_get_multiple('shub_message_comment',array('shub_message_id'=>$this->shub_message_id),'shub_message_comment_id','shub_message_comment_id'); //@json_decode($this->get('comments'),true);
         }
         return $messages;
     }
@@ -431,6 +431,7 @@ class SupportHub_message{
             // is this a queued-to-send message?
             $extra_class = '';
             $comment_status = '';
+            $message_error = false;
             if(!empty($comment['shub_outbox_id'])){
                 $shub_outbox = new SupportHubOutbox($comment['shub_outbox_id']);
                 if($shub_outbox->get('shub_outbox_id') != $comment['shub_outbox_id']){
@@ -446,6 +447,7 @@ class SupportHub_message{
                         case _SHUB_OUTBOX_STATUS_FAILED:
                             $extra_class .= ' outbox_failed';
                             $comment_status = 'Failed to send message! Please check logs.';
+                            $message_error = true;
                             break;
                     }
                 }
@@ -506,6 +508,16 @@ class SupportHub_message{
                     </div>
                 </div>
                 <div class="shub_message_actions">
+                    <?php if($message_error && !empty($comment['shub_outbox_id'])){ ?>
+                        <button data-post="<?php echo esc_attr(json_encode(array(
+                            'action' => "support_hub_resend_outbox_message",
+                            'shub_outbox_id' => $comment['shub_outbox_id'],
+                        ))); ?>" class="btn button shub_message_action_button"><?php _e('Re-Send'); ?></button>
+                        <button data-post="<?php echo esc_attr(json_encode(array(
+                            'action' => "support_hub_delete_outbox_message",
+                            'shub_outbox_id' => $comment['shub_outbox_id'],
+                        ))); ?>" class="btn button shub_message_action_button"><?php _e('Delete Message'); ?></button>
+                    <?php } ?>
                 </div>
             </div>
         <?php }
@@ -537,10 +549,28 @@ class SupportHub_message{
                             'account-id' => $this->get('shub_account_id'),
                             'message-id' => $message_id,
                             'network' => $this->network,
-                        ))); ?>" class="btn button shub_send_message_reply_button"><?php _e('Send'); ?></button>
-                    </div>
+                        ))); ?>" class="btn button shub_send_message_reply_button shub_hide_when_no_message"><?php _e('Send'); ?></button>
+                    </div
                 </div>
-                <div class="shub_message_actions">
+                <div class="shub_message_actions shub_hide_when_no_message">
+                    <div>
+                        <label
+                            for="message_reply_archive_<?php echo $message_id; ?>"><?php _e('Archive After Reply', 'shub'); ?></label>
+                        <input id="message_reply_archive_<?php echo $message_id; ?>" type="checkbox" name="archive"
+                               data-reply="yes" value="1" checked>
+                    </div>
+                    <div>
+                        <label
+                            for="message_reply_private_<?php echo $message_id; ?>"><?php _e('Mark As Private', 'shub'); ?></label>
+                        <input id="message_reply_private_<?php echo $message_id; ?>" type="checkbox" name="private"
+                               data-reply="yes" value="1">
+                    </div>
+                    <div>
+                        <label
+                            for="message_reply_notify_email_<?php echo $message_id; ?>"><?php _e('Notify Via Email', 'shub'); ?></label>
+                        <input id="message_reply_notify_email_<?php echo $message_id; ?>" type="checkbox" name="notify_email"
+                               data-reply="yes" value="1">
+                    </div>
                     <div>
                         <label
                             for="message_reply_debug_<?php echo $message_id; ?>"><?php _e('Enable Debug Mode', 'shub'); ?></label>
