@@ -144,7 +144,7 @@ class shub_ucm_message extends SupportHub_message{
 						$new_post_id = $matches[1];
 						$this->update('ucm_id',$new_post_id);
 						// reload this message and messages from the graph api.
-						$this->load_by_ucm_id($this->get('ucm_id'),false,$this->get('type'),$debug, true);
+						$this->load_by_network_key($this->get('ucm_id'),false,$this->get('type'),$debug, true);
 					}else{
 						echo 'Failed to send message. Error was: '.var_export($result,true);
 						// remove from database.

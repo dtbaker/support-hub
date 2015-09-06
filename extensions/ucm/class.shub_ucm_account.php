@@ -107,24 +107,8 @@ class shub_ucm_account extends SupportHub_account{
 	public function get_api_user_to_id($ucm_user_data){
 		//print_r($ucm_user_data);exit;
         $comment_user = new SupportHubUser_ucm();
-        if(isset($ucm_user_data['envato']['purchases']) && is_array($ucm_user_data['envato']['purchases'])){
-            // find a matching user account with these purchases.
-            foreach($ucm_user_data['envato']['purchases'] as $purchase){
-                if(!empty($purchase['license_code'])) {
-                    // pull in the license code using the envato module if it's enabled.
-                    if(isset(SupportHub::getInstance()->message_managers['envato'])) {
-                        $result = SupportHub::getInstance()->message_managers['envato']->pull_purchase_code(false, $purchase['license_code'], array());
-                        if ($result && !empty($result['shub_user_id'])) {
-                            $comment_user->load($result['shub_user_id']);
-                            SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'ucm','Found a user based on license code.',array(
-                                'license_code' => $purchase['license_code'],
-                                'found_user_id' => $comment_user->get('shub_user_id'),
-                            ));
-                            break;
-                        }
-                    }
-                }
-            }
+        if(!empty($ucm_user_data['email'])){
+            $comment_user->load_by( 'user_email', trim(strtolower($ucm_user_data['email'])));
         }
         if(!$comment_user->get('shub_user_id')){
             // didn't find one yet.
@@ -142,6 +126,28 @@ class shub_ucm_account extends SupportHub_account{
                 }
             }
         }
+
+
+        if(isset($ucm_user_data['envato']['purchases']) && is_array($ucm_user_data['envato']['purchases'])){
+            // find a matching user account with these purchases.
+            foreach($ucm_user_data['envato']['purchases'] as $purchase){
+                if(!empty($purchase['license_code'])) {
+                    // pull in the license code using the envato module if it's enabled.
+                    if(isset(SupportHub::getInstance()->message_managers['envato'])) {
+                        $result = SupportHub::getInstance()->message_managers['envato']->pull_purchase_code(false, $purchase['license_code'], array(), $comment_user->get('shub_user_id'));
+                        if ($result && !empty($result['shub_user_id'])) {
+                            $comment_user->load($result['shub_user_id']);
+                            SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'ucm','Found a user based on license code.',array(
+                                'license_code' => $purchase['license_code'],
+                                'found_user_id' => $comment_user->get('shub_user_id'),
+                            ));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         if(!$comment_user->get('shub_user_id')){
             // find a match based on email.
             if(!empty($ucm_user_data['email'])){

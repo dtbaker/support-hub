@@ -570,7 +570,7 @@ class shub_envato extends SupportHub_extension {
 		return false;
 	}
 
-    public function pull_purchase_code($api, $purchase_code, $api_raw_data = array()){
+    public function pull_purchase_code($api, $purchase_code, $api_raw_data = array(), $existing_shub_user_id = false){
 
         $accounts = array();
         if(!$api){
@@ -633,15 +633,21 @@ class shub_envato extends SupportHub_extension {
                 $envato_username = $result['buyer'];
                 // find this user in our system.
                 $shub_user = new SupportHubUser_Envato();
-                $shub_user->load_by_meta('envato_username', strtolower($envato_username));
+                if($existing_shub_user_id){
+                    $shub_user->load($existing_shub_user_id);
+                }else{
+                    $shub_user->load_by_meta('envato_username', strtolower($envato_username));
+                }
 
                 if (!$shub_user->get('shub_user_id')) {
                     // no users exists in our system with this username.
                     // add a new one.
                     $shub_user->create_new();
-                    $shub_user->update('user_username', $envato_username);
-                    $shub_user->add_meta('envato_username', strtolower($envato_username));
                 }
+                if(!$shub_user->get('user_username')){
+                    $shub_user->update('user_username', $envato_username);
+                }
+                $shub_user->add_unique_meta('envato_username', strtolower($envato_username));
                 // find out which product this purchase code is relating to
                 $existing_products = SupportHub::getInstance()->get_products();
                 // check if this item exists already
