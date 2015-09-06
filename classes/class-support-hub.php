@@ -604,19 +604,14 @@ class SupportHub {
 		$message_count = $this->get_unread_count();;
 		$menu_label = sprintf( __( 'Support Hub %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . (int)$message_count . "</span></span>" : '');
 
-        add_menu_page( __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages', 'support_hub_main', array($this, 'show_dashboard'), 'dashicons-format-chat', "21.1" );
+        add_menu_page( __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages', 'support_hub_main', array($this, 'show_inbox'), 'dashicons-format-chat', "21.1" );
 
-
-        $page = add_submenu_page('support_hub_main', __( 'Dashboard', 'support_hub' ), __('Dashboard' ,'support_hub'), 'edit_pages',  'support_hub_main' , array($this, 'show_dashboard'));
-        add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
         // hack to rmeove default submenu
         $menu_label = sprintf( __( 'Inbox %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . number_format_i18n($message_count) . "</span></span>" : '' );
-		$page = add_submenu_page('support_hub_main', __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_inbox' , array($this, 'show_inbox'));
+		$page = add_submenu_page('support_hub_main', __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_main' , array($this, 'show_inbox'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
         add_action("load-$page", array( $this, 'screen_options' ));
-
-
 
 		//$page = add_submenu_page('support_hub_main', __( 'Compose', 'support_hub' ), __('Compose' ,'support_hub'), 'edit_pages',  'support_hub_compose' , array($this, 'show_compose'));
 		//add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
@@ -630,6 +625,10 @@ class SupportHub {
         $menu_label = sprintf( __( 'Outbox %s', 'support_hub' ), "<span class='update-plugins' title='$outbox_message_count'><span class='update-count' id='shub_menu_outbox_count' data-count='$outbox_message_count'>" . $outbox_message_count . "</span></span>" );
 		$page = add_submenu_page('support_hub_main', __( 'Outbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_outbox' , array($this, 'show_outbox'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
+
+
+        $page = add_submenu_page('support_hub_main', __( 'Dashboard', 'support_hub' ), __('Dashboard' ,'support_hub'), 'edit_pages',  'support_hub_dashboard' , array($this, 'show_dashboard'));
+        add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
 		$page = add_submenu_page('support_hub_main', __( 'Settings', 'support_hub' ), __( 'Settings', 'support_hub' ), 'edit_pages',  'support_hub_settings' , array($this, 'show_settings'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
@@ -891,7 +890,7 @@ class SupportHub {
                     // example: if two users submit
                     $extra_shub_user_id = $this_extra->get('shub_user_id');
                     if(!empty($extra_shub_user_id) && !in_array($extra_shub_user_id,$user_hints['shub_user_id'])){
-                        echo " <br><br><Br>ADDING $extra_shub_user_id TO THE LIST IN DATA!! PLEASE REPORT THIS ERROR SO DTBAKER CAN INVESTIGATE <br><br><br> ";
+                        echo " <br><br><Br>Error: Displaying extra data for the user '$extra_shub_user_id' when that user ID isn't already in the list. Please report this bug to dtbaker.<br><br><br> ";
                         // moved the user_hints loop to the top to build up the user id list first.
                         $user_hints['shub_user_id'][] = $extra_shub_user_id;
                     }
@@ -900,21 +899,23 @@ class SupportHub {
             }
 		}
 		foreach($extra_datas as $extra_data){
-			//echo $extra_data->get('shub_extra_data_id') . ' ';
-			?>
-			<div>
-				<strong><?php echo htmlspecialchars($extras[$extra_data->get('shub_extra_id')]->get('extra_name'));?>:</strong>
-				<?php
-                switch($extras[$extra_data->get('shub_extra_id')]->get('field_type')){
-                    case 'encrypted':
-                        echo '(encrypted)';
-                        break;
-                    default:
-                        echo shub_forum_text($extra_data->get('extra_value'),false);
-                }
+            if(isset($extras[$extra_data->get('shub_extra_id')])) {
                 ?>
-			</div>
-			<?php
+                <div>
+                    <strong><?php echo htmlspecialchars($extras[$extra_data->get('shub_extra_id')]->get('extra_name')); ?>
+                        :</strong>
+                    <?php
+                    switch ($extras[$extra_data->get('shub_extra_id')]->get('field_type')) {
+                        case 'encrypted':
+                            echo '(encrypted)';
+                            break;
+                        default:
+                            echo shub_forum_text($extra_data->get('extra_value'), false);
+                    }
+                    ?>
+                </div>
+                <?php
+            }
 		}
 
         // work out if this user has a valid support period

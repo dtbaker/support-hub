@@ -8,7 +8,7 @@ function shub_managers_ucm( $shub ){
 		require_once 'class.shub_ucm.php';
 		require_once 'class.shub_ucm_user.php';
 		require_once 'class.shub_ucm_account.php';
-		require_once 'class.shub_ucm_product.php';
+		require_once 'class.shub_ucm_item.php';
 		require_once 'class.shub_ucm_message.php';
 		$shub['ucm'] = new shub_ucm();
 	}else{

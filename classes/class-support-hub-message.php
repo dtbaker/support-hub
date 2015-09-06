@@ -180,7 +180,7 @@ class SupportHub_message{
 
     private function _update_comments($data, $existing_messages){
         if(is_array($data)){
-            $last_message_user_name = false;
+            $last_message_user_id = false;
             foreach($data as $message){
                 if($message['id']){
                     // does this id exist in the db already?
@@ -214,7 +214,7 @@ class SupportHub_message{
                         'message_text' => isset($message['content']) ? $message['content'] : '',
                         'shub_user_id' => $shub_user_id,
                     ));
-                    $last_message_user_name = isset($message['username']) ? $message['username'] : false;
+                    $last_message_user_id = $shub_user_id;
                     if(isset($existing_messages[$shub_message_comment_id])){
                         unset($existing_messages[$shub_message_comment_id]);
                     }
@@ -223,9 +223,8 @@ class SupportHub_message{
                     }*/
                 }
             }
-            if($last_message_user_name){
-                $account_user_data = $this->account->get('account_data');
-                if($account_user_data && isset($account_user_data['user']) && $last_message_user_name == $account_user_data['user']['username']){
+            if($last_message_user_id){
+                if($last_message_user_id == $this->account->get('shub_user_id')){
                     // the last comment on this item was from the account owner.
                     // mark this item as resolves so it doesn;t show up in the inbox.
                     $this->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);

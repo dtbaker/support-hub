@@ -588,8 +588,8 @@ class shub_envato extends SupportHub_extension {
             if (!$api) {
                 break;
             }
-            $result = $api->api('v1/market/private/user/verify-purchase:' . $purchase_code . '.json');
-//        $result = $api->api( 'v2/market/author/sale?code='.$purchase_code );
+//            $result = $api->api('v1/market/private/user/verify-purchase:' . $purchase_code . '.json');
+            $result = $api->api( 'v2/market/author/sale?code='.$purchase_code );
             /*
             {
               "amount": "12.60",
@@ -627,10 +627,10 @@ class shub_envato extends SupportHub_extension {
               "support_amount": ""
             }
             }*/
-            if ($result && !empty($result['verify-purchase']) && !empty($result['verify-purchase']['item_id'])) {
+            if ($result && !empty($result['item']) && !empty($result['item']['id'])) {
                 // valid purchase code.
                 // what is the username attached to this purchase result?
-                $envato_username = $result['verify-purchase']['buyer'];
+                $envato_username = $result['buyer'];
                 // find this user in our system.
                 $shub_user = new SupportHubUser_Envato();
                 $shub_user->load_by_meta('envato_username', strtolower($envato_username));
@@ -647,7 +647,7 @@ class shub_envato extends SupportHub_extension {
                 // check if this item exists already
                 $exists = false;
                 foreach ($existing_products as $existing_product) {
-                    if (isset($existing_product['product_data']['envato_item_id']) && $existing_product['product_data']['envato_item_id'] == $result['verify-purchase']['item_id']) {
+                    if (isset($existing_product['product_data']['envato_item_id']) && $existing_product['product_data']['envato_item_id'] == $result['item']['id']) {
                         $exists = $existing_product['shub_product_id'];
                     }
                 }
@@ -658,24 +658,21 @@ class shub_envato extends SupportHub_extension {
                     $newproduct->load($exists);
                 }
                 if (!$newproduct->get('product_name')) {
-                    $newproduct->update('product_name', $result['verify-purchase']['item_name']);
+                    $newproduct->update('product_name', $result['item']['name']);
                 }
                 $existing_product_data = $newproduct->get('product_data');
                 if (!is_array($existing_product_data)) $existing_product_data = array();
                 if (empty($existing_product_data['envato_item_id'])) {
-                    $existing_product_data['envato_item_id'] = $result['verify-purchase']['item_id'];
+                    $existing_product_data['envato_item_id'] = $result['item']['id'];
                 }
                 if (empty($existing_product_data['envato_item_data'])) {
                     // get these item details from api
-                    $item_data = $api->api('v2/market/catalog/item?id=' . $result['verify-purchase']['item_id']);
-                    if (!empty($item_data) && $item_data['id'] == $result['verify-purchase']['item_id']) {
-                        $existing_product_data['envato_item_data'] = $item_data;
-                        if (empty($existing_product_data['image'])) {
-                            $existing_product_data['image'] = $item_data['thumbnail_url'];
-                        }
-                        if (empty($existing_product_data['url'])) {
-                            $existing_product_data['url'] = $item_data['url'];
-                        }
+                    $existing_product_data['envato_item_data'] = $result['item'];
+                    if (empty($existing_product_data['image'])) {
+                        $existing_product_data['image'] = $result['item']['thumbnail_url'];
+                    }
+                    if (empty($existing_product_data['url'])) {
+                        $existing_product_data['url'] = $result['item']['url'];
                     }
                 }
                 $newproduct->update('product_data', $existing_product_data);
@@ -691,7 +688,7 @@ class shub_envato extends SupportHub_extension {
                     $possible_purchases = shub_get_multiple('shub_envato_purchase', array(
                         'shub_user_id' => $shub_user->get('shub_user_id'),
                         'shub_product_id' => $newproduct->get('shub_product_id'),
-                        'purchase_time' => strtotime($result['verify-purchase']['created_at']),
+                        'purchase_time' => strtotime($result['sold_at']),
                     ));
                     foreach ($possible_purchases as $possible_purchase) {
                         if (empty($possible_purchases['purchase_code'])) {
@@ -713,13 +710,13 @@ class shub_envato extends SupportHub_extension {
                 }
                 if (!$shub_envato_purchase_id) {
                     // add new one
-                    $raw_purchase_data = array_merge(array('verify-purchase' => $result['verify-purchase']), is_array($api_raw_data) ? $api_raw_data : array());
+                    $raw_purchase_data = array_merge(array('author/sale' => $result), is_array($api_raw_data) ? $api_raw_data : array());
                     $shub_envato_purchase_id = shub_update_insert('shub_envato_purchase_id', false, 'shub_envato_purchase', array(
                         'shub_user_id' => $shub_user->get('shub_user_id'),
                         'shub_product_id' => $newproduct->get('shub_product_id'),
                         'envato_user_id' => 0,
-                        'api_type' => 'verify-purchase',
-                        'purchase_time' => strtotime($result['verify-purchase']['created_at']),
+                        'api_type' => 'author/sale',
+                        'purchase_time' => strtotime($result['sold_at']),
                         'purchase_code' => $purchase_code,
                         'purchase_data' => json_encode($raw_purchase_data),
                     ));
@@ -727,13 +724,13 @@ class shub_envato extends SupportHub_extension {
                 if ($shub_envato_purchase_id) {
 
                     // support expiry time is 6 months from the purchase date, or as specified by the api result.
-                    if(strtotime($result['verify-purchase']['created_at']) < strtotime("2015-09-01")){
+                    if(strtotime($result['sold_at']) < strtotime("2015-09-01")){
                         $support_expiry_time = strtotime("+6 months", strtotime("2015-09-01"));
                     }else{
-                        $support_expiry_time = strtotime("+6 months", strtotime($result['verify-purchase']['created_at']));
+                        $support_expiry_time = strtotime("+6 months", strtotime($result['sold_at']));
                     }
-                    if (!empty($result['verify-purchase']['supported_until'])) {
-                        $support_expiry_time = strtotime($result['verify-purchase']['supported_until']);
+                    if (!empty($result['supported_until'])) {
+                        $support_expiry_time = strtotime($result['supported_until']);
                     }
 
                     $existing_support = shub_get_single('shub_envato_support', array(
@@ -746,14 +743,14 @@ class shub_envato extends SupportHub_extension {
                             'shub_user_id' => $shub_user->get('shub_user_id'),
                         ));
                     }
-                    if ($existing_support && $existing_support['shub_envato_support_id'] && $existing_support['start_time'] == strtotime($result['verify-purchase']['created_at'])) {
+                    if ($existing_support && $existing_support['shub_envato_support_id'] && $existing_support['start_time'] == strtotime($result['sold_at'])) {
                         // check the existing support expiry matches the one we have in the database.
                         if ($existing_support['end_time'] < $support_expiry_time) {
                             // we have a support extension!
                             $shub_envato_support_id = shub_update_insert('shub_envato_support_id', $existing_support['shub_envato_support_id'], 'shub_envato_support', array(
                                 'end_time' => $support_expiry_time,
-                                'api_type' => 'verify-purchase',
-                                'support_data' => json_encode($result['verify-purchase']),
+                                'api_type' => 'author/sale',
+                                'support_data' => json_encode($result),
                             ));
                         }
                     } else {
@@ -762,10 +759,10 @@ class shub_envato extends SupportHub_extension {
                             'shub_user_id' => $shub_user->get('shub_user_id'),
                             'shub_product_id' => $newproduct->get('shub_product_id'),
                             'shub_envato_purchase_id' => $shub_envato_purchase_id,
-                            'api_type' => 'verify-purchase',
-                            'start_time' => strtotime($result['verify-purchase']['created_at']),
+                            'api_type' => 'author/sale',
+                            'start_time' => strtotime($result['sold_at']),
                             'end_time' => $support_expiry_time,
-                            'support_data' => json_encode($result['verify-purchase']),
+                            'support_data' => json_encode($result),
                         ));
                     }
                 }
@@ -796,12 +793,12 @@ class shub_envato extends SupportHub_extension {
 	        }else{
 		        $result = false;
 	        }
-            if($result && !empty($result['verify-purchase'])){
+            if($result && !empty($result['item'])){
                 $status['success'] = true;
                 $status['data'] = $possible_purchase_code;
-                $result['verify-purchase']['time'] = time();
-                $result['verify-purchase']['valid_purchase_code'] = true;
-                $status['extra_data'] = $result['verify-purchase'];
+                $result['time'] = time();
+                $result['valid_purchase_code'] = true;
+                $status['extra_data'] = $result;
             }else{
                 $status['success'] = false;
                 $status['message'] = 'Invalid purchase code, please try again.';

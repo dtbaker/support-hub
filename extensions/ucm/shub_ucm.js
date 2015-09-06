@@ -6,7 +6,7 @@ ucm.social.ucm = {
             f.show();
             f.find('textarea')[0].focus();
         }).delegate('.ucm_check_all','change',function(){
-                jQuery('.check_ucm_product').prop('checked', !!jQuery(this).prop('checked'));
+                jQuery('.check_item').prop('checked', !!jQuery(this).prop('checked'));
 
             });
     }
