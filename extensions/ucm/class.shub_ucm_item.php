@@ -41,7 +41,7 @@ class shub_ucm_item extends SupportHub_item{
         if(!$last_message_received){
             $last_message_received = strtotime('-20 days');
         }
-        $last_message_received = false;
+//        $last_message_received = false;
 
         SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'ucm','Loading latest tickets for product ('.$ucm_product_id.') "'.$this->get('product_name').'" modified since '.shub_print_date($last_message_received,true));
 		// find any messages from this particular UCM product that have been updated since our last scrape time.
