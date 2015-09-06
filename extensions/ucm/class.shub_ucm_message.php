@@ -245,6 +245,7 @@ class shub_ucm_message extends SupportHub_message{
     }
 
     public function get_user_hints($user_hints = array()){
+        $user_hints['shub_user_id'][] = $this->get('shub_user_id');
         $comments         = $this->get_comments();
         $first_comment = current($comments);
         if(isset($first_comment['shub_user_id']) && $first_comment['shub_user_id']){
