@@ -28,9 +28,9 @@ class ucm_api_basic{
         $params['auth'] = $this->_api_key;
 		if($params){
 			$headers['body'] = $params;
-			$response     = wp_remote_post($this->_api_url . "&endpoint=$endpoint&method=$method", $headers);
+			$response     = wp_remote_post($this->_api_url . (strpos($this->_api_url,'?') ? '&' : '?') . "endpoint=$endpoint&method=$method", $headers);
 		}else{
-			$response     = wp_remote_get($this->_api_url . "&endpoint=$endpoint&method=$method", $headers);
+			$response     = wp_remote_get($this->_api_url . (strpos($this->_api_url,'?') ? '&' : '?') . "endpoint=$endpoint&method=$method", $headers);
 		}
 		if( is_array($response) && isset($response['body']) && isset($response['response']['code']) && $response['response']['code'] == 200 ) {
 			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'ucm', 'API Call: '.$endpoint .'/' .$method,$response['body']);

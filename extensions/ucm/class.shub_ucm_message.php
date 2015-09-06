@@ -99,7 +99,7 @@ class shub_ucm_message extends SupportHub_message{
         if($this->account){
             $bits = @parse_url($this->account->get('ucm_api_url'));
             if($bits && !empty($bits['path'])){
-                $url = $bits['scheme'].'://'.$bits['host'].str_replace('ext.php','',$bits['path']);
+                $url = $bits['scheme'].'://'.$bits['host'].str_replace('ext.php','',str_replace('external/m.api/h.v1','',$bits['path']));
                 $url .= '?m=ticket&p=ticket_admin';
             }
             if($item){
