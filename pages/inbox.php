@@ -9,7 +9,7 @@
     $save_search = array('layout_type','orderquery');
     foreach($save_search as $save){
         if(isset($_REQUEST[$save])){
-            $_SESSION['shub_save_'.$save] = $_REQUEST['save'];
+            $_SESSION['shub_save_'.$save] = $_REQUEST[$save];
         }else if(isset($_SESSION['shub_save_'.$save])){
             $_REQUEST[$save] = $_SESSION['shub_save_'.$save]; // please don't stab me.
         }
