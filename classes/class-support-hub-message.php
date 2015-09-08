@@ -302,7 +302,7 @@ class SupportHub_message{
                 return strtotime($a['created_at']) > strtotime($b['created_at']);
             });
         }else{
-            $messages = shub_get_multiple('shub_message_comment',array('shub_message_id'=>$this->shub_message_id),'shub_message_comment_id','shub_message_comment_id'); //@json_decode($this->get('comments'),true);
+            $messages = shub_get_multiple('shub_message_comment',array('shub_message_id'=>$this->shub_message_id),'shub_message_comment_id','time'); //@json_decode($this->get('comments'),true);
         }
         return $messages;
     }
