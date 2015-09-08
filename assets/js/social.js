@@ -319,6 +319,11 @@ ucm.social = {
                     fail_callback: fail_callback
                 }
             );
+            var menu_count = jQuery('#shub_menu_outbox_count');
+            if(menu_count.get(0)){
+                var new_count = parseInt(menu_count.data('count')) + 1;
+                jQuery('#shub_menu_outbox_count').data('count',new_count).text(new_count);
+            }
             this.watch();
         },
         watching: false,
