@@ -131,7 +131,11 @@ ucm.social = {
                 // add any additioal reply options to this.
                 pt.find('[data-reply="yes"]').each(function(){
                     if(jQuery(this).attr('type') == 'checkbox'){
-                        post_data[jQuery(this).attr('name')] = this.checked ? jQuery(this).val() : false;
+                        if(this.checked){
+                            post_data[jQuery(this).attr('name')] = jQuery(this).val();
+                        }else{
+                            // don't pass a 'false' into ajax, just send nothing.
+                        }
                     }else{
                         post_data[jQuery(this).attr('name')] = jQuery(this).val();
                     }
@@ -165,7 +169,7 @@ ucm.social = {
                                         element_action.find('.action_content').html('Message Sent!');
                                     }, function(){
                                         // failed to send
-                                        element_action.find('.action_content').html('FAILED TO SEND MESSAGE');
+                                        element_action.find('.action_content').html('Failed to send message. Please check logs.');
                                     });
                                     if(element.is('div')){
                                         element.slideUp();
@@ -174,6 +178,8 @@ ucm.social = {
                                         element.hide();
                                         element_action.show();
                                     }
+                                    var pos = element_action.position();
+                                    jQuery(window).scrollTop(pos.top-10);
                                 })();
                             }else{
                                 // we are in popup. have to close modal and find this message on the page to see if we can slide it up.
@@ -190,7 +196,7 @@ ucm.social = {
                                             element_action.find('.action_content').html('Message Sent!');
                                         }, function(){
                                             // failed to send
-                                            element_action.find('.action_content').html('FAILED TO SEND MESSAGE');
+                                            element_action.find('.action_content').html('Failed to send message. Please check logs.');
                                         });
                                         if(element.is('div')){
                                             element.slideUp();
@@ -199,6 +205,8 @@ ucm.social = {
                                             element.hide();
                                             element_action.show();
                                         }
+                                        var pos = element_action.position();
+                                        jQuery(window).scrollTop(pos.top-10);
                                     })();
                                 }else{
                                     // cant find it on the screen, must have opened a related message.
@@ -250,6 +258,40 @@ ucm.social = {
             $s.find('header,aside').show();
             return false;
         });
+
+        ucm.social.set_inline_view();
+
+    },
+    set_inline_view: function(){
+
+        // on page scroll we align the inline-sidebar with the viewport.
+        var inline_views = [];
+        jQuery('.shub_table_inline .shub_extension_message').each(function(){
+            inline_views.push({
+                pos: jQuery(this).position(),
+                height: jQuery(this).height(),
+                sidebar: jQuery(this).find('section.message_sidebar')
+            });
+        });
+        jQuery(window).scroll(function(){
+            var currenttop = jQuery(window).scrollTop();
+            // find out which elements we have to move into view.
+            for(var i = 0; i < inline_views.length; i++){
+                if(inline_views[i].pos.top < currenttop && inline_views[i].pos.top + inline_views[i].height > currenttop){
+                    // calc here incase of ajax loading sidebar data
+                    var sidebar_height = inline_views[i].sidebar.height();
+                    var from_top = Math.min(inline_views[i].height - sidebar_height - 20, currenttop - inline_views[i].pos.top + 20);
+                    if(from_top > 10){
+                        inline_views[i].sidebar.css('padding-top',from_top+'px');
+                    }else{
+                        inline_views[i].sidebar.attr('style','');
+                    }
+                }else{
+                    inline_views[i].sidebar.attr('style','');
+                }
+            }
+        });
+
     },
     close_modal: function(){
         tb_remove();
@@ -271,7 +313,7 @@ ucm.social = {
         add: function(shub_outbox_id, element, success_callback, fail_callback){
             this.queue.push(
                 {
-                    shub_outbox_id: shub_outbox_id,
+                    shub_outbox_id: parseInt(shub_outbox_id),
                     element: element,
                     success_callback: success_callback,
                     fail_callback: fail_callback
@@ -284,14 +326,6 @@ ucm.social = {
             var t = this;
             if(t.watching)return;
             t.watching = true;
-            // update the menu UI
-            var queue_length = 0;
-            for(var x = 0; x < t.queue.length; x++) {
-                if (typeof t.queue[x] != 'undefined') {
-                    queue_length++;
-                }
-            }
-            jQuery('#shub_menu_outbox_count').text(queue_length); // (t.queue.length); //.parents('li').first().show();
             var post_data = {
                 action: 'support_hub_queue-watch',
                 wp_nonce: support_hub.wp_nonce,
@@ -303,6 +337,8 @@ ucm.social = {
                 data: post_data,
                 dataType: 'json',
                 success: function(r){
+
+
                     for(var x = 0; x < t.queue.length; x++){
                         if(typeof t.queue[x] != 'undefined') {
                             // find this shub_outbox_id in the queue response from server.
@@ -310,10 +346,10 @@ ucm.social = {
                             if (r && typeof r.outbox_ids != 'undefined') {
                                 for (var i in r.outbox_ids) {
                                     if (r.outbox_ids.hasOwnProperty(i) && typeof r.outbox_ids[i] != 'undefined') {
-                                        if (r.outbox_ids[i].shub_outbox_id && t.queue[x].shub_outbox_id == r.outbox_ids[i].shub_outbox_id) {
+                                        if (r.outbox_ids[i].shub_outbox_id && t.queue[x].shub_outbox_id == parseInt(r.outbox_ids[i].shub_outbox_id)) {
                                             found = true;
                                             // has it errored?
-                                            if (r.outbox_ids[i].status == 2) {
+                                            if (parseInt(r.outbox_ids[i].shub_status) == 2) {
                                                 if (typeof t.queue[x].fail_callback == 'function') {
                                                     t.queue[x].fail_callback();
                                                     delete(t.queue[x]);
@@ -335,14 +371,23 @@ ucm.social = {
                         }
                     }
                     var has_pending = false;
+                    // update the menu UI
+                    var queue_length = 0;
                     if (r && typeof r.outbox_ids != 'undefined') {
                         for (var i in r.outbox_ids) {
-                            if (r.outbox_ids.hasOwnProperty(i) && typeof r.outbox_ids[i] != 'undefined' && typeof r.outbox_ids[i].status != 'undefined' && (parseInt(r.outbox_ids[i].status) == 0  ||  parseInt(r.outbox_ids[i].status) == 1)) {
-                                // we have a pending queue to send!
-                                has_pending = true;
+                            if (r.outbox_ids.hasOwnProperty(i) && typeof r.outbox_ids[i] != 'undefined') {
+                                if (typeof r.outbox_ids[i].shub_status != 'undefined' && (parseInt(r.outbox_ids[i].shub_status) == 0 || parseInt(r.outbox_ids[i].shub_status) == 1 || parseInt(r.outbox_ids[i].shub_status) == 2)) {
+                                    // new/pending/errored
+                                    queue_length++;
+                                }
+                                if (typeof r.outbox_ids[i].shub_status != 'undefined' && (parseInt(r.outbox_ids[i].shub_status) == 0 || parseInt(r.outbox_ids[i].shub_status) == 1)) {
+                                    // we have a pending queue to send!
+                                    has_pending = true;
+                                }
                             }
                         }
                     }
+                    jQuery('#shub_menu_outbox_count').text(queue_length); // (t.queue.length); //.parents('li').first().show();
 
                     t.watching = false;
                     if(has_pending) {

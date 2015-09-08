@@ -4,7 +4,6 @@ class shub_ucm_message extends SupportHub_message{
 
     protected $network = 'ucm';
 
-
 	public function load_by_network_key($network_key, $ticket, $type, $debug = false){
 
 		switch($type){
@@ -89,9 +88,64 @@ class shub_ucm_message extends SupportHub_message{
 
 		}
 		return false;
-
 	}
 
+
+    public function send_queued_comment_reply($envato_message_comment_id, $shub_outbox, $debug = false){
+        $comments = $this->get_comments();
+        if(isset($comments[$envato_message_comment_id]) && !empty($comments[$envato_message_comment_id]['message_text'])){
+            $api = $this->account->get_api();
+            $outbox_data = $shub_outbox->get('message_data');
+            if($outbox_data && isset($outbox_data['extra']) && is_array($outbox_data['extra'])){
+                $extra_data = $outbox_data['extra'];
+            }else{
+                $extra_data = array();
+            }
+            $api_result = $api->api('ticket','reply',array(
+                'ticket_id'=>$this->get('network_key'),
+                'message'=>$comments[$envato_message_comment_id]['message_text'],
+                'extra_data'=>$extra_data,
+            ));
+            if ($api_result && !empty($api_result['ticket_message_id'])) {
+                if($debug){
+                    echo 'UCM API Result:';
+                    print_r($api_result);
+                }
+                // add a placeholder in the comments table, next time the cron runs it should pick this up and fill in all the details correctly from the API
+                shub_update_insert('shub_message_comment_id', $envato_message_comment_id, 'shub_message_comment', array(
+                    'network_key' => $api_result['ticket_message_id'],
+                    'time' => time(),
+                ));
+                return true;
+            } else {
+                echo "Failed to send comment, check debug log. ".var_export($api_result,true);
+                return false;
+            }
+        }
+        echo 'No comment found to send.';
+        return false;
+    }
+
+
+    public function reply_actions(){
+        $user_data = $this->account->get('account_data');
+        if(isset($user_data['reply_options']) && is_array($user_data['reply_options'])){
+            foreach($user_data['reply_options'] as $reply_option){
+                if(isset($reply_option['title'])){
+                    echo '<div>';
+                    echo '<label for="">'.htmlspecialchars($reply_option['title']).'</label>';
+                    if(isset($reply_option['field']) && is_array($reply_option['field'])){
+                        $reply_option['field']['name'] = 'extra-'.$reply_option['field']['name'];
+                        $reply_option['field']['data'] = array(
+                            'reply' => 'yes'
+                        );
+                        shub_module_form::generate_form_element($reply_option['field']);
+                    }
+                    echo '</div>';
+                }
+            }
+        }
+    }
 
     public function get_link() {
         $item = $this->get('item');
@@ -104,68 +158,11 @@ class shub_ucm_message extends SupportHub_message{
             }
             if($item){
                 $url .= '&faq_product_id='.$item->get('network_key');
+                $url .= '&ticket_id='.$this->get('network_key');
             }
         }
         return $url;
     }
-
-
-	public function send_queued($debug = false){
-		if($this->account && $this->shub_message_id) {
-			// send this message out to ucm.
-			// this is run when user is composing a new message from the UI,
-			if ( $this->get( 'shub_status' ) == _shub_MESSAGE_STATUS_SENDING )
-				return; // dont double up on cron.
-
-
-			switch($this->get('type')){
-				case 'product_post':
-
-
-					if(!$this->item) {
-						echo 'No ucm product defined';
-						return false;
-					}
-
-					$this->update( 'shub_status', _shub_MESSAGE_STATUS_SENDING );
-					$api = $this->account->get_api();
-					$item_id = $this->item->get('product_id');
-					if($debug)echo "Sending a new message to ucm product ID: $item_id <br>\n";
-					$result = false;
-					$post_data = array();
-					$post_data['summary'] = $this->get('summary');
-					$post_data['title'] = $this->get('title');
-					$now = time();
-					$send_time = $this->get('last_active');
-					$result = $api->api('v1/products/'.$item_id.'/posts',array(),'POST',$post_data,'location');
-					if($debug)echo "API Post Result: <br>\n".var_export($result,true)." <br>\n";
-					if($result && preg_match('#https://api.ucm.com/v1/posts/(.*)$#',$result,$matches)){
-						// we have a result from the API! this should be an API call in itself:
-						$new_post_id = $matches[1];
-						$this->update('ucm_id',$new_post_id);
-						// reload this message and messages from the graph api.
-						$this->load_by_network_key($this->get('ucm_id'),false,$this->get('type'),$debug, true);
-					}else{
-						echo 'Failed to send message. Error was: '.var_export($result,true);
-						// remove from database.
-						$this->delete();
-						return false;
-					}
-
-					// successfully sent, mark is as answered.
-					$this->update( 'shub_status', _shub_MESSAGE_STATUS_ANSWERED );
-					return true;
-
-					break;
-				default:
-					if($debug)echo "Unknown post type: ".$this->get('type');
-			}
-
-		}
-		return false;
-	}
-
-
 
 	public function get_type_pretty() {
 		$type = $this->get('type');
@@ -211,6 +208,7 @@ class shub_ucm_message extends SupportHub_message{
             $shub_product->load( $shub_product_id );
             $product_data = $shub_product->get( 'product_data' );
         }
+        //echo SupportHub::getInstance()->message_managers['ucm']->get_friendly_icon();
         ?>
         <img src="<?php echo plugins_url('extensions/ucm/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon">
         <?php
@@ -221,6 +219,7 @@ class shub_ucm_message extends SupportHub_message{
         }
         ?>
         <br/>
+        <strong><?php _e('Subject:');?></strong> <?php echo htmlspecialchars( $this->get('title') );?> <br/>
         <strong><?php _e('Account:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('account') ? $this->get('account')->get( 'account_name' ) : 'N/A' ); ?></a> <br/>
         <strong><?php _e('Time:');?></strong> <?php echo shub_print_date( $this->get('last_active'), true ); ?>  <br/>
 

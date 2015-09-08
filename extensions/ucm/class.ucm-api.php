@@ -23,6 +23,7 @@ class ucm_api_basic{
 	public function api($endpoint, $method=false, $params=array()){
 		$headers = array(
 		    'user-agent' => 'SupportHub WP Plugin',
+            'timeout' => 20,
 		);
 		//$headers['headers'] = array('Authorization' => $this->_api_key,);
         $params['auth'] = $this->_api_key;
@@ -36,12 +37,15 @@ class ucm_api_basic{
 			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'ucm', 'API Call: '.$endpoint .'/' .$method,$response['body']);
 		    $header = $response['headers'];
 		    $body = @json_decode($response['body'],true);
+            if(!$body){
+                SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'ucm', 'API Error, unable to JSON decode: '.$endpoint. ' '.(isset($response['response']['code']) ? $response['response']['code'] .' / ': '').(isset($response['body']) ? $response['body'] : ''));
+            }
 			return $body;
 		}else if(is_array($response) && isset($response['response']['code']) && $response['response']['code']){
 			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'ucm', 'API Error: '.$endpoint. ' '.(isset($response['response']['code']) ? $response['response']['code'] .' / ': '').(isset($response['body']) ? $response['body'] : ''), $response);
 		}else if(is_wp_error($response)){
-			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'ucm', 'API Error: '.$endpoint. ' '.$response->get_error_message());
-		}
+			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'ucm', 'API Error: '.$endpoint. ' '.$response->get_error_message(),$response);
+        }
 		return false;
 	}
 

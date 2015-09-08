@@ -51,23 +51,33 @@ class shub_ucm_item extends SupportHub_item{
 		$newest_message_received = 0;
 
 		$count = 0;
-		foreach($tickets['tickets'] as $ticket){
-			$message_time = $ticket['last_message_timestamp'];
-			$newest_message_received = max($newest_message_received,$message_time);
-			//if($message_time <= $last_message_received)break; // all done here.
+        if(isset($tickets['reply_options'])) {
+            $this->account->save_account_data(array(
+                'reply_options' => $tickets['reply_options']
+            ));
+        }
+        if(isset($tickets['tickets'])) {
+            foreach ($tickets['tickets'] as $ticket) {
+                $message_time = $ticket['last_message_timestamp'];
+                $newest_message_received = max($newest_message_received, $message_time);
+                //if($message_time <= $last_message_received)break; // all done here.
 
-			$ucm_message = new shub_ucm_message($this->account, $this, false);
-			$ucm_message -> load_by_network_key($ticket['ticket_id'], $ticket, 'ticket', $debug);
-			$count++;
-			if($debug) {
-				?>
-				<div>
-				<pre> Imported Ticket ID: <?php echo $ucm_message->get( 'network_key' ); ?> with <?php echo $ticket['message_count'];?> message. </pre>
-				</div>
-			<?php
-			}
+                $ucm_message = new shub_ucm_message($this->account, $this, false);
+                $ucm_message->load_by_network_key($ticket['ticket_id'], $ticket, 'ticket', $debug);
+                $count++;
+                if ($debug) {
+                    ?>
+                    <div>
+                        <pre> Imported Ticket ID: <?php echo $ucm_message->get('network_key'); ?>
+                            with <?php echo $ticket['message_count']; ?> message. </pre>
+                    </div>
+                    <?php
+                }
 
-		}
+            }
+        }else{
+            SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'ucm','Failed to get a reply from the API for product '.$ucm_product_id.' "',$tickets);
+        }
 		// get user, return envato_codes in meta
 		SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'ucm', 'Imported  '.$count.' product tickets into database (from a total of '.count($tickets['tickets']).' returned by the api)');
 		if($debug)echo " imported $count new product tickets <br>";

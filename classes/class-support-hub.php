@@ -196,7 +196,7 @@ class SupportHub {
                             );
                             $message = isset( $_POST['message'] ) && $_POST['message'] ? $_POST['message'] : '';
                             $account_id = $_REQUEST['account-id'];
-                            $debug = isset( $_POST['debug'] ) && (int)$_POST['debug'] > 0 ? $_POST['debug'] : false;
+                            $debug = isset( $_POST['debug'] ) && (int)$_POST['debug'] > 0 ? true : false;
                             if ( $message ) {
 
                                 // we have a message and a message manager.
@@ -222,11 +222,6 @@ class SupportHub {
                                         $return['message'] .= 'Failed to queue comment reply in database.';
                                         $return['error'] = true;
                                     }
-                                    if ($debug) {
-                                        $return['message'] .= ob_get_clean();
-                                    } else {
-                                        //set_message( _l( 'message sent and conversation archived.' ) );
-                                    }
 
                                     $outbox->update(array(
                                         'shub_extension' => $_REQUEST['network'],
@@ -234,7 +229,19 @@ class SupportHub {
                                         'shub_message_id' => $_REQUEST['message-id'],
                                         'shub_message_comment_id' => $message_comment_id,
                                     ));
-                                    $return['shub_outbox_id'] = $outbox->get('shub_outbox_id');
+
+                                    if ($debug) {
+                                        // send the message straight away and show any debug output
+                                        echo $outbox->send_queued(true);
+                                        $return['message'] .= ob_get_clean();
+                                        // dont send an shub_outbox_id in debug mode
+                                        // this will keep the 'message' window open and not shrink it down so we can better display debug messages.
+
+                                    } else {
+                                        //set_message( _l( 'message sent and conversation archived.' ) );
+                                        $return['shub_outbox_id'] = $outbox->get('shub_outbox_id');
+                                    }
+
                                 }
                             }
                             if (!headers_sent())header('Content-type: text/javascript');

@@ -88,7 +88,7 @@ class shub_bbpress_message extends SupportHub_message{
                         // timestamp is handled in forum class
                         $comments[$id]['content'] = $comment['post_content'];
                     }
-					$this->update('title',$topic_data['post_content']);
+					$this->update('title',$topic_data['post_title']);
 					// latest comment goes in summary
 					$this->update('summary',isset($comments[0]) ? $comments[0]['post_content'] : $topic_data['post_content']);
 					$this->update('last_active',!empty($topic_data['timestamp']) ? $topic_data['timestamp'] : (is_array($topic_data['post_date']) ? $topic_data['post_date']['timestamp'] : (isset($topic_data['post_date']->timestamp) ? $topic_data['post_date']->timestamp : 0)));
@@ -197,7 +197,6 @@ class shub_bbpress_message extends SupportHub_message{
 		return false;
 	}
 
-
     public function send_queued_comment_reply($bbpress_message_comment_id, $shub_outbox, $debug = false){
         $comments = $this->get_comments();
         if(isset($comments[$bbpress_message_comment_id]) && !empty($comments[$bbpress_message_comment_id]['message_text'])){
@@ -210,7 +209,7 @@ class shub_bbpress_message extends SupportHub_message{
             if($debug)echo "Sending a reply to bbPress Topic ID: $bbpress_id <br>\n";
 
             $outbox_data = $shub_outbox->get('message_data');
-            if(isset($outbox_data['extra']) && is_array($outbox_data['extra'])){
+            if($outbox_data && isset($outbox_data['extra']) && is_array($outbox_data['extra'])){
                 $extra_data = $outbox_data['extra'];
             }else{
                 $extra_data = array();
@@ -366,8 +365,9 @@ class shub_bbpress_message extends SupportHub_message{
         ?>
         <br/>
 
+        <strong><?php _e('Thread:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('title') );?></a> <br/>
 
-        <strong><?php _e('Account:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('account') ? $this->get('account')->get( 'account_name' ) : 'N/A' ); ?></a> <br/>
+        <strong><?php _e('Account:');?></strong> <?php echo htmlspecialchars( $this->get('account') ? $this->get('account')->get( 'account_name' ) : 'N/A' ); ?> <br/>
 
         <strong><?php _e('Time:');?></strong> <?php echo shub_print_date( $this->get('last_active'), true ); ?>  <br/>
 

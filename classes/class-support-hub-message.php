@@ -82,7 +82,7 @@ class SupportHub_message{
 
     /**
      * @param $field string the field name to return
-     * @return bool|string|int|array
+     * @return bool|string|int|array|shub_ucm_item
      */
     public function get($field){
         if(isset($this->{$field})){
@@ -279,7 +279,9 @@ class SupportHub_message{
                 'message_text' => $message,
                 'user_id' => get_current_user_id(),
             ));
-            $this->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
+            if(!empty($extra_data['archive'])){
+                $this->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
+            }
             if($debug){
                 echo "Successfully added comment with id $shub_message_comment_id <br>\n";
             }
