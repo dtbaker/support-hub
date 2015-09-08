@@ -988,6 +988,8 @@ class SupportHub {
                         }
                     }
 
+                    // for debugging:
+                    $user_bits[] = array('shub_user_id',$user->get('shub_user_id'));
 
                     if (!empty($user->details['user_fname'])) {
                         $user_bits[] = array('FName', esc_html($user->details['user_fname']));
@@ -1010,10 +1012,13 @@ class SupportHub {
                     if (!empty($user->details['user_email'])) {
                         $user_bits[] = array('Email', '<a href="mailto:' . esc_html($user->details['user_email']) . '">' . esc_html($user->details['user_email']) . '</a>');
                     }
-                    // todo - group user output together nicely (e.g. Name <email>) so it looks better when there are multiple linked user accounts
                 }
             }
         }
+
+
+        //var_export($this->message_managers['envato']->pull_purchase_code(false,'61782ac6-1f67-4302-b34a-17c9e4d4f123',array(),3452)); echo 'done';exit;
+
 		if(isset($user_details['url']) && isset($user_details['username'])){
             if(!is_array($user_details['url']))$user_details['url'] = array($user_details['url']);
             if(!is_array($user_details['username']))$user_details['username'] = array($user_details['username']);
@@ -1037,6 +1042,26 @@ class SupportHub {
         }
         */
         $user_bits = apply_filters('supporthub_message_user_sidebar', $user_bits, $user_hints['shub_user_id']);
+
+        // todo - group user output together nicely (e.g. Name <email>) so it looks better when there are multiple linked user accounts
+        foreach($user_bits as $key=>$val){
+            // check if this one exists yet?
+            foreach($user_bits as $key_check=>$val_check){
+                if($key != $key_check && $val[0] == $val_check[0]){
+                    // we're matching something like 'Username' with 'Username'
+                    if(trim(strip_tags($val[1])) == trim(strip_tags($val_check[1]))){
+                        // same same! keep one, the longer one (which might contian a link)
+                        if(strlen($val[1]) > strlen($val_check[1])){
+                            unset($user_bits[$key_check]);
+                        }else{
+                            unset($user_bits[$key]);
+                        }
+                    }
+                }
+            }
+        }
+
+
         ?> <ul class="linked_user_details"> <?php
         foreach($user_bits as $user_bit){
             ?>

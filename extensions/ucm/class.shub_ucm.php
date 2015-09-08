@@ -245,7 +245,7 @@ class shub_ucm extends SupportHub_extension {
 			$shub_ucm_account = new shub_ucm_account( $account['shub_account_id'] );
 			$shub_ucm_account->run_cron($debug);
 			$products = $shub_ucm_account->get('items');
-			/* @var $products shub_ucm_product[] */
+			/* @var $products shub_ucm_item[] */
 			foreach($products as $product){
 				$product->run_cron($debug);
 			}

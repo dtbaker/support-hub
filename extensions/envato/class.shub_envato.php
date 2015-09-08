@@ -572,6 +572,11 @@ class shub_envato extends SupportHub_extension {
 
     public function pull_purchase_code($api, $purchase_code, $api_raw_data = array(), $existing_shub_user_id = false){
 
+        $purchase_code = strtolower(preg_replace('#([a-z0-9]{8})-?([a-z0-9]{4})-?([a-z0-9]{4})-?([a-z0-9]{4})-?([a-z0-9]{12})#','$1-$2-$3-$4-$5',$purchase_code));
+        // todo: add documentation that it needs to be named "Purchase Code"
+        // todo: add a default extra value called Purchase Code.
+        if(strlen($purchase_code)!=36)return false;
+
         $accounts = array();
         if(!$api){
             // loop through accounts and try an API call on each one.
@@ -711,6 +716,8 @@ class shub_envato extends SupportHub_extension {
 //                    if (empty($existing_purchase['shub_user_id'])) {
                         shub_update_insert('shub_envato_purchase_id', $shub_envato_purchase_id, 'shub_envato_purchase', array(
                             'shub_user_id' => $shub_user->get('shub_user_id'),
+                            'shub_product_id' => $newproduct->get('shub_product_id'),
+                            'purchase_time' => strtotime($result['sold_at']),
                         ));
 //                    }
                 }
@@ -776,6 +783,23 @@ class shub_envato extends SupportHub_extension {
                 return $result;
             }
         }while(count($accounts));
+
+        // if we get here it means the API request failed or it's an invalid purchase code.
+        // log it in our database so we can at least re-check it at a later point in time or show it as failed in the UI somehow.
+
+        $existing_purchase = shub_get_single('shub_envato_purchase', 'purchase_code', $purchase_code);
+        if (!$existing_purchase) {
+            $shub_envato_purchase_id = shub_update_insert('shub_envato_purchase_id', false, 'shub_envato_purchase', array(
+                'shub_user_id' => $existing_shub_user_id, // we update this later on when we get a correct reply from API
+                'shub_product_id' => 0, // update later on when product is correct
+                'envato_user_id' => 0,
+                'api_type' => 'fail',
+                'purchase_time' => 0,
+                'purchase_code' => $purchase_code,
+                'purchase_data' => '',
+            ));
+        }
+
         return false;
     }
 
@@ -913,6 +937,13 @@ class shub_envato extends SupportHub_extension {
                                     $total +=  $sale_data['amount'];
                                 }
                             }
+                        }else{
+                            // failed API lookup, show purchase code instead.
+                            // todo: a re-lookup button.
+                            $user_bits[] = array(
+                                'Failed Purchase Code',
+                                $purchase['purchase_code']
+                            );
                         }
                     }
                     if($total){
