@@ -5,8 +5,17 @@
 	</h2>
     <?php
 
-    $layout_type = isset($_REQUEST['layout_type']) ? $_REQUEST['layout_type'] : (!empty($_SESSION['shub_layout_type']) ? $_SESSION['shub_layout_type'] : 'inline');
-    $_SESSION['shub_layout_type'] = $layout_type;
+    // what search keys do we want to save between states?
+    $save_search = array('layout_type','orderquery');
+    foreach($save_search as $save){
+        if(isset($_REQUEST[$save])){
+            $_SESSION['shub_save_'.$save] = $_REQUEST['save'];
+        }else if(isset($_SESSION['shub_save_'.$save])){
+            $_REQUEST[$save] = $_SESSION['shub_save_'.$save]; // please don't stab me.
+        }
+    }
+
+    $layout_type = isset($_REQUEST['layout_type']) ? $_REQUEST['layout_type'] : 'inline';
 
 	// grab a mysql resource from all available social plugins (hardcoded for now - todo: hook)
 	$search = isset($_REQUEST['search']) && is_array($_REQUEST['search']) ? $_REQUEST['search'] : array();
