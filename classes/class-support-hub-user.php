@@ -199,10 +199,34 @@ class SupportHubUser{
 	public function get_link(){
 		return '#';
 	}
-	public function get_full_link(){
-		return '';
-	}
+    public function get_full_link(){
+        $data = $this->get('user_data');
+        $return = '';
+        // this is for UCM:
+        if(!empty($data['name']) && !empty($data['last_name'])){
+            $return .= htmlspecialchars($data['name'] .' '.$data['last_name'] .' ');
+        }
+        // this is for Envato
+        if(!empty($data['envato']['username'])){
+            $return .= '<a href="'.esc_url($this->get_link()).'" target="_blank">';
+            $return .= htmlspecialchars($data['envato']['username']);
+            $return .= '</a> ';
+        }
+        // this is fallback
+        if(!strlen($return)){
+            $return .= '<a href="'.esc_url($this->get_link()).'" target="_blank">';
+            $return .= htmlspecialchars($this->get('user_username'));
+            $return .= '</a> ';
+        }
+        return $return;
+    }
+
 	public function get_image(){
+
+        $data = $this->get('user_data');
+        if($data && !empty($data['image'])){
+            return $data['image'];
+        }
 		if($this->get('user_email')){
 			$hash = md5(trim($this->get('user_email')));
 			return '//www.gravatar.com/avatar/'.$hash.'?d=wavatar';
