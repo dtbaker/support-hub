@@ -80,6 +80,10 @@ class SupportHub {
 		foreach($this->message_managers as $name => $message_manager){
 			$message_manager->init();
 		}
+
+        if(isset($_REQUEST['debug_shub_cron'])){
+            $this->cron_run(true);
+        }
 	}
 
 	public function register_session(){
@@ -771,7 +775,9 @@ class SupportHub {
                     'time' => time(),
                 ));
                 $this->log_data(0, 'cron', 'Starting Extension Cron: ' . $name);
-                $message_manager->run_cron($debug, $cron_timeout, $cron_start);
+                if(!isset($_REQUEST['debug_shub_cron'])){
+                    $message_manager->run_cron($debug, $cron_timeout, $cron_start);
+                }
                 // this cron job has completed successfully.
                 // if we've been running more than timeout, quit.
                 if ($cron_start + $cron_timeout < time()) {
