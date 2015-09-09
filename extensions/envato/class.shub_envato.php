@@ -577,6 +577,26 @@ class shub_envato extends SupportHub_extension {
         // todo: add a default extra value called Purchase Code.
         if(strlen($purchase_code)!=36)return false;
 
+        // check existing purchase code and return that if it's cached
+        $existing_purchase = shub_get_single('shub_envato_purchase', 'purchase_code', $purchase_code);
+        if ($existing_purchase && $existing_purchase['shub_envato_purchase_id']) {
+            // if there is a matching support id, grab that cached support data, add shub_user_id do it and return it
+            // this matches our return data below.
+            // if we don't find this then we continue below and call the API again to get fresh data.
+            $existing_support = shub_get_single('shub_envato_support', array(
+                'shub_envato_purchase_id',
+            ), array(
+                $existing_purchase['shub_envato_purchase_id'],
+            ));
+            if($existing_support && $existing_support['shub_user_id'] && $existing_support['support_data']){
+                $return = @json_decode($existing_support['support_data'],true);
+                if($return){
+                    $return['shub_user_id'] = $existing_support['shub_user_id'];
+                    return $return;
+                }
+            }
+        }
+
         $accounts = array();
         if(!$api){
             // loop through accounts and try an API call on each one.
@@ -707,7 +727,14 @@ class shub_envato extends SupportHub_extension {
                             // add it in!
                             $shub_envato_purchase_id = shub_update_insert('shub_envato_purchase_id', $possible_purchase['shub_envato_purchase_id'], 'shub_envato_purchase', array(
                                 'purchase_code' => $purchase_code,
+                                'api_time' => time(),
                             ));
+                            if (empty($possible_purchases['purchase_data'])) {
+                                $raw_purchase_data = array_merge(array('author/sale' => $result), is_array($api_raw_data) ? $api_raw_data : array());
+                                $shub_envato_purchase_id = shub_update_insert('shub_envato_purchase_id', $possible_purchase['shub_envato_purchase_id'], 'shub_envato_purchase', array(
+                                    'purchase_data' => json_encode($raw_purchase_data),
+                                ));
+                            }
                         }
                     }
                 } else {
@@ -728,6 +755,7 @@ class shub_envato extends SupportHub_extension {
                         'shub_user_id' => $shub_user->get('shub_user_id'),
                         'shub_product_id' => $newproduct->get('shub_product_id'),
                         'envato_user_id' => 0,
+                        'api_time' => time(),
                         'api_type' => 'author/sale',
                         'purchase_time' => strtotime($result['sold_at']),
                         'purchase_code' => $purchase_code,
@@ -983,6 +1011,7 @@ CREATE TABLE {$wpdb->prefix}shub_envato_purchase (
   shub_user_id int(11) NOT NULL,
   shub_product_id int(11) NOT NULL,
   envato_user_id int(11) NOT NULL,
+  api_time int(11) NOT NULL DEFAULT '0',
   purchase_time int(11) NOT NULL,
   api_type varchar(20) NOT NULL DEFAULT '',
   purchase_code varchar(255) NOT NULL DEFAULT '',

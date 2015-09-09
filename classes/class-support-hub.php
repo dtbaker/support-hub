@@ -83,6 +83,7 @@ class SupportHub {
 
         if(isset($_REQUEST['debug_shub_cron'])){
             $this->cron_run(true);
+            exit;
         }
 	}
 
@@ -777,6 +778,8 @@ class SupportHub {
                 $this->log_data(0, 'cron', 'Starting Extension Cron: ' . $name);
                 if(!isset($_REQUEST['debug_shub_cron'])){
                     $message_manager->run_cron($debug, $cron_timeout, $cron_start);
+                }else{
+                    echo 'Starting Extension Cron: ' . $name."<br>\n";
                 }
                 // this cron job has completed successfully.
                 // if we've been running more than timeout, quit.

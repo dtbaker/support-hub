@@ -242,11 +242,13 @@ class shub_ucm extends SupportHub_extension {
 		if($debug)echo "Starting ucm Cron Job \n";
 		$accounts = $this->get_accounts();
 		foreach($accounts as $account){
+            SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'envato', 'Running Cron Job On Account: ' . $account['shub_account_id']);
 			$shub_ucm_account = new shub_ucm_account( $account['shub_account_id'] );
 			$shub_ucm_account->run_cron($debug);
 			$products = $shub_ucm_account->get('items');
 			/* @var $products shub_ucm_item[] */
 			foreach($products as $product){
+                SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'envato', 'Running Cron Job On Item: ' . $product->get('shub_item_id'));
 				$product->run_cron($debug);
 			}
 		}
