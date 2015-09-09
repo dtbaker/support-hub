@@ -146,13 +146,7 @@ class SupportHub {
                                 ?>
                                 var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
                                 var element_action = element.prev('.shub_extension_message_action').first();
-                                element_action.find('.action_content').html('Message Archived. <a href="#"
-                                                                                                  class="shub_message_action"
-                                                                                                  data-action="set-unanswered"
-                                                                                                  data-post="<?php echo esc_attr(json_encode(array(
-                                                                                                      'network' => $_REQUEST['network'],
-                                                                                                      'shub_message_id' => (int)$_REQUEST['shub_message_id'],
-                                                                                                  ))); ?>">Undo</a>');
+                                element_action.find('.action_content').html('Message Archived. <a href="#" class="shub_message_action" data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array('network' => $_REQUEST['network'], 'shub_message_id' => (int)$_REQUEST['shub_message_id'],))); ?>">Undo</a>');
                                 if(element.is('div')){
                                 element.slideUp();
                                 element_action.slideDown();
