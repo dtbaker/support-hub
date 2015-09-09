@@ -195,7 +195,7 @@ class shub_ucm_message extends SupportHub_message{
 		}
 		return array();
 	}
-    public function message_sidebar_data(){
+    public function message_sidebar_data($type = 'full'){
 
         // find if there is a product here
         $shub_product_id = $this->get_product_id();
@@ -227,14 +227,23 @@ class shub_ucm_message extends SupportHub_message{
                 echo '</a>';
             }
         }
+        if($type == 'mobile')return;
         ?>
         <br/>
         <strong><?php _e('Subject:');?></strong> <?php echo htmlspecialchars( $this->get('title') );?> <br/>
+        <?php
+        $ticket_data = $this->get('shub_data');
+        if(!empty($ticket_data['reply_from_shub_user_id'])){
+            $staff_member = new SupportHubUser_ucm($ticket_data['reply_from_shub_user_id']);
+            ?>
+            <strong><?php _e('Staff:');?></strong> <?php echo htmlspecialchars($staff_member->get_full_link());?> <br/>
+            <?php
+        }
+        ?>
         <strong><?php _e('Account:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('account') ? $this->get('account')->get( 'account_name' ) : 'N/A' ); ?></a> <br/>
         <strong><?php _e('Time:');?></strong> <?php echo shub_print_date( $this->get('last_active'), true ); ?>  <br/>
 
-        <?php
-        if($item_data){
+        <?php if ($item_data && !empty($item_data['item'])){
             ?>
             <strong><?php _e('Item:');?></strong>
             <a href="<?php echo isset( $item_data['url'] ) ? $item_data['url'] : $this->get_link(); ?>"

@@ -172,10 +172,10 @@ ucm.social = {
                                         element_action.find('.action_content').html('Failed to send message. Please check logs.');
                                     });
                                     if(element.is('div')){
-                                        element.slideUp();
+                                        element.slideUp(function(){element.remove();});
                                         element_action.slideDown();
                                     }else{
-                                        element.hide();
+                                        element.remove();
                                         element_action.show();
                                     }
                                     var pos = element_action.position();
@@ -199,10 +199,10 @@ ucm.social = {
                                             element_action.find('.action_content').html('Failed to send message. Please check logs.');
                                         });
                                         if(element.is('div')){
-                                            element.slideUp();
+                                            element.slideUp(function(){element.remove();});
                                             element_action.slideDown();
                                         }else{
-                                            element.hide();
+                                            element.remove();
                                             element_action.show();
                                         }
                                         var pos = element_action.position();
@@ -249,6 +249,30 @@ ucm.social = {
                 }
             });
             return false;
+        }).delegate('.shub_message_load_content','click',function(){
+            // action a message (archive / unarchive)
+            var post_data = {
+                action: 'support_hub_' + jQuery(this).data('action'),
+                wp_nonce: support_hub.wp_nonce,
+                form_auth_key: ucm.form_auth_key
+            };
+            var button_post = jQuery(this).data('post');
+            for(var i in button_post){
+                if(button_post.hasOwnProperty(i)){
+                    post_data[i] = button_post[i];
+                }
+            }
+            var target = jQuery(jQuery(this).data('target'));
+            jQuery.ajax({
+                url: ajaxurl,
+                method: 'POST',
+                data: post_data,
+                dataType: 'html',
+                success: function(r){
+                    target.append(r);
+                }
+            });
+            return false;
         }).delegate('.swap_layout_type','click',function(){
             jQuery('#layout_type').val(jQuery(this).data('layout-type')).parents('form').get(0).submit();
             return false;
@@ -274,20 +298,23 @@ ucm.social = {
             });
         });
         jQuery(window).scroll(function(){
-            var currenttop = jQuery(window).scrollTop();
-            // find out which elements we have to move into view.
-            for(var i = 0; i < inline_views.length; i++){
-                if(inline_views[i].pos.top < currenttop && inline_views[i].pos.top + inline_views[i].height > currenttop){
-                    // calc here incase of ajax loading sidebar data
-                    var sidebar_height = inline_views[i].sidebar.height();
-                    var from_top = Math.min(inline_views[i].height - sidebar_height - 20, currenttop - inline_views[i].pos.top + 20);
-                    if(from_top > 10){
-                        inline_views[i].sidebar.css('padding-top',from_top+'px');
-                    }else{
-                        inline_views[i].sidebar.attr('style','');
+            var width = jQuery(window).width();
+            if(width > 782) {
+                var currenttop = jQuery(window).scrollTop();
+                // find out which elements we have to move into view.
+                for (var i = 0; i < inline_views.length; i++) {
+                    if (inline_views[i].pos.top < currenttop && inline_views[i].pos.top + inline_views[i].height > currenttop) {
+                        // calc here incase of ajax loading sidebar data
+                        var sidebar_height = inline_views[i].sidebar.height();
+                        var from_top = Math.min(inline_views[i].height - sidebar_height - 20, currenttop - inline_views[i].pos.top + 20);
+                        if (from_top > 10) {
+                            inline_views[i].sidebar.css('padding-top', from_top + 'px');
+                        } else {
+                            inline_views[i].sidebar.attr('style', '');
+                        }
+                    } else {
+                        inline_views[i].sidebar.attr('style', '');
                     }
-                }else{
-                    inline_views[i].sidebar.attr('style','');
                 }
             }
         });

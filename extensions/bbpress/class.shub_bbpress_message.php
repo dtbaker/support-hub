@@ -337,7 +337,7 @@ class shub_bbpress_message extends SupportHub_message{
 
 
 
-    public function message_sidebar_data(){
+    public function message_sidebar_data($type = 'full'){
 
         // find if there is a product here
         $shub_product_id = $this->get_product_id();
@@ -368,13 +368,12 @@ class shub_bbpress_message extends SupportHub_message{
                 echo '</a>';
             }
         }
+        if($type == 'mobile')return;
         ?>
         <br/>
 
         <strong><?php _e('Thread:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('title') );?></a> <br/>
-
         <strong><?php _e('Account:');?></strong> <?php echo htmlspecialchars( $this->get('account') ? $this->get('account')->get( 'account_name' ) : 'N/A' ); ?> <br/>
-
         <strong><?php _e('Time:');?></strong> <?php echo shub_print_date( $this->get('last_active'), true ); ?>  <br/>
 
         <?php

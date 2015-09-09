@@ -52,6 +52,7 @@ class SupportHub {
 		add_action( 'wp_ajax_support_hub_queue-watch' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_resend_outbox_message' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_delete_outbox_message' , array( $this, 'admin_ajax' ) );
+		add_action( 'wp_ajax_support_hub_next-continuous-message' , array( $this, 'admin_ajax' ) );
 
         add_filter('set-screen-option', array( $this, 'set_screen_options' ), 10, 3);
 
@@ -126,6 +127,37 @@ class SupportHub {
                         echo 'Failed network params';
                     }
                     break;
+                case 'next-continuous-message':
+
+                    if(!empty($_SESSION['_shub_search_rules'])){
+                        //$_SESSION['_shub_search_rules'] = array($this_search, $order, $message_ids);
+                        $this_search = $_SESSION['_shub_search_rules'][0];
+                        $message_ids = $_SESSION['_shub_search_rules'][2];
+                        $this_search['not_in'] = $message_ids;;
+                        SupportHub::getInstance()->load_all_messages($this_search, $_SESSION['_shub_search_rules'][1], 5);
+                        $all_messages = SupportHub::getInstance()->all_messages;
+                        foreach($all_messages as $all_message){
+                            $message_ids[]=$all_message['shub_message_id'];
+                        }
+                        // this is used in class-support-hub.php to load the next batch of messages.
+                        $_SESSION['_shub_search_rules'][2] = $message_ids;
+
+                        $myListTable = new SupportHubMessageList(array(
+                            'screen' => 'shub_inbox'
+                        ));
+                        $myListTable->set_layout_type('continuous');
+                        $myListTable->set_data($all_messages);
+                        $myListTable->prepare_items();
+                        if ( $myListTable->has_items() ) {
+                            $myListTable->display_rows();
+                        } else {
+                            echo '<div class="no-items" style="text-align:center">';
+                            $myListTable->no_items();
+                            echo '</div>';
+                        }
+                    }
+
+                    break;
                 case 'set-answered':
                     if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_message_id'])) {
                         $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_message_id']);
@@ -148,10 +180,10 @@ class SupportHub {
                                 var element_action = element.prev('.shub_extension_message_action').first();
                                 element_action.find('.action_content').html('Message Archived. <a href="#" class="shub_message_action" data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array('network' => $_REQUEST['network'], 'shub_message_id' => (int)$_REQUEST['shub_message_id'],))); ?>">Undo</a>');
                                 if(element.is('div')){
-                                element.slideUp();
+                                element.slideUp(function(){element.remove();});
                                 element_action.slideDown();
                                 }else{
-                                element.hide();
+                                element.remove();
                                 element_action.show();
                                 }
                                 element_action.data('undo-type','answered');
@@ -176,10 +208,10 @@ class SupportHub {
                                 'shub_message_id' => (int)$_REQUEST['shub_message_id'],
                             )));?>">Undo</a>');
                             if(element.is('div')){
-                            element.slideUp();
+                            element.slideUp(function(){element.remove();});
                             element_action.slideDown();
                             }else{
-                            element.hide();
+                            element.remove();
                             element_action.show();
                             }
                             element_action.data('undo-type','unanswered');
@@ -1149,15 +1181,12 @@ class SupportHub {
 
 
     public $all_messages = array();
-    public $limit_start = 0;
     public $search_params = array();
     public $search_order = array();
-    public $search_limit = 0;
 
-    public function load_all_messages($search=array(),$order=array(),$limit_batch=0){
+    public function load_all_messages($search=array(),$order=array(),$limit_batch=0,$limit_start=0){
         $this->search_params = $search;
         $this->search_order = $order;
-        $this->search_limit = $limit_batch;
 
         $sql = "SELECT m.*, m.last_active AS `message_time`, mr.read_time, sa.shub_extension FROM `"._support_hub_DB_PREFIX."shub_message` m ";
         $sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_message_read` mr ON ( m.shub_message_id = mr.shub_message_id AND mr.user_id = ".get_current_user_id()." )";
@@ -1185,6 +1214,12 @@ class SupportHub {
             $sql .= " AND (`title` LIKE '%".esc_sql($search['generic'])."%'";
             $sql .= " OR `summary` LIKE '%".esc_sql($search['generic'])."%' )";
         }
+        if(isset($search['not_in']) && is_array($search['not_in']) && count($search['not_in'])){
+            foreach($search['not_in'] as $key=>$val){
+                $search['not_in'][$key] = (int)$val;
+            }
+            $sql .= " AND m.shub_message_id NOT IN ( " . implode(',',$search['not_in']) . " ) ";
+        }
         if(empty($order)){
             $sql .= " ORDER BY `last_active` DESC ";
         }else{
@@ -1195,9 +1230,8 @@ class SupportHub {
                     break;
             }
         }
-        if($limit_batch){
-            $sql .= " LIMIT ".$this->limit_start.', '.$limit_batch;
-            $this->limit_start += $limit_batch;
+        if((int)$limit_batch>0){
+            $sql .= " LIMIT ".(int)$limit_start.', '.(int)$limit_batch;
         }
         global $wpdb;
         $this->all_messages = $wpdb->get_results($sql, ARRAY_A);

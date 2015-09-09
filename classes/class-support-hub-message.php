@@ -367,6 +367,10 @@ class SupportHub_message{
                                 'last_activity' => $this->get('last_active'),
                             )));?>"><?php _e( 'Archive' ); ?></a>
                         <?php } ?>
+                        <span class="responsive_sidebar_summary">
+                        <?php $this->message_sidebar_data('mobile'); ?>
+                        </span>
+
                         <a href="#" class="shub_view_full_message_sidebar btn btn-default btn-xs button alignright"><?php _e( 'Show More Details' ); ?></a>
                     </nav>
                     <header>
@@ -388,9 +392,7 @@ class SupportHub_message{
                         <?php } ?>
                     </header>
                     <aside class="message_sidebar">
-
                         <?php
-
                         $this->message_sidebar_data();
                         // find out the user details, purchases and if they have any other open messages.
                         $user_hints = array(
@@ -533,10 +535,10 @@ class SupportHub_message{
                 $reply_shub_user = $this->get_reply_user();
                 ?>
                 <div class="shub_message_picture">
-                    <!--  <img src="<?php echo $reply_shub_user->get_image(); ?>" /> -->
+                      <img src="<?php echo $reply_shub_user->get_image(); ?>" />
                 </div>
                 <div class="shub_message_header">
-                    <!-- <?php echo $reply_shub_user->get_full_link(); ?> -->
+                     <?php echo $reply_shub_user->get_full_link(); ?>
                 </div>
                 <div class="shub_message_body">
                     <textarea placeholder="Write a reply..."></textarea>

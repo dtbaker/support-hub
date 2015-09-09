@@ -15,7 +15,7 @@
         }
     }
 
-    $layout_type = isset($_REQUEST['layout_type']) ? $_REQUEST['layout_type'] : 'inline';
+    $layout_type = isset($_REQUEST['layout_type']) ? $_REQUEST['layout_type'] : 'continuous';
 
 	// grab a mysql resource from all available social plugins (hardcoded for now - todo: hook)
 	$search = isset($_REQUEST['search']) && is_array($_REQUEST['search']) ? $_REQUEST['search'] : array();
@@ -29,6 +29,11 @@
             'orderby' => $bits[0],
             'order' => $bits[1],
         );
+    }else{
+        $order = array(
+            'orderby' => 'shub_column_time',
+            'order' => 'asc',
+        );
     }
 
 	// retuin a combined copy of all available messages, based on search, as a MySQL resource
@@ -36,18 +41,9 @@
 
 
 
-    $myListTable = new SupportHubMessageList();
-    $screen = get_current_screen();
-    // retrieve the "per_page" option
-    $screen_option = $screen->get_option('per_page', 'option');
-    // retrieve the value of the option stored for the current user
-    $per_page = get_user_meta(get_current_user_id(), $screen_option, true);
-    if ( empty ( $per_page) || $per_page < 1  || is_array($per_page) ) {
-        // get the default value if none is set
-        $per_page = $screen->get_option( 'per_page', 'default' );
-    }
-    if(!$per_page)$per_page=20;
-    $myListTable->items_per_page = $per_page;
+    $myListTable = new SupportHubMessageList(array(
+        'screen' => 'shub_inbox'
+    ));
     $myListTable->set_columns( array(
 		'cb' => 'Select All',
 		'shub_column_account' => __( 'Account', 'support_hub' ),
@@ -65,17 +61,42 @@
 	) );*/
     $myListTable->process_bulk_action(); // before we do the search on messages.
 
-
     $this_search = $search;
     if (isset($this_search['shub_status']) && $this_search['shub_status'] == -1) {
         unset($this_search['shub_status']);
     }
-    SupportHub::getInstance()->load_all_messages($this_search, $order);
+    SupportHub::getInstance()->load_all_messages($this_search, $order, $layout_type == 'continuous' ? 5 : false);
+    // we store this data in the session so that continuous mode can access it and perform hte same search when loading more data.
+
     $all_messages = SupportHub::getInstance()->all_messages;
-    $limit_pages = 2; // get about 10 pages of data to display in WordPress.
     $has_more = false;
-    if(count($all_messages) >= ($myListTable->get_pagenum() * $myListTable->items_per_page) + ($limit_pages * $myListTable->items_per_page)){
-        $has_more = true; // a flag so we can show "more" in the pagination listing.
+    if($layout_type == 'continuous'){
+
+        $message_ids = array();
+        foreach($all_messages as $all_message){
+            $message_ids[]=$all_message['shub_message_id'];
+        }
+        // this is used in class-support-hub.php to load the next batch of messages.
+        // todo: pull this out of sessions into ajax variables so we can have two tabs open with different searches going at the same time.
+        $_SESSION['_shub_search_rules'] = array($this_search, $order, $message_ids);
+        // todo: ajax notification when currently listed messages are updated or new ones appear at the top of the list.
+
+    }else{
+        $screen = get_current_screen();
+        // retrieve the "per_page" option
+        $screen_option = $screen->get_option('per_page', 'option');
+        // retrieve the value of the option stored for the current user
+        $per_page = get_user_meta(get_current_user_id(), $screen_option, true);
+        if ( empty ( $per_page) || $per_page < 1  || is_array($per_page) ) {
+            // get the default value if none is set
+            $per_page = $screen->get_option( 'per_page', 'default' );
+        }
+        if(!$per_page)$per_page=20;
+        $myListTable->items_per_page = $per_page;
+        $limit_pages = 2; // get about 10 pages of data to display in WordPress.
+        if(count($all_messages) >= ($myListTable->get_pagenum() * $myListTable->items_per_page) + ($limit_pages * $myListTable->items_per_page)){
+            $has_more = true; // a flag so we can show "more" in the pagination listing.
+        }
     }
 
 
@@ -86,6 +107,8 @@
     $myListTable->set_data($all_messages);
     $myListTable->prepare_items();
     $myListTable->pagination_has_more = $has_more;
+
+    // for ajax it would be $myListTable->single_row($message_array);
     ?>
     <form method="post" id="shub_search_form">
         <div class="shub_header_box">
@@ -133,14 +156,15 @@
 
             <label for="orderquery"><?php _e('Sort:','support_hub');?></label>
             <select id="orderquery" name="orderquery">
-                <option value="shub_column_time:desc"<?php echo isset($_REQUEST['orderquery']) && $_REQUEST['orderquery'] == 'shub_column_time:desc' ? ' selected' : '';?>><?php _e('Descending','support_hub');?></option>
                 <option value="shub_column_time:asc"<?php echo isset($_REQUEST['orderquery']) && $_REQUEST['orderquery'] == 'shub_column_time:asc' ? ' selected' : '';?>><?php _e('Ascending','support_hub');?></option>
+                <option value="shub_column_time:desc"<?php echo isset($_REQUEST['orderquery']) && $_REQUEST['orderquery'] == 'shub_column_time:desc' ? ' selected' : '';?>><?php _e('Descending','support_hub');?></option>
             </select>
             </span>
             <span>
 
             <label for="layout_type"><?php _e('View:','support_hub');?></label>
             <select id="layout_type" name="layout_type">
+                <option value="continuous"<?php echo $layout_type=='continuous' ? 'selected' : '';?>><?php _e('Continuous','support_hub');?></option>
                 <option value="inline"<?php echo $layout_type=='inline' ? 'selected' : '';?>><?php _e('Inline','support_hub');?></option>
                 <option value="table"<?php echo $layout_type=='table' ? 'selected' : '';?>><?php _e('Table','support_hub');?></option>
             </select>

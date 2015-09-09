@@ -230,14 +230,14 @@
 tr.log_error{
     background: #FBFF66 !important;
 }
-.shub_table_inline {
+#shub_table_inline {
     margin: 20px 0;
     padding: 20px;
     background: #FFF;
     border-radius: 10px;
 }
 @media (max-width: 600px) {
-    .shub_table_inline{
+    #shub_table_inline{
         margin:10px -8px;
         -webkit-border-radius: 0;
         -moz-border-radius: 0;
@@ -246,14 +246,14 @@ tr.log_error{
     }
 }
 @media (min-width: 961px) {
-    .shub_table_inline {
+    #shub_table_inline {
         width: 80%;
         margin-left: 10%;
         margin-right: 10%;
     }
 }
 @media (min-width: 1300px) {
-    .shub_table_inline {
+    #shub_table_inline {
         width: 66%;
         margin-left: 15%;
         margin-right: 15%;
@@ -286,6 +286,13 @@ tr.log_error{
         display: block;
         clear: both;
     }
+    .message_sidebar nav .shub_message_action{
+        float:left;
+        margin-right: 10px;
+    }
+    .message_sidebar nav .responsive_sidebar_summary{
+        float:left;
+    }
     #shub_search_form .tablenav.top{
         display: none;
     }
@@ -313,14 +320,14 @@ tr.log_error{
     -moz-border-radius: 4px;
     border-radius: 4px;
 }
-.shub_table_inline .shub_extension_message_action:after{
+#shub_table_inline .shub_extension_message_action:after{
     content: "";
     display: block;
     margin-bottom: 5px;
     padding-top: 5px;
     clear: both;
 }
-.shub_table_inline .shub_extension_message:after{
+#shub_table_inline .shub_extension_message:after{
     border-bottom: 1px solid #d4d4d4;
     content: "";
     display: block;
@@ -328,7 +335,7 @@ tr.log_error{
     padding-top: 20px;
     clear: both;
 }
-.shub_table_inline .primary_comment {
+#shub_table_inline .primary_comment {
     background-color: #f5f5f5;
 }
 
@@ -439,4 +446,7 @@ span.buyer_badge,
 }
 .shub_hide_when_no_message{
     display: none !important;
+}
+#shub_continuous_more{
+    text-align: center;
 }
