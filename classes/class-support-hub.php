@@ -176,7 +176,7 @@ class SupportHub {
                             } else {
                                 $shub_extension_message->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
                                 ?>
-                                var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
+                                var element = jQuery('.shub_extension_message[data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
                                 var element_action = element.prev('.shub_extension_message_action').first();
                                 element_action.find('.action_content').html('Message Archived. <a href="#" class="shub_message_action" data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array('network' => $_REQUEST['network'], 'shub_message_id' => (int)$_REQUEST['shub_message_id'],))); ?>">Undo</a>');
                                 if(element.is('div')){
@@ -201,7 +201,7 @@ class SupportHub {
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
                             ?>
-                            var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
+                            var element = jQuery('.shub_extension_message[data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
                             var element_action = element.prev('.shub_extension_message_action').first();
                             element_action.find('.action_content').html('Message Moved to Inbox. <a href="#" class="shub_message_action" data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $_REQUEST['network'],
@@ -270,6 +270,11 @@ class SupportHub {
                                         if (!$message_comment_id) {
                                             $return['message'] .= 'Failed to queue comment reply in database.';
                                             $return['error'] = true;
+                                        }else{
+                                            // successfully queued. do we archive?
+                                            if(!empty($_POST['archive'])){
+                                                $shub_extension_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
+                                            }
                                         }
 
                                         $outbox->update(array(
@@ -1221,11 +1226,11 @@ class SupportHub {
             $sql .= " AND m.shub_message_id NOT IN ( " . implode(',',$search['not_in']) . " ) ";
         }
         if(empty($order)){
-            $sql .= " ORDER BY `last_active` DESC ";
+            $sql .= " ORDER BY `priority` DESC, `last_active` ASC ";
         }else{
             switch($order['orderby']){
                 case 'shub_column_time':
-                    $sql .= " ORDER BY `last_active` ";
+                    $sql .= " ORDER BY `priority` DESC, `last_active` ";
                     $sql .= $order['order'] == 'asc' ? 'ASC' : 'DESC';
                     break;
             }
@@ -1286,6 +1291,7 @@ CREATE TABLE {$wpdb->prefix}shub_message (
   shub_link varchar(255) NOT NULL,
   shub_data text NOT NULL,
   shub_status tinyint(1) NOT NULL DEFAULT '0',
+  priority int(2) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
   shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_message_id (shub_message_id),

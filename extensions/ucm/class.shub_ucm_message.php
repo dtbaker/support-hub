@@ -52,7 +52,6 @@ class shub_ucm_message extends SupportHub_message{
                         $this->update('shub_data', $ticket);
                         $this->update('shub_link', $ticket['url']);
                         $this->update('network_key', $network_key);
-                        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'ucm','Updateing ticket '.$network_key.' with status '.$this->get('shub_status').' and existing comment count '.count($this->get_comments()).' and new comment count '.count($comments));
                         if($this->get('shub_status')!=_shub_MESSAGE_STATUS_HIDDEN){
                             // we have to decide if we're updating the message status from answered to unanswered.
                             // if this message status is already answered and the existing comment count matches the new comment count then we don't update the status

@@ -279,9 +279,6 @@ class SupportHub_message{
                 'message_text' => $message,
                 'user_id' => get_current_user_id(),
             ));
-            if(!empty($extra_data['archive'])){
-                $this->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
-            }
             if($debug){
                 echo "Successfully added comment with id $shub_message_comment_id <br>\n";
             }

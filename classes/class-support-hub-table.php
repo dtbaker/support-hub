@@ -450,7 +450,10 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                     $message->output_message_page('inline');
                     echo '</div>';
                 }else{
+                    echo '<hr>';
                     echo 'Invalid item. Please report bug to dtbaker. <br>';
+                    print_r($item);
+                    echo '<hr>';
                 }
                 break;
             default:
