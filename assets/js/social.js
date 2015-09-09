@@ -179,7 +179,7 @@ ucm.social = {
                                         element_action.show();
                                     }
                                     var pos = element_action.position();
-                                    jQuery(window).scrollTop(pos.top-10);
+                                    if(jQuery(window).scrollTop()>pos.top-10)jQuery(window).scrollTop(pos.top-10);
                                 })();
                             }else{
                                 // we are in popup. have to close modal and find this message on the page to see if we can slide it up.

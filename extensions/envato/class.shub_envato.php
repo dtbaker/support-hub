@@ -964,6 +964,12 @@ class shub_envato extends SupportHub_extension {
                                 if($sale_data && !empty($sale_data['amount'])){
                                     $total +=  $sale_data['amount'];
                                 }
+                                if($sale_data && !empty($sale_data['support_amount'])){
+                                    $total +=  $sale_data['support_amount'];
+                                }
+                                if(!$sale_data){
+                                    print_r($purchase);
+                                }
                             }
                         }else{
                             // failed API lookup, show purchase code instead.

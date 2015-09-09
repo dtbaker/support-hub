@@ -358,9 +358,15 @@ class shub_bbpress_message extends SupportHub_message{
         <img src="<?php echo plugins_url('extensions/bbpress/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon">
         <?php
         if($shub_product_id && !empty($product_data['image'])) {
+            if(!empty($product_data['url'])){
+                echo '<a href="'.esc_attr($product_data['url']).'" target="_blank">';
+            }
             ?>
             <img src="<?php echo $product_data['image'];?>" class="shub_message_account_icon">
             <?php
+            if(!empty($product_data['url'])){
+                echo '</a>';
+            }
         }
         ?>
         <br/>

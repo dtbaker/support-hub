@@ -19,6 +19,9 @@ class shub_ucm_message extends SupportHub_message{
                     $api_result = $api->api('ticket','message',array('ticket_ids'=>$network_key));
                     if($api_result && isset($api_result['tickets'][$network_key]) && count($api_result['tickets'][$network_key])) {
                         //print_r($api_result);
+                        if(isset($ticket['staff']) && !empty($ticket['staff']['email'])){
+                            $ticket['reply_from_shub_user_id'] = $this->account->get_api_user_to_id($ticket['staff']);
+                        }
 						$all_comments = $api_result['tickets'][$network_key];
 						$comments = array();
 						foreach($all_comments as $comment_id => $comment){
@@ -49,6 +52,7 @@ class shub_ucm_message extends SupportHub_message{
                         $this->update('shub_data', $ticket);
                         $this->update('shub_link', $ticket['url']);
                         $this->update('network_key', $network_key);
+                        SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'ucm','Updateing ticket '.$network_key.' with status '.$this->get('shub_status').' and existing comment count '.count($this->get_comments()).' and new comment count '.count($comments));
                         if($this->get('shub_status')!=_shub_MESSAGE_STATUS_HIDDEN){
                             // we have to decide if we're updating the message status from answered to unanswered.
                             // if this message status is already answered and the existing comment count matches the new comment count then we don't update the status
@@ -213,9 +217,15 @@ class shub_ucm_message extends SupportHub_message{
         <img src="<?php echo plugins_url('extensions/ucm/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon">
         <?php
         if($shub_product_id && !empty($product_data['image'])) {
+            if(!empty($product_data['url'])){
+                echo '<a href="'.esc_attr($product_data['url']).'" target="_blank">';
+            }
             ?>
             <img src="<?php echo $product_data['image'];?>" class="shub_message_account_icon">
             <?php
+            if(!empty($product_data['url'])){
+                echo '</a>';
+            }
         }
         ?>
         <br/>
@@ -257,6 +267,11 @@ class shub_ucm_message extends SupportHub_message{
         return new SupportHubUser_ucm($shub_user_id);
     }
     public function get_reply_user(){
+        // each message can have a different assigned staff member in the ucm database, this is stored in the initial API scrape of a ticket
+        $ticket_data = $this->get('shub_data');
+        if(!empty($ticket_data['reply_from_shub_user_id'])){
+            return new SupportHubUser_ucm($ticket_data['reply_from_shub_user_id']);
+        }
         return new SupportHubUser_ucm($this->account->get('shub_user_id'));
     }
 
