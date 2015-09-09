@@ -357,12 +357,14 @@ class SupportHub_message{
                                data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
                                 'shub_message_id' => $message_id,
+                                'last_activity' => $this->get('last_active'),
                             )));?>"><?php _e( 'Inbox' ); ?></a>
                         <?php }else{ ?>
                             <a href="#" class="shub_message_action btn btn-default btn-xs button"
                                data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
                                 'shub_message_id' => $message_id,
+                                'last_activity' => $this->get('last_active'),
                             )));?>"><?php _e( 'Archive' ); ?></a>
                         <?php } ?>
                         <a href="#" class="shub_view_full_message_sidebar btn btn-default btn-xs button alignright"><?php _e( 'Show More Details' ); ?></a>
@@ -374,12 +376,14 @@ class SupportHub_message{
                                data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
                                 'shub_message_id' => $message_id,
+                                'last_activity' => $this->get('last_active'),
                             )));?>"><?php _e( 'Inbox' ); ?></a>
                         <?php }else{ ?>
                             <a href="#" class="shub_message_action btn btn-default btn-xs button"
                                data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
                                 'shub_message_id' => $message_id,
+                                'last_activity' => $this->get('last_active'),
                             )));?>"><?php _e( 'Archive' ); ?></a>
                         <?php } ?>
                     </header>
@@ -496,8 +500,9 @@ class SupportHub_message{
                                 echo '<span class="buyer_badge unsupported">Unsupported</span> ';
                             }
                             if(!empty($buyer_status['presale'])){
-                                echo '<span class="buyer_badge presale">Pre-sale</span> ';
+                                //echo '<span class="buyer_badge presale">Pre-sale</span> ';
                             }
+                            // todo - add a badge for staff reply.
                             ?>
                         </span>
                     </span>
@@ -550,6 +555,7 @@ class SupportHub_message{
                             'account-id' => $this->get('shub_account_id'),
                             'message-id' => $message_id,
                             'network' => $this->network,
+                            'last_activity' => $this->get('last_active'),
                         ))); ?>" class="btn button shub_send_message_reply_button shub_hide_when_no_message"><?php _e('Send'); ?></button>
                     </div
                 </div>

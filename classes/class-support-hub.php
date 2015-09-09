@@ -130,26 +130,39 @@ class SupportHub {
                     if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_message_id'])) {
                         $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_message_id']);
                         if ($shub_extension_message->get('shub_message_id') == $_REQUEST['shub_message_id']) {
-                            $shub_extension_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
-                            if (!headers_sent())header('Content-type: text/javascript');
+                            if (!headers_sent()) header('Content-type: text/javascript');
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
-                            ?>
-                            var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
-                            var element_action = element.prev('.shub_extension_message_action').first();
-                            element_action.find('.action_content').html('Message Archived. <a href="#" class="shub_message_action" data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
-                                'network' => $_REQUEST['network'],
-                                'shub_message_id' => (int)$_REQUEST['shub_message_id'],
-                            )));?>">Undo</a>');
-                            if(element.is('div')){
-                            element.slideUp();
-                            element_action.slideDown();
-                            }else{
-                            element.hide();
-                            element_action.show();
+
+                            if (isset($_REQUEST['last_active']) && $_REQUEST['last_active'] != $shub_extension_message->get('last_active')) {
+                                // a new message was received without updating the page.
+                                // todo: ajax the shit out of live message updates instead of waiting for action.
+                                // todo: do this check on bulk actions as well.
+                                ?>
+                                alert('There is an update to this message. Please refresh the page to see.');
+                                <?php
+                            } else {
+                                $shub_extension_message->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
+                                ?>
+                                var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
+                                var element_action = element.prev('.shub_extension_message_action').first();
+                                element_action.find('.action_content').html('Message Archived. <a href="#"
+                                                                                                  class="shub_message_action"
+                                                                                                  data-action="set-unanswered"
+                                                                                                  data-post="<?php echo esc_attr(json_encode(array(
+                                                                                                      'network' => $_REQUEST['network'],
+                                                                                                      'shub_message_id' => (int)$_REQUEST['shub_message_id'],
+                                                                                                  ))); ?>">Undo</a>');
+                                if(element.is('div')){
+                                element.slideUp();
+                                element_action.slideDown();
+                                }else{
+                                element.hide();
+                                element_action.show();
+                                }
+                                element_action.data('undo-type','answered');
+                                <?php
                             }
-                            element_action.data('undo-type','answered');
-                            <?php
                         }
                     }
                     break;
@@ -199,56 +212,63 @@ class SupportHub {
                                 'error' => false,
                                 'shub_outbox_id' => false,
                             );
-                            $message = isset( $_POST['message'] ) && $_POST['message'] ? $_POST['message'] : '';
-                            $account_id = $_REQUEST['account-id'];
-                            $debug = isset( $_POST['debug'] ) && (int)$_POST['debug'] > 0 ? true : false;
-                            if ( $message ) {
+                            if (isset($_REQUEST['last_active']) && $_REQUEST['last_active'] != $shub_extension_message->get('last_active')) {
+                                $return['error'] = true;
+                                $return['message'] = 'There is an update to this message. Please refresh the page to see.';
+                            }else {
 
-                                // we have a message and a message manager.
-                                // time to queue this baby into the outbox and send it swimming
-                                // what the hell did I just write? I need sleep!
+                                $message = isset($_POST['message']) && $_POST['message'] ? $_POST['message'] : '';
+                                $account_id = $_REQUEST['account-id'];
+                                $debug = isset($_POST['debug']) && (int)$_POST['debug'] > 0 ? true : false;
+                                if ($message) {
 
-                                $outbox = new SupportHubOutbox();
-                                $outbox->create_new();
-                                if($outbox->get('shub_outbox_id')) {
-                                    if ($debug) ob_start();
-                                    $extra_data = array();
-                                    foreach ($_POST as $key => $val) {
-                                        if (strpos($key, 'extra-') !== false) {
-                                            $extra_data[substr($key, 6)] = $val;
+                                    // we have a message and a message manager.
+                                    // time to queue this baby into the outbox and send it swimming
+                                    // what the hell did I just write? I need sleep!
+
+                                    $outbox = new SupportHubOutbox();
+                                    $outbox->create_new();
+                                    if ($outbox->get('shub_outbox_id')) {
+                                        if ($debug) ob_start();
+                                        $extra_data = array();
+                                        foreach ($_POST as $key => $val) {
+                                            if (strpos($key, 'extra-') !== false) {
+                                                $extra_data[substr($key, 6)] = $val;
+                                            }
                                         }
+                                        $outbox->update_outbox_data(array(
+                                            'debug' => $debug,
+                                            'extra' => $extra_data,
+                                        ));
+                                        $message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
+                                        if (!$message_comment_id) {
+                                            $return['message'] .= 'Failed to queue comment reply in database.';
+                                            $return['error'] = true;
+                                        }
+
+                                        $outbox->update(array(
+                                            'shub_extension' => $_REQUEST['network'],
+                                            'shub_account_id' => $account_id,
+                                            'shub_message_id' => $_REQUEST['message-id'],
+                                            'shub_message_comment_id' => $message_comment_id,
+                                        ));
+
+                                        if ($debug) {
+                                            // send the message straight away and show any debug output
+                                            echo $outbox->send_queued(true);
+                                            $return['message'] .= ob_get_clean();
+                                            // dont send an shub_outbox_id in debug mode
+                                            // this will keep the 'message' window open and not shrink it down so we can better display debug messages.
+
+                                        } else {
+                                            //set_message( _l( 'message sent and conversation archived.' ) );
+                                            $return['shub_outbox_id'] = $outbox->get('shub_outbox_id');
+                                        }
+
                                     }
-                                    $outbox->update_outbox_data(array(
-                                        'debug' => $debug,
-                                        'extra' => $extra_data,
-                                    ));
-                                    $message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
-                                    if(!$message_comment_id){
-                                        $return['message'] .= 'Failed to queue comment reply in database.';
-                                        $return['error'] = true;
-                                    }
-
-                                    $outbox->update(array(
-                                        'shub_extension' => $_REQUEST['network'],
-                                        'shub_account_id' => $account_id,
-                                        'shub_message_id' => $_REQUEST['message-id'],
-                                        'shub_message_comment_id' => $message_comment_id,
-                                    ));
-
-                                    if ($debug) {
-                                        // send the message straight away and show any debug output
-                                        echo $outbox->send_queued(true);
-                                        $return['message'] .= ob_get_clean();
-                                        // dont send an shub_outbox_id in debug mode
-                                        // this will keep the 'message' window open and not shrink it down so we can better display debug messages.
-
-                                    } else {
-                                        //set_message( _l( 'message sent and conversation archived.' ) );
-                                        $return['shub_outbox_id'] = $outbox->get('shub_outbox_id');
-                                    }
-
                                 }
                             }
+
                             if (!headers_sent())header('Content-type: text/javascript');
                             echo json_encode( $return );
                             exit;
