@@ -994,6 +994,7 @@ class SupportHub {
                         foreach ($messages as $message) {
                             if (!isset($other_messages[$message['shub_message_id']])) {
                                 $other_messages[$message['shub_message_id']] = array(
+                                    'link' => '?page=support_hub_main&network='.$message['shub_extension'].'&message_id='.$message['shub_message_id'],
                                     'summary' => $message['title'],
                                     'time' => $message['last_active'],
                                     'network' => $message['shub_extension'],
@@ -1021,6 +1022,7 @@ class SupportHub {
                         foreach ($comments as $comment) {
                             if (!isset($other_messages[$comment['shub_message_id']])) {
                                 $other_messages[$comment['shub_message_id']] = array(
+                                    'link' => '?page=support_hub_main&network='.$comment['shub_extension'].'&message_id='.$comment['shub_message_id'].'&message_comment_id='.$comment['shub_message_comment_id'],
                                     'summary' => $comment['message_text'],
                                     'time' => $comment['time'],
                                     'network' => $comment['shub_extension'],

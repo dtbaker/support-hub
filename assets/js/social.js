@@ -11,8 +11,13 @@ ucm.social = {
         jQuery('.support_hub_date_field').datepicker({ dateFormat: 'yy-mm-dd' });
         jQuery('.support_hub_time_field').timepicker();
         jQuery('body').delegate('.shub_modal','click',function() {
-            ucm.social.open_modal(jQuery(this).attr('href'), jQuery(this).data('modaltitle'), jQuery(this).data());
-            return false;
+            var width = jQuery(window).width();
+            if(width > 782) {
+                // only show modal on desktop
+                ucm.social.open_modal(jQuery(this).attr('href'), jQuery(this).data('modaltitle'), jQuery(this).data());
+                return false;
+            }
+            return true;
         }).delegate('.shub_request_extra', 'click', function(){
             var $f = jQuery(this).parents('.message_edit_form').first();
             // find out how far away this button is from the parent form
@@ -31,6 +36,13 @@ ucm.social = {
             }
             return false;
         }).delegate('.shub_request_extra_generate', 'click', function(){
+            if(jQuery(this).hasClass('shub_button_loading')){
+                // we show some progress indicator
+                var loading_button = dtbaker_loading_button(this);
+                if(!loading_button){
+                    return false;
+                }
+            }
             var $f = jQuery(this).parents('.message_edit_form').first();
             $f.find('.extra_details_message').text('');
             // send a message with these extra details.
@@ -57,6 +69,11 @@ ucm.social = {
                         $f.find('.shub_request_extra').first().click(); // swap back to message screen.
                     }else{
                         $f.find('.extra_details_message').text("Unknown error, please try again: "+r);
+                    }
+                },
+                complete: function(){
+                    if(typeof loading_button != 'undefined'){
+                        loading_button.done();
                     }
                 }
             });
@@ -110,6 +127,15 @@ ucm.social = {
             return false;
         }).delegate('.shub_send_message_reply_button','click',function(){
             // send a message!
+
+            if(jQuery(this).hasClass('shub_button_loading')){
+                // we show some progress indicator
+                var loading_button = dtbaker_loading_button(this);
+                if(!loading_button){
+                    return false;
+                }
+            }
+
             var pt = jQuery(this).parents('.shub_message_reply_box').first();
             var txt = pt.find('textarea');
             var message = txt.val();
@@ -220,13 +246,29 @@ ucm.social = {
                         }else{
                             pt.html("Unknown error, please check logs or try reconnecting in settings. "+r);
                         }
+                    },
+                    complete: function(){
+                        if(typeof loading_button != 'undefined'){
+                            loading_button.done();
+                        }
                     }
                 });
                 pt.html('Sending...');
                 pt.find('.shub_message_actions').hide();
+            }else{
+                if(typeof loading_button != 'undefined'){
+                    loading_button.done();
+                }
             }
             return false;
         }).delegate('.shub_message_action','click',function(){
+            if(jQuery(this).hasClass('shub_button_loading')){
+                // we show some progress indicator
+                var loading_button = dtbaker_loading_button(this);
+                if(!loading_button){
+                    return false;
+                }
+            }
             // action a message (archive / unarchive)
             var post_data = {
                 action: 'support_hub_' + jQuery(this).data('action'),
@@ -246,6 +288,11 @@ ucm.social = {
                 dataType: 'script',
                 success: function(r){
                     ucm.social.close_modal();
+                },
+                complete: function(){
+                    if(typeof loading_button != 'undefined'){
+                        setTimeout(loading_button.done,2000);
+                    }
                 }
             });
             return false;
@@ -437,3 +484,45 @@ ucm.social = {
     }
 
 };
+function dtbaker_loading_button(btn){
+
+    var $button = jQuery(btn);
+    if($button.attr('disabled'))return false;
+    var existing_text = $button.text();
+    var existing_width = $button.outerWidth();
+    var loading_text = '⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⠄⠂⠁⠁⠂⠄';
+    var completed = false;
+
+    $button.css('width',existing_width);
+    $button.addClass('dtbaker_loading_button_current');
+    $button.text(loading_text);
+    $button.attr('disabled',true);
+
+    var anim_index = [0,1,2];
+
+    // animate the text indent
+    function moo() {
+        if (completed)return;
+        var current_text = '';
+        // increase each index up to the loading length
+        for(var i = 0; i < anim_index.length; i++){
+            anim_index[i] = anim_index[i]+1;
+            if(anim_index[i] >= loading_text.length)anim_index[i] = 0;
+            current_text += loading_text.charAt(anim_index[i]);
+        }
+        $button.text(current_text);
+        setTimeout(function(){ moo();},60);
+    }
+
+    moo();
+
+    return {
+        done: function(){
+            completed = true;
+            $button.text(existing_text);
+            $button.removeClass('dtbaker_loading_button_current');
+            $button.attr('disabled',false);
+        }
+    }
+
+}

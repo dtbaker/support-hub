@@ -450,3 +450,12 @@ span.buyer_badge,
 #shub_continuous_more{
     text-align: center;
 }
+.linked_user_details li{
+    margin:0;
+    padding: 0;
+}
+.dtbaker_loading_button_current{
+    color:#CCC !important;
+    text-align: center;
+
+}

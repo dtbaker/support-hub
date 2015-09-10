@@ -422,14 +422,14 @@ class SupportHub_message{
                 <section class="message_sidebar">
                     <nav>
                         <?php if($this->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
-                            <a href="#" class="shub_message_action btn btn-default btn-xs button"
+                            <a href="#" class="shub_message_action btn btn-default btn-xs button shub_button_loading"
                                data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
                                 'shub_message_id' => $message_id,
                                 'last_activity' => $this->get('last_active'),
                             )));?>"><?php _e( 'Inbox' ); ?></a>
                         <?php }else{ ?>
-                            <a href="#" class="shub_message_action btn btn-default btn-xs button"
+                            <a href="#" class="shub_message_action btn btn-default btn-xs button shub_button_loading"
                                data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
                                 'shub_message_id' => $message_id,
@@ -447,14 +447,14 @@ class SupportHub_message{
                     <header>
                         <a href="<?php echo $this->get_link(); ?>" class="social_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
                         <?php if($this->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
-                            <a href="#" class="shub_message_action btn btn-default btn-xs button"
+                            <a href="#" class="shub_message_action btn btn-default btn-xs button shub_button_loading"
                                data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
                                 'shub_message_id' => $message_id,
                                 'last_activity' => $this->get('last_active'),
                             )));?>"><?php _e( 'Inbox' ); ?></a>
                         <?php }else{ ?>
-                            <a href="#" class="shub_message_action btn btn-default btn-xs button"
+                            <a href="#" class="shub_message_action btn btn-default btn-xs button shub_button_loading"
                                data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $this->network,
                                 'shub_message_id' => $message_id,
@@ -527,7 +527,7 @@ class SupportHub_message{
                         if(!empty($data['other_messages'])) {
                             ?>
                             <div class="shub_other_messages">
-                                <strong><?php echo sprintf(__('%d Other Messages:', 'shub'), count($data['other_messages'])); ?></strong><br/>
+                                <strong><?php echo sprintf(_n('%d Other Message:', '%d Other Messages:', count($data['other_messages']), 'support_hub'), count($data['other_messages'])); ?></strong><br/>
                                 <ul>
                                     <?php
                                     foreach ($data['other_messages'] as $other_message) {
@@ -556,7 +556,7 @@ class SupportHub_message{
                                                 <?php echo $other_message['icon']; ?>
                                             </span>
                                             <br/>
-                                            <a href="#" class="shub_modal"
+                                            <a href="<?php echo esc_attr($other_message['link']); ?>" target="_blank" class="shub_modal"
                                                data-network="<?php echo esc_attr($other_message['network']); ?>"
                                                data-message_id="<?php echo (int)$other_message['message_id']; ?>"
                                                data-message_comment_id="<?php echo isset($other_message['message_comment_id']) ? (int)$other_message['message_comment_id'] : ''; ?>"
@@ -728,7 +728,7 @@ class SupportHub_message{
                             'message-id' => $message_id,
                             'network' => $this->network,
                             'last_activity' => $this->get('last_active'),
-                        ))); ?>" class="btn button shub_send_message_reply_button shub_hide_when_no_message"><?php _e('Send'); ?></button>
+                        ))); ?>" class="btn button shub_send_message_reply_button shub_hide_when_no_message shub_button_loading"><?php _e('Send'); ?></button>
                     </div
                 </div>
                 <div class="shub_message_actions shub_hide_when_no_message">
