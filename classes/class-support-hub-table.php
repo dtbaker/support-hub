@@ -14,7 +14,7 @@ class SupportHub_Account_Data_List_Table extends WP_List_Table {
 	public $_sortable_columns = array();
 	public $found_data = array();
 
-	public $items_per_page = 20;
+	public $items_per_page = 0;
 
 	public $pagination_has_more = false;
 
@@ -106,14 +106,19 @@ class SupportHub_Account_Data_List_Table extends WP_List_Table {
 		$total_items  = count( $this->items );
 
 		// only ncessary because we have sample data
-		$this->found_data = array_slice( $this->items, ( ( $current_page - 1 ) * $this->items_per_page ), $this->items_per_page );
-        if(!$this->found_data)$this->found_data = $this->items; // hack to stop the page overflow bug
+        if($this->items_per_page) {
+            $this->found_data = array_slice($this->items, (($current_page - 1) * $this->items_per_page), $this->items_per_page);
+            if (!$this->found_data) $this->found_data = $this->items; // hack to stop the page overflow bug
+            $this->set_pagination_args( array(
+                'total_items' => $total_items, //WE have to calculate the total number of items
+                'per_page'    => $this->items_per_page //WE have to determine how many items to show on a page
+            ) );
+        }else{
+            $this->found_data = $this->items;
+        }
 
-		$this->set_pagination_args( array(
-			'total_items' => $total_items, //WE have to calculate the total number of items
-			'per_page'    => $this->items_per_page //WE have to determine how many items to show on a page
-		) );
 		$this->items = $this->found_data;
+        unset($this->found_data);
 
 	}
 
@@ -371,16 +376,32 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
         $this->display_tablenav( 'top' );
 
         switch($this->layout_type){
+            case 'continuous':
             case 'inline':
                 ?>
-                <div class="shub_table_inline">
+                <div id="shub_table_inline">
+                    <div id="shub_table_contents">
                     <?php if ( $this->has_items() ) {
                         $this->display_rows();
                     } else {
                         echo '<div class="no-items" style="text-align:center">';
                         $this->no_items();
                         echo '</div>';
-                    } ?>
+                    }
+                    ?>
+                    </div>
+                    <?php
+                    if($this->layout_type == 'continuous'){
+                        ?>
+                        <div id="shub_continuous_more">
+                            <a href="#" class="shub_message_load_content btn btn-default btn-xs button"
+                               data-action="next-continuous-message" data-target="#shub_table_contents" data-post="<?php echo esc_attr(json_encode(array(
+                            )));?>"><?php _e('Load More','support_hub');?></a>
+
+                        </div>
+                        <?php
+                    }
+                    ?>
                 </div>
                 <?php
                 break;
@@ -415,6 +436,7 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 
     public function single_row( $item ) {
         switch($this->layout_type) {
+            case 'continuous':
             case 'inline':
                 if (is_array($item) && !empty($item['shub_extension']) && $message_manager = SupportHub::getInstance()->message_managers[$item['shub_extension']]) {
                     echo '<div class="shub_extension_message_action"><div class="action_content"></div></div>';
@@ -428,7 +450,10 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                     $message->output_message_page('inline');
                     echo '</div>';
                 }else{
+                    echo '<hr>';
                     echo 'Invalid item. Please report bug to dtbaker. <br>';
+                    print_r($item);
+                    echo '<hr>';
                 }
                 break;
             default:
@@ -452,6 +477,7 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
         list( $columns, $hidden ) = $this->get_column_info();
 
         switch($this->layout_type) {
+            case 'continuous':
             case 'inline':
                 ?>
                 <div class="shub_message"

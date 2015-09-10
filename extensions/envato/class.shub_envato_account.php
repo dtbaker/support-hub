@@ -127,6 +127,7 @@ class shub_envato_account extends SupportHub_account{
 
     public function update_author_sale_history( $debug = false, $do_all = false ){
 
+        return; // todo: save sale history in db with no username/api key just for stats
         $api = $this->get_api();
 
         // how many days do we want to go back? maybe 60 days to start with?
@@ -291,6 +292,15 @@ class shub_envato_account extends SupportHub_account{
         $this->update('last_checked',time());
 
         $this->update_author_sale_history( $debug, false );
+
+        // confirm the token every so often.
+        $last_token_confirmation = $this->get('last_token_refresh');
+        if(!$last_token_confirmation || $last_token_confirmation < time() - 86400){
+            if(!$this->confirm_token()){
+                SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'envato', 'Cookie Error: Failed to confirm Envato account cookie. The cookie must have expired. Please put a new cookie into the settings area.');
+            }
+            $this->save_account_data(array('last_token_refresh',time()));
+        }
 
 
     }

@@ -61,8 +61,8 @@ class SupportHub_extension{
 	public function get_install_sql(){return '';}
 
 
-    public function get_friendly_icon(){
-        return '<img src="'.plugins_url('extensions/'.$this->id.'/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="shub_friendly_icon">';
+    public function get_friendly_icon($class='shub_friendly_icon'){
+        return '<img src="'.plugins_url('extensions/'.$this->id.'/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_).'" class="'.$class.'">';
     }
 
 

@@ -11,8 +11,13 @@ ucm.social = {
         jQuery('.support_hub_date_field').datepicker({ dateFormat: 'yy-mm-dd' });
         jQuery('.support_hub_time_field').timepicker();
         jQuery('body').delegate('.shub_modal','click',function() {
-            ucm.social.open_modal(jQuery(this).attr('href'), jQuery(this).data('modaltitle'), jQuery(this).data());
-            return false;
+            var width = jQuery(window).width();
+            if(width > 782) {
+                // only show modal on desktop
+                ucm.social.open_modal(jQuery(this).attr('href'), jQuery(this).data('modaltitle'), jQuery(this).data());
+                return false;
+            }
+            return true;
         }).delegate('.shub_request_extra', 'click', function(){
             var $f = jQuery(this).parents('.message_edit_form').first();
             // find out how far away this button is from the parent form
@@ -31,6 +36,13 @@ ucm.social = {
             }
             return false;
         }).delegate('.shub_request_extra_generate', 'click', function(){
+            if(jQuery(this).hasClass('shub_button_loading')){
+                // we show some progress indicator
+                var loading_button = dtbaker_loading_button(this);
+                if(!loading_button){
+                    return false;
+                }
+            }
             var $f = jQuery(this).parents('.message_edit_form').first();
             $f.find('.extra_details_message').text('');
             // send a message with these extra details.
@@ -58,22 +70,72 @@ ucm.social = {
                     }else{
                         $f.find('.extra_details_message').text("Unknown error, please try again: "+r);
                     }
+                },
+                complete: function(){
+                    if(typeof loading_button != 'undefined'){
+                        loading_button.done();
+                    }
                 }
             });
             return false;
         }).delegate('.shub_message_reply textarea','keyup',function(){
-            var a = this;
-            if (!jQuery(a).prop('scrollTop')) {
+            var a = jQuery(this);
+            if (!a.prop('scrollTop')) {
                 do {
-                    var b = jQuery(a).prop('scrollHeight');
-                    var h = jQuery(a).height();
-                    jQuery(a).height(h - 5);
+                    var b = a.prop('scrollHeight');
+                    var h = a.height();
+                    a.height(h - 5);
                 }
-                while (b && (b != jQuery(a).prop('scrollHeight')));
+                while (b && (b != a.prop('scrollHeight')));
             }
-            jQuery(a).height(jQuery(a).prop('scrollHeight') + 10);
+            // show the reply buttons and actions if we have content.
+            var txt = a.val();
+            var $replybox = a.parents('.shub_message_reply').first();
+            if(txt.length > 0){
+                $replybox.addClass('shub_has_message_text');
+            }else{
+                $replybox.removeClass('shub_has_message_text');
+            }
+
+            a.height(a.prop('scrollHeight') + 10);
+        }).delegate('.shub_message_action_button','click',function(){
+            var pt = jQuery(this).parents('.shub_message_actions').first();
+            var post_data = {
+                action: 'support_hub_message-actions',
+                wp_nonce: support_hub.wp_nonce,
+                form_auth_key: ucm.form_auth_key
+            };
+            var button_post = jQuery(this).data('post');
+            for(var i in button_post){
+                if(button_post.hasOwnProperty(i)){
+                    post_data[i] = button_post[i];
+                }
+            }
+            jQuery.ajax({
+                url: ajaxurl,
+                method: 'POST',
+                data: post_data,
+                dataType: 'json',
+                success: function(r){
+                    if(r && typeof r.message != 'undefined' && r.message.length > 0){
+                        pt.append("<div>" + r.message + "</div>");
+                    }else{
+                        pt.append("<div>Unknown error, please check logs. " + r+ "</div>");
+                    }
+                }
+            });
+            return false;
         }).delegate('.shub_send_message_reply_button','click',function(){
             // send a message!
+
+            if(jQuery(this).hasClass('shub_button_loading')){
+                // we show some progress indicator
+                var loading_button = dtbaker_loading_button(this);
+                if(!loading_button){
+                    return false;
+                }
+            }
+
             var pt = jQuery(this).parents('.shub_message_reply_box').first();
             var txt = pt.find('textarea');
             var message = txt.val();
@@ -95,7 +157,11 @@ ucm.social = {
                 // add any additioal reply options to this.
                 pt.find('[data-reply="yes"]').each(function(){
                     if(jQuery(this).attr('type') == 'checkbox'){
-                        post_data[jQuery(this).attr('name')] = this.checked ? jQuery(this).val() : false;
+                        if(this.checked){
+                            post_data[jQuery(this).attr('name')] = jQuery(this).val();
+                        }else{
+                            // don't pass a 'false' into ajax, just send nothing.
+                        }
                     }else{
                         post_data[jQuery(this).attr('name')] = jQuery(this).val();
                     }
@@ -129,15 +195,17 @@ ucm.social = {
                                         element_action.find('.action_content').html('Message Sent!');
                                     }, function(){
                                         // failed to send
-                                        element_action.find('.action_content').html('FAILED TO SEND MESSAGE');
+                                        element_action.find('.action_content').html('Failed to send message. Please check logs.');
                                     });
                                     if(element.is('div')){
-                                        element.slideUp();
+                                        element.slideUp(function(){element.remove();});
                                         element_action.slideDown();
                                     }else{
-                                        element.hide();
+                                        element.remove();
                                         element_action.show();
                                     }
+                                    var pos = element_action.position();
+                                    if(jQuery(window).scrollTop()>pos.top-10)jQuery(window).scrollTop(pos.top-10);
                                 })();
                             }else{
                                 // we are in popup. have to close modal and find this message on the page to see if we can slide it up.
@@ -154,15 +222,17 @@ ucm.social = {
                                             element_action.find('.action_content').html('Message Sent!');
                                         }, function(){
                                             // failed to send
-                                            element_action.find('.action_content').html('FAILED TO SEND MESSAGE');
+                                            element_action.find('.action_content').html('Failed to send message. Please check logs.');
                                         });
                                         if(element.is('div')){
-                                            element.slideUp();
+                                            element.slideUp(function(){element.remove();});
                                             element_action.slideDown();
                                         }else{
-                                            element.hide();
+                                            element.remove();
                                             element_action.show();
                                         }
+                                        var pos = element_action.position();
+                                        jQuery(window).scrollTop(pos.top-10);
                                     })();
                                 }else{
                                     // cant find it on the screen, must have opened a related message.
@@ -176,13 +246,29 @@ ucm.social = {
                         }else{
                             pt.html("Unknown error, please check logs or try reconnecting in settings. "+r);
                         }
+                    },
+                    complete: function(){
+                        if(typeof loading_button != 'undefined'){
+                            loading_button.done();
+                        }
                     }
                 });
                 pt.html('Sending...');
                 pt.find('.shub_message_actions').hide();
+            }else{
+                if(typeof loading_button != 'undefined'){
+                    loading_button.done();
+                }
             }
             return false;
         }).delegate('.shub_message_action','click',function(){
+            if(jQuery(this).hasClass('shub_button_loading')){
+                // we show some progress indicator
+                var loading_button = dtbaker_loading_button(this);
+                if(!loading_button){
+                    return false;
+                }
+            }
             // action a message (archive / unarchive)
             var post_data = {
                 action: 'support_hub_' + jQuery(this).data('action'),
@@ -202,6 +288,35 @@ ucm.social = {
                 dataType: 'script',
                 success: function(r){
                     ucm.social.close_modal();
+                },
+                complete: function(){
+                    if(typeof loading_button != 'undefined'){
+                        setTimeout(loading_button.done,2000);
+                    }
+                }
+            });
+            return false;
+        }).delegate('.shub_message_load_content','click',function(){
+            // action a message (archive / unarchive)
+            var post_data = {
+                action: 'support_hub_' + jQuery(this).data('action'),
+                wp_nonce: support_hub.wp_nonce,
+                form_auth_key: ucm.form_auth_key
+            };
+            var button_post = jQuery(this).data('post');
+            for(var i in button_post){
+                if(button_post.hasOwnProperty(i)){
+                    post_data[i] = button_post[i];
+                }
+            }
+            var target = jQuery(jQuery(this).data('target'));
+            jQuery.ajax({
+                url: ajaxurl,
+                method: 'POST',
+                data: post_data,
+                dataType: 'html',
+                success: function(r){
+                    target.append(r);
                 }
             });
             return false;
@@ -214,6 +329,43 @@ ucm.social = {
             $s.find('header,aside').show();
             return false;
         });
+
+        ucm.social.set_inline_view();
+
+    },
+    set_inline_view: function(){
+
+        // on page scroll we align the inline-sidebar with the viewport.
+        var inline_views = [];
+        jQuery('.shub_table_inline .shub_extension_message').each(function(){
+            inline_views.push({
+                pos: jQuery(this).position(),
+                height: jQuery(this).height(),
+                sidebar: jQuery(this).find('section.message_sidebar')
+            });
+        });
+        jQuery(window).scroll(function(){
+            var width = jQuery(window).width();
+            if(width > 782) {
+                var currenttop = jQuery(window).scrollTop();
+                // find out which elements we have to move into view.
+                for (var i = 0; i < inline_views.length; i++) {
+                    if (inline_views[i].pos.top < currenttop && inline_views[i].pos.top + inline_views[i].height > currenttop) {
+                        // calc here incase of ajax loading sidebar data
+                        var sidebar_height = inline_views[i].sidebar.height();
+                        var from_top = Math.min(inline_views[i].height - sidebar_height - 20, currenttop - inline_views[i].pos.top + 20);
+                        if (from_top > 10) {
+                            inline_views[i].sidebar.css('padding-top', from_top + 'px');
+                        } else {
+                            inline_views[i].sidebar.attr('style', '');
+                        }
+                    } else {
+                        inline_views[i].sidebar.attr('style', '');
+                    }
+                }
+            }
+        });
+
     },
     close_modal: function(){
         tb_remove();
@@ -235,12 +387,17 @@ ucm.social = {
         add: function(shub_outbox_id, element, success_callback, fail_callback){
             this.queue.push(
                 {
-                    shub_outbox_id: shub_outbox_id,
+                    shub_outbox_id: parseInt(shub_outbox_id),
                     element: element,
                     success_callback: success_callback,
                     fail_callback: fail_callback
                 }
             );
+            var menu_count = jQuery('#shub_menu_outbox_count');
+            if(menu_count.get(0)){
+                var new_count = parseInt(menu_count.data('count')) + 1;
+                jQuery('#shub_menu_outbox_count').data('count',new_count).text(new_count);
+            }
             this.watch();
         },
         watching: false,
@@ -248,14 +405,6 @@ ucm.social = {
             var t = this;
             if(t.watching)return;
             t.watching = true;
-            // update the menu UI
-            var queue_length = 0;
-            for(var x = 0; x < t.queue.length; x++) {
-                if (typeof t.queue[x] != 'undefined') {
-                    queue_length++;
-                }
-            }
-            jQuery('#shub_menu_outbox_count').text(queue_length); // (t.queue.length); //.parents('li').first().show();
             var post_data = {
                 action: 'support_hub_queue-watch',
                 wp_nonce: support_hub.wp_nonce,
@@ -267,6 +416,8 @@ ucm.social = {
                 data: post_data,
                 dataType: 'json',
                 success: function(r){
+
+
                     for(var x = 0; x < t.queue.length; x++){
                         if(typeof t.queue[x] != 'undefined') {
                             // find this shub_outbox_id in the queue response from server.
@@ -274,10 +425,10 @@ ucm.social = {
                             if (r && typeof r.outbox_ids != 'undefined') {
                                 for (var i in r.outbox_ids) {
                                     if (r.outbox_ids.hasOwnProperty(i) && typeof r.outbox_ids[i] != 'undefined') {
-                                        if (r.outbox_ids[i].shub_outbox_id && t.queue[x].shub_outbox_id == r.outbox_ids[i].shub_outbox_id) {
+                                        if (r.outbox_ids[i].shub_outbox_id && t.queue[x].shub_outbox_id == parseInt(r.outbox_ids[i].shub_outbox_id)) {
                                             found = true;
                                             // has it errored?
-                                            if (r.outbox_ids[i].status == 2) {
+                                            if (parseInt(r.outbox_ids[i].shub_status) == 2) {
                                                 if (typeof t.queue[x].fail_callback == 'function') {
                                                     t.queue[x].fail_callback();
                                                     delete(t.queue[x]);
@@ -299,14 +450,23 @@ ucm.social = {
                         }
                     }
                     var has_pending = false;
+                    // update the menu UI
+                    var queue_length = 0;
                     if (r && typeof r.outbox_ids != 'undefined') {
                         for (var i in r.outbox_ids) {
-                            if (r.outbox_ids.hasOwnProperty(i) && typeof r.outbox_ids[i] != 'undefined' && typeof r.outbox_ids[i].status != 'undefined' && (parseInt(r.outbox_ids[i].status) == 0  ||  parseInt(r.outbox_ids[i].status) == 1)) {
-                                // we have a pending queue to send!
-                                has_pending = true;
+                            if (r.outbox_ids.hasOwnProperty(i) && typeof r.outbox_ids[i] != 'undefined') {
+                                if (typeof r.outbox_ids[i].shub_status != 'undefined' && (parseInt(r.outbox_ids[i].shub_status) == 0 || parseInt(r.outbox_ids[i].shub_status) == 1 || parseInt(r.outbox_ids[i].shub_status) == 2)) {
+                                    // new/pending/errored
+                                    queue_length++;
+                                }
+                                if (typeof r.outbox_ids[i].shub_status != 'undefined' && (parseInt(r.outbox_ids[i].shub_status) == 0 || parseInt(r.outbox_ids[i].shub_status) == 1)) {
+                                    // we have a pending queue to send!
+                                    has_pending = true;
+                                }
                             }
                         }
                     }
+                    jQuery('#shub_menu_outbox_count').text(queue_length); // (t.queue.length); //.parents('li').first().show();
 
                     t.watching = false;
                     if(has_pending) {
@@ -324,3 +484,45 @@ ucm.social = {
     }
 
 };
+function dtbaker_loading_button(btn){
+
+    var $button = jQuery(btn);
+    if($button.attr('disabled'))return false;
+    var existing_text = $button.text();
+    var existing_width = $button.outerWidth();
+    var loading_text = '⡀⡀⡀⡀⡀⡀⡀⡀⡀⡀⠄⠂⠁⠁⠂⠄';
+    var completed = false;
+
+    $button.css('width',existing_width);
+    $button.addClass('dtbaker_loading_button_current');
+    $button.text(loading_text);
+    $button.attr('disabled',true);
+
+    var anim_index = [0,1,2];
+
+    // animate the text indent
+    function moo() {
+        if (completed)return;
+        var current_text = '';
+        // increase each index up to the loading length
+        for(var i = 0; i < anim_index.length; i++){
+            anim_index[i] = anim_index[i]+1;
+            if(anim_index[i] >= loading_text.length)anim_index[i] = 0;
+            current_text += loading_text.charAt(anim_index[i]);
+        }
+        $button.text(current_text);
+        setTimeout(function(){ moo();},60);
+    }
+
+    moo();
+
+    return {
+        done: function(){
+            completed = true;
+            $button.text(existing_text);
+            $button.removeClass('dtbaker_loading_button_current');
+            $button.attr('disabled',false);
+        }
+    }
+
+}

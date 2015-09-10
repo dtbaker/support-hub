@@ -88,7 +88,7 @@ class shub_bbpress_message extends SupportHub_message{
                         // timestamp is handled in forum class
                         $comments[$id]['content'] = $comment['post_content'];
                     }
-					$this->update('title',$topic_data['post_content']);
+					$this->update('title',$topic_data['post_title']);
 					// latest comment goes in summary
 					$this->update('summary',isset($comments[0]) ? $comments[0]['post_content'] : $topic_data['post_content']);
 					$this->update('last_active',!empty($topic_data['timestamp']) ? $topic_data['timestamp'] : (is_array($topic_data['post_date']) ? $topic_data['post_date']['timestamp'] : (isset($topic_data['post_date']->timestamp) ? $topic_data['post_date']->timestamp : 0)));
@@ -197,7 +197,6 @@ class shub_bbpress_message extends SupportHub_message{
 		return false;
 	}
 
-
     public function send_queued_comment_reply($bbpress_message_comment_id, $shub_outbox, $debug = false){
         $comments = $this->get_comments();
         if(isset($comments[$bbpress_message_comment_id]) && !empty($comments[$bbpress_message_comment_id]['message_text'])){
@@ -210,7 +209,7 @@ class shub_bbpress_message extends SupportHub_message{
             if($debug)echo "Sending a reply to bbPress Topic ID: $bbpress_id <br>\n";
 
             $outbox_data = $shub_outbox->get('message_data');
-            if(isset($outbox_data['extra']) && is_array($outbox_data['extra'])){
+            if($outbox_data && isset($outbox_data['extra']) && is_array($outbox_data['extra'])){
                 $extra_data = $outbox_data['extra'];
             }else{
                 $extra_data = array();
@@ -243,6 +242,7 @@ class shub_bbpress_message extends SupportHub_message{
                 return true;
             }else{
                 echo "Failed to send comment, check debug log.";
+                print_r($api_result);
                 return false;
             }
             /*if((int) $api_result > 0){
@@ -337,80 +337,19 @@ class shub_bbpress_message extends SupportHub_message{
 
 
 
-    public function message_sidebar_data(){
+    public function get_message_sidebar_data($product_data, $item_data){
 
-        // find if there is a product here
-        $shub_product_id = $this->get_product_id();
-        $product_data = array();
-        $item_data = array();
-        $bbpress_item = $this->get('item');
-        if(!$shub_product_id && $bbpress_item){
-            $shub_product_id = $bbpress_item->get('shub_product_id');
-            $item_data = $bbpress_item->get('item_data');
-            if(!is_array($item_data))$item_data = array();
-        }
-        if($shub_product_id) {
-            $shub_product = new SupportHubProduct();
-            $shub_product->load( $shub_product_id );
-            $product_data = $shub_product->get( 'product_data' );
-        }
-        ?>
-        <img src="<?php echo plugins_url('extensions/bbpress/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon">
-        <?php
-        if($shub_product_id && !empty($product_data['image'])) {
-            ?>
-            <img src="<?php echo $product_data['image'];?>" class="shub_message_account_icon">
-            <?php
-        }
-        ?>
-        <br/>
-
-
-        <strong><?php _e('Account:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('account') ? $this->get('account')->get( 'account_name' ) : 'N/A' ); ?></a> <br/>
-
-        <strong><?php _e('Time:');?></strong> <?php echo shub_print_date( $this->get('last_active'), true ); ?>  <br/>
-
-        <?php
+        $data = parent::get_message_sidebar_data($product_data, $item_data);
+        $data['message_details']['subject'][0] = 'Thread';
         if($item_data){
-            ?>
-            <strong><?php _e('Item:');?></strong>
-            <a href="<?php echo isset( $item_data['url'] ) ? $item_data['url'] : $this->get_link(); ?>"
-               target="_blank"><?php
-                echo htmlspecialchars( !empty($item_data['post_title']) ? $item_data['post_title'] : '' ); ?></a>
-            <br/>
-            <?php
+            $data['message_details']['item'] = array(
+                'Item',
+                '<a href="'.(isset( $item_data['url'] ) ? $item_data['url'] : $this->get_link()).'" target="_blank">'.htmlspecialchars( !empty($item_data['post_title']) ? $item_data['post_title'] : '' ).'</a>'
+            );
         }
-
-        $data = $this->get('shub_data');
-        if(!empty($data['buyer_and_author']) && $data['buyer_and_author'] && $data['buyer_and_author'] !== 'false'){
-            // hmm - this doesn't seem to be a "purchased" flag.
-            /*?>
-            <strong>PURCHASED</strong><br/>
-            <?php*/
-        }
+        return $data;
     }
 
-    
-    public function get_user_hints($user_hints = array()){
-        $user_hints['shub_user_id'][] = $this->get('shub_user_id');
-        /*
-        $comments         = $this->get_comments();
-        $first_comment = current($comments);
-        if(isset($first_comment['shub_user_id']) && $first_comment['shub_user_id']){
-            $user_hints['shub_user_id'][] = $first_comment['shub_user_id'];
-        }
-        $message_from = @json_decode($first_comment['message_from'],true);
-        if($message_from && isset($message_from['username'])){ //} && $message_from['username'] != $bbpress_message->get('account')->get( 'bbpress_name' )){
-            // this wont work if user changes their username, oh well.
-            $other_users = new SupportHubUser_bbPress();
-            $other_users->load_by_meta('bbpress_username',$message_from['username']);
-            if($other_users->get('shub_user_id') && !in_array($other_users->get('shub_user_id'),$user_hints['shub_user_id'])){
-                // pass these back to the calling method so we can get the correct values.
-                $user_hints['shub_user_id'][] = $other_users->get('shub_user_id');
-            }
-        }*/
-        return $user_hints;
-    }
 
     public function get_user($shub_user_id){
         return new SupportHubUser_bbPress($shub_user_id);

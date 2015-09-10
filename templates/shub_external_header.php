@@ -1,5 +1,6 @@
-<html>
+<!doctype html>
 <head>
+    <meta charset="utf-8">
 	<title>Support Hub</title>
 	<link rel="stylesheet" href="<?php echo plugins_url( 'assets/css/social.css', _DTBAKER_SUPPORT_HUB_CORE_FILE_ );?>" />
 	<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>

@@ -50,6 +50,9 @@ class SupportHub {
 		add_action( 'wp_ajax_support_hub_fb_url_info' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_request_extra_details' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_queue-watch' , array( $this, 'admin_ajax' ) );
+		add_action( 'wp_ajax_support_hub_resend_outbox_message' , array( $this, 'admin_ajax' ) );
+		add_action( 'wp_ajax_support_hub_delete_outbox_message' , array( $this, 'admin_ajax' ) );
+		add_action( 'wp_ajax_support_hub_next-continuous-message' , array( $this, 'admin_ajax' ) );
 
         add_filter('set-screen-option', array( $this, 'set_screen_options' ), 10, 3);
 
@@ -78,6 +81,11 @@ class SupportHub {
 		foreach($this->message_managers as $name => $message_manager){
 			$message_manager->init();
 		}
+
+        if(isset($_REQUEST['debug_shub_cron'])){
+            $this->cron_run(true);
+            exit;
+        }
 	}
 
 	public function register_session(){
@@ -119,30 +127,68 @@ class SupportHub {
                         echo 'Failed network params';
                     }
                     break;
+                case 'next-continuous-message':
+
+                    if(!empty($_SESSION['_shub_search_rules'])){
+                        //$_SESSION['_shub_search_rules'] = array($this_search, $order, $message_ids);
+                        $this_search = $_SESSION['_shub_search_rules'][0];
+                        $message_ids = $_SESSION['_shub_search_rules'][2];
+                        $this_search['not_in'] = $message_ids;;
+                        SupportHub::getInstance()->load_all_messages($this_search, $_SESSION['_shub_search_rules'][1], 5);
+                        $all_messages = SupportHub::getInstance()->all_messages;
+                        foreach($all_messages as $all_message){
+                            $message_ids[]=$all_message['shub_message_id'];
+                        }
+                        // this is used in class-support-hub.php to load the next batch of messages.
+                        $_SESSION['_shub_search_rules'][2] = $message_ids;
+
+                        $myListTable = new SupportHubMessageList(array(
+                            'screen' => 'shub_inbox'
+                        ));
+                        $myListTable->set_layout_type('continuous');
+                        $myListTable->set_data($all_messages);
+                        $myListTable->prepare_items();
+                        if ( $myListTable->has_items() ) {
+                            $myListTable->display_rows();
+                        } else {
+                            echo '<div class="no-items" style="text-align:center">';
+                            $myListTable->no_items();
+                            echo '</div>';
+                        }
+                    }
+
+                    break;
                 case 'set-answered':
                     if(isset($_REQUEST['network']) && isset($this->message_managers[$_REQUEST['network']]) && !empty($_REQUEST['shub_message_id'])) {
                         $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_message_id']);
                         if ($shub_extension_message->get('shub_message_id') == $_REQUEST['shub_message_id']) {
-                            $shub_extension_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
-                            if (!headers_sent())header('Content-type: text/javascript');
+                            if (!headers_sent()) header('Content-type: text/javascript');
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
-                            ?>
-                            var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
-                            var element_action = element.prev('.shub_extension_message_action').first();
-                            element_action.find('.action_content').html('Message Archived. <a href="#" class="shub_message_action" data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
-                                'network' => $_REQUEST['network'],
-                                'shub_message_id' => (int)$_REQUEST['shub_message_id'],
-                            )));?>">Undo</a>');
-                            if(element.is('div')){
-                            element.slideUp();
-                            element_action.slideDown();
-                            }else{
-                            element.hide();
-                            element_action.show();
+
+                            if (isset($_REQUEST['last_active']) && $_REQUEST['last_active'] != $shub_extension_message->get('last_active')) {
+                                // a new message was received without updating the page.
+                                // todo: ajax the shit out of live message updates instead of waiting for action.
+                                // todo: do this check on bulk actions as well.
+                                ?>
+                                alert('There is an update to this message. Please refresh the page to see.');
+                                <?php
+                            } else {
+                                $shub_extension_message->update('shub_status', _shub_MESSAGE_STATUS_ANSWERED);
+                                ?>
+                                var element = jQuery('.shub_extension_message[data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
+                                var element_action = element.prev('.shub_extension_message_action').first();
+                                element_action.find('.action_content').html('Message Archived. <a href="#" class="shub_message_action" data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array('network' => $_REQUEST['network'], 'shub_message_id' => (int)$_REQUEST['shub_message_id'],))); ?>">Undo</a>');
+                                if(element.is('div')){
+                                element.slideUp(function(){element.remove();});
+                                element_action.slideDown();
+                                }else{
+                                element.remove();
+                                element_action.show();
+                                }
+                                element_action.data('undo-type','answered');
+                                <?php
                             }
-                            element_action.data('undo-type','answered');
-                            <?php
                         }
                     }
                     break;
@@ -155,17 +201,17 @@ class SupportHub {
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
                             ?>
-                            var element = jQuery('.shub_extension_message[data-network=<?php echo $_REQUEST['network']; ?>][data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
+                            var element = jQuery('.shub_extension_message[data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
                             var element_action = element.prev('.shub_extension_message_action').first();
                             element_action.find('.action_content').html('Message Moved to Inbox. <a href="#" class="shub_message_action" data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
                                 'network' => $_REQUEST['network'],
                                 'shub_message_id' => (int)$_REQUEST['shub_message_id'],
                             )));?>">Undo</a>');
                             if(element.is('div')){
-                            element.slideUp();
+                            element.slideUp(function(){element.remove();});
                             element_action.slideDown();
                             }else{
-                            element.hide();
+                            element.remove();
                             element_action.show();
                             }
                             element_action.data('undo-type','unanswered');
@@ -192,49 +238,68 @@ class SupportHub {
                                 'error' => false,
                                 'shub_outbox_id' => false,
                             );
-                            $message = isset( $_POST['message'] ) && $_POST['message'] ? $_POST['message'] : '';
-                            $account_id = $_REQUEST['account-id'];
-                            $debug = isset( $_POST['debug'] ) && (int)$_POST['debug'] > 0 ? $_POST['debug'] : false;
-                            if ( $message ) {
+                            if (isset($_REQUEST['last_active']) && $_REQUEST['last_active'] != $shub_extension_message->get('last_active')) {
+                                $return['error'] = true;
+                                $return['message'] = 'There is an update to this message. Please refresh the page to see.';
+                            }else {
 
-                                // we have a message and a message manager.
-                                // time to queue this baby into the outbox and send it swimming
-                                // what the hell did I just write? I need sleep!
+                                $message = isset($_POST['message']) && $_POST['message'] ? $_POST['message'] : '';
+                                $account_id = $_REQUEST['account-id'];
+                                $debug = isset($_POST['debug']) && (int)$_POST['debug'] > 0 ? true : false;
+                                if ($message) {
 
-                                $outbox = new SupportHubOutbox();
-                                $outbox->create_new();
-                                if($outbox->get('shub_outbox_id')) {
-                                    if ($debug) ob_start();
-                                    $extra_data = array();
-                                    foreach ($_POST as $key => $val) {
-                                        if (strpos($key, 'extra-') !== false) {
-                                            $extra_data[substr($key, 6)] = $val;
+                                    // we have a message and a message manager.
+                                    // time to queue this baby into the outbox and send it swimming
+                                    // what the hell did I just write? I need sleep!
+
+                                    $outbox = new SupportHubOutbox();
+                                    $outbox->create_new();
+                                    if ($outbox->get('shub_outbox_id')) {
+                                        if ($debug) ob_start();
+                                        $extra_data = array();
+                                        foreach ($_POST as $key => $val) {
+                                            if (strpos($key, 'extra-') !== false) {
+                                                $extra_data[substr($key, 6)] = $val;
+                                            }
                                         }
-                                    }
-                                    $outbox->update_outbox_data(array(
-                                        'debug' => $debug,
-                                        'extra' => $extra_data,
-                                    ));
-                                    $message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
-                                    if(!$message_comment_id){
-                                        $return['message'] .= 'Failed to queue comment reply in database.';
-                                        $return['error'] = true;
-                                    }
-                                    if ($debug) {
-                                        $return['message'] .= ob_get_clean();
-                                    } else {
-                                        //set_message( _l( 'message sent and conversation archived.' ) );
-                                    }
+                                        $outbox->update_outbox_data(array(
+                                            'debug' => $debug,
+                                            'extra' => $extra_data,
+                                        ));
+                                        $message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
+                                        if (!$message_comment_id) {
+                                            $return['message'] .= 'Failed to queue comment reply in database.';
+                                            $return['error'] = true;
+                                        }else{
+                                            // successfully queued. do we archive?
+                                            if(!empty($_POST['archive'])){
+                                                $shub_extension_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
+                                            }
+                                        }
 
-                                    $outbox->update(array(
-                                        'shub_extension' => $_REQUEST['network'],
-                                        'shub_account_id' => $account_id,
-                                        'shub_message_id' => $_REQUEST['message-id'],
-                                        'shub_message_comment_id' => $message_comment_id,
-                                    ));
-                                    $return['shub_outbox_id'] = $outbox->get('shub_outbox_id');
+                                        $outbox->update(array(
+                                            'shub_extension' => $_REQUEST['network'],
+                                            'shub_account_id' => $account_id,
+                                            'shub_message_id' => $_REQUEST['message-id'],
+                                            'shub_message_comment_id' => $message_comment_id,
+                                        ));
+
+                                        if ($debug) {
+                                            // send the message straight away and show any debug output
+                                            echo $outbox->send_queued(true);
+                                            $return['message'] .= ob_get_clean();
+                                            // dont send an shub_outbox_id in debug mode
+                                            // this will keep the 'message' window open and not shrink it down so we can better display debug messages.
+
+                                        } else {
+                                            //set_message( _l( 'message sent and conversation archived.' ) );
+                                            $return['shub_outbox_id'] = $outbox->get('shub_outbox_id');
+                                        }
+
+                                    }
                                 }
                             }
+
                             if (!headers_sent())header('Content-type: text/javascript');
                             echo json_encode( $return );
                             exit;
@@ -264,6 +329,40 @@ class SupportHub {
                     }
                     echo json_encode( $return );
 
+                    break;
+                case 'resend_outbox_message':
+                    $shub_outbox_id = !empty($_REQUEST['shub_outbox_id']) ? (int)$_REQUEST['shub_outbox_id'] : false;
+                    if($shub_outbox_id){
+                        if (!headers_sent())header('Content-type: text/javascript');
+                        $pending = new SupportHubOutbox($shub_outbox_id);
+                        if($pending->get('shub_outbox_id') == $shub_outbox_id) {
+                            ob_start();
+                            echo $pending->send_queued(true);
+                            $return = array(
+                                'message' => 'Message Resent. Please refresh the page. ' . ob_get_clean()
+                            );
+                            echo json_encode($return);
+                        }
+                        exit;
+
+                    }
+                    break;
+                case 'delete_outbox_message':
+                    $shub_outbox_id = !empty($_REQUEST['shub_outbox_id']) ? (int)$_REQUEST['shub_outbox_id'] : false;
+                    if($shub_outbox_id){
+                        if (!headers_sent())header('Content-type: text/javascript');
+                        // remove the comment from the database.
+                        $pending = new SupportHubOutbox($shub_outbox_id);
+                        if($pending->get('shub_outbox_id') == $shub_outbox_id) {
+                            shub_delete_from_db('shub_message_comment', 'shub_message_comment_id', $pending->get('shub_message_comment_id'));
+                            $pending->delete();
+                            $return = array(
+                                'message' => 'Deleted Successfully. Please re-load the page.'
+                            );
+                            echo json_encode($return);
+                        }
+                        exit;
+                    }
                     break;
 
                 case 'request_extra_details':
@@ -568,19 +667,14 @@ class SupportHub {
 		$message_count = $this->get_unread_count();;
 		$menu_label = sprintf( __( 'Support Hub %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . (int)$message_count . "</span></span>" : '');
 
-        add_menu_page( __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages', 'support_hub_main', array($this, 'show_dashboard'), 'dashicons-format-chat', "21.1" );
+        add_menu_page( __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages', 'support_hub_main', array($this, 'show_inbox'), 'dashicons-format-chat', "21.1" );
 
-
-        $page = add_submenu_page('support_hub_main', __( 'Dashboard', 'support_hub' ), __('Dashboard' ,'support_hub'), 'edit_pages',  'support_hub_main' , array($this, 'show_dashboard'));
-        add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
         // hack to rmeove default submenu
         $menu_label = sprintf( __( 'Inbox %s', 'support_hub' ), $message_count > 0 ? "<span class='update-plugins count-$message_count' title='$message_count'><span class='update-count'>" . number_format_i18n($message_count) . "</span></span>" : '' );
-		$page = add_submenu_page('support_hub_main', __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_inbox' , array($this, 'show_inbox'));
+		$page = add_submenu_page('support_hub_main', __( 'Support Hub Inbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_main' , array($this, 'show_inbox'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
         add_action("load-$page", array( $this, 'screen_options' ));
-
-
 
 		//$page = add_submenu_page('support_hub_main', __( 'Compose', 'support_hub' ), __('Compose' ,'support_hub'), 'edit_pages',  'support_hub_compose' , array($this, 'show_compose'));
 		//add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
@@ -594,6 +688,10 @@ class SupportHub {
         $menu_label = sprintf( __( 'Outbox %s', 'support_hub' ), "<span class='update-plugins' title='$outbox_message_count'><span class='update-count' id='shub_menu_outbox_count' data-count='$outbox_message_count'>" . $outbox_message_count . "</span></span>" );
 		$page = add_submenu_page('support_hub_main', __( 'Outbox', 'support_hub' ), $menu_label, 'edit_pages',  'support_hub_outbox' , array($this, 'show_outbox'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
+
+
+        $page = add_submenu_page('support_hub_main', __( 'Dashboard', 'support_hub' ), __('Dashboard' ,'support_hub'), 'edit_pages',  'support_hub_dashboard' , array($this, 'show_dashboard'));
+        add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
 
 		$page = add_submenu_page('support_hub_main', __( 'Settings', 'support_hub' ), __( 'Settings', 'support_hub' ), 'edit_pages',  'support_hub_settings' , array($this, 'show_settings'));
 		add_action( 'admin_print_styles-'.$page, array( $this, 'inbox_assets' ) );
@@ -729,7 +827,11 @@ class SupportHub {
                     'time' => time(),
                 ));
                 $this->log_data(0, 'cron', 'Starting Extension Cron: ' . $name);
-                $message_manager->run_cron($debug, $cron_timeout, $cron_start);
+                if(!isset($_REQUEST['debug_shub_cron'])){
+                    $message_manager->run_cron($debug, $cron_timeout, $cron_start);
+                }else{
+                    echo 'Starting Extension Cron: ' . $name."<br>\n";
+                }
                 // this cron job has completed successfully.
                 // if we've been running more than timeout, quit.
                 if ($cron_start + $cron_timeout < time()) {
@@ -791,9 +893,14 @@ class SupportHub {
 	    load_plugin_textdomain( $domain , FALSE , dirname( plugin_basename( $this->file ) ) . '/lang/' );
 	}
 
-
-	public function message_user_summary($user_hints, $current_extension, $message_object){
+	public function get_message_user_summary($user_hints, $current_extension, $message_object){
 		// here we hunt down other messages from this user and bring them back to the UI
+
+        $return = array(
+            'extra_datas' => array(),
+            'user_details' => array(),
+        );
+
 		$user_details = array();
 		$other_messages = array();
 
@@ -855,34 +962,14 @@ class SupportHub {
                     // example: if two users submit
                     $extra_shub_user_id = $this_extra->get('shub_user_id');
                     if(!empty($extra_shub_user_id) && !in_array($extra_shub_user_id,$user_hints['shub_user_id'])){
-                        echo " <br><br><Br>ADDING $extra_shub_user_id TO THE LIST IN DATA!! PLEASE REPORT THIS ERROR SO DTBAKER CAN INVESTIGATE <br><br><br> ";
+                        echo " <br><br><Br>Error: Displaying extra data for the user '$extra_shub_user_id' when that user ID isn't already in the list. Please report this bug to dtbaker.<br><br><br> ";
                         // moved the user_hints loop to the top to build up the user id list first.
                         $user_hints['shub_user_id'][] = $extra_shub_user_id;
                     }
                 }
-                $extra_datas = $extra_datas + $this_extras;
+                $return['extra_datas'] = $return['extra_datas'] + $this_extras;
             }
 		}
-		foreach($extra_datas as $extra_data){
-			//echo $extra_data->get('shub_extra_data_id') . ' ';
-			?>
-			<div>
-				<strong><?php echo htmlspecialchars($extras[$extra_data->get('shub_extra_id')]->get('extra_name'));?>:</strong>
-				<?php
-                switch($extras[$extra_data->get('shub_extra_id')]->get('field_type')){
-                    case 'encrypted':
-                        echo '(encrypted)';
-                        break;
-                    default:
-                        echo shub_forum_text($extra_data->get('extra_value'),false);
-                }
-                ?>
-			</div>
-			<?php
-		}
-
-        // work out if this user has a valid support period
-        $support_period = false;
 
         $user_bits = array();
         //$user_bits[] = array('Support Pack','UNKNOWN');
@@ -907,9 +994,11 @@ class SupportHub {
                         foreach ($messages as $message) {
                             if (!isset($other_messages[$message['shub_message_id']])) {
                                 $other_messages[$message['shub_message_id']] = array(
+                                    'link' => '?page=support_hub_main&network='.$message['shub_extension'].'&message_id='.$message['shub_message_id'],
                                     'summary' => $message['title'],
                                     'time' => $message['last_active'],
                                     'network' => $message['shub_extension'],
+                                    'icon' => $this->message_managers[$message['shub_extension']]->get_friendly_icon(),
                                     'message_id' => $message['shub_message_id'],
                                     'message_comment_id' => 0,
                                     'message_status' => $message['shub_status'],
@@ -933,9 +1022,11 @@ class SupportHub {
                         foreach ($comments as $comment) {
                             if (!isset($other_messages[$comment['shub_message_id']])) {
                                 $other_messages[$comment['shub_message_id']] = array(
+                                    'link' => '?page=support_hub_main&network='.$comment['shub_extension'].'&message_id='.$comment['shub_message_id'].'&message_comment_id='.$comment['shub_message_comment_id'],
                                     'summary' => $comment['message_text'],
                                     'time' => $comment['time'],
                                     'network' => $comment['shub_extension'],
+                                    'icon' => $this->message_managers[$comment['shub_extension']]->get_friendly_icon(),
                                     'message_id' => $comment['shub_message_id'],
                                     'message_comment_id' => $comment['shub_message_comment_id'],
                                     'message_status' => $comment['shub_status'],
@@ -944,6 +1035,8 @@ class SupportHub {
                         }
                     }
 
+                    // for debugging:
+                    $user_bits[] = array('shub_user_id',$user->get('shub_user_id'));
 
                     if (!empty($user->details['user_fname'])) {
                         $user_bits[] = array('FName', esc_html($user->details['user_fname']));
@@ -966,10 +1059,13 @@ class SupportHub {
                     if (!empty($user->details['user_email'])) {
                         $user_bits[] = array('Email', '<a href="mailto:' . esc_html($user->details['user_email']) . '">' . esc_html($user->details['user_email']) . '</a>');
                     }
-                    // todo - group user output together nicely (e.g. Name <email>) so it looks better when there are multiple linked user accounts
                 }
             }
         }
+
+
+        //var_export($this->message_managers['envato']->pull_purchase_code(false,'61782ac6-1f67-4302-b34a-17c9e4d4f123',array(),3452)); echo 'done';exit;
+
 		if(isset($user_details['url']) && isset($user_details['username'])){
             if(!is_array($user_details['url']))$user_details['url'] = array($user_details['url']);
             if(!is_array($user_details['username']))$user_details['username'] = array($user_details['username']);
@@ -993,53 +1089,32 @@ class SupportHub {
         }
         */
         $user_bits = apply_filters('supporthub_message_user_sidebar', $user_bits, $user_hints['shub_user_id']);
-        ?> <ul class="linked_user_details"> <?php
-        foreach($user_bits as $user_bit){
-            ?>
-            <li><strong><?php echo $user_bit[0];?>:</strong> <?php echo $user_bit[1];?></li>
-            <?php
-        }
-        ?> </ul>
-        <?php
-        if(count($other_messages)){
-            ?>
-            <div class="shub_other_messages">
-            <strong><?php echo sprintf(__('%d Other Messages:','shub'),count($other_messages));?></strong><br/>
-            <ul>
-            <?php
-            foreach($other_messages as $other_message){
-                ?>
-                <li>
-                    <span class="other_message_time"><?php echo shub_pretty_date($other_message['time']);?></span>
-                    <span class="other_message_status"><?php
-                    if(isset($other_message['message_status'])) {
-                        switch ($other_message['message_status']) {
-                            case _shub_MESSAGE_STATUS_ANSWERED:
-                                echo '<span class="message_status_archived">Archived</span>';
-                                break;
-                            case _shub_MESSAGE_STATUS_UNANSWERED:
-                                echo '<span class="message_status_inbox">Inbox</span>';
-                                break;
-                            case _shub_MESSAGE_STATUS_HIDDEN:
-                                echo '<span class="message_status_hidden">Hidden</span>';
-                                break;
-                            default:
-                                echo 'UNKNOWN?';
+
+        // todo - group user output together nicely (e.g. Name <email>) so it looks better when there are multiple linked user accounts
+        foreach($user_bits as $key=>$val){
+            // check if this one exists yet?
+            foreach($user_bits as $key_check=>$val_check){
+                if($key != $key_check && $val[0] == $val_check[0]){
+                    // we're matching something like 'Username' with 'Username'
+                    if(trim(strip_tags($val[1])) == trim(strip_tags($val_check[1]))){
+                        // same same! keep one, the longer one (which might contian a link)
+                        if(strlen($val[1]) > strlen($val_check[1])){
+                            unset($user_bits[$key_check]);
+                        }else{
+                            unset($user_bits[$key]);
                         }
                     }
-                    ?>
-                    </span>
-                    <span class="other_message_network">
-                        <?php echo $this->message_managers[$other_message['network']]->get_friendly_icon();?>
-                    </span>
-                    <br/>
-                    <a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-message_id="<?php echo (int)$other_message['message_id'];?>" data-message_comment_id="<?php echo isset($other_message['message_comment_id']) ? (int)$other_message['message_comment_id'] : '';?>" data-modaltitle="<?php echo esc_attr($other_message['summary']);?>"><?php echo esc_html($other_message['summary']);?></a>
-                </li>
-                <?php
+                }
             }
-            ?></ul>
-            </div><?php
         }
+
+        $return['user_bits'] = $user_bits;
+        $return['user_details'] = $user_details;
+        $return['other_messages'] = $other_messages;
+
+
+
+        return $return;
 
 	}
 
@@ -1057,15 +1132,12 @@ class SupportHub {
 
 
     public $all_messages = array();
-    public $limit_start = 0;
     public $search_params = array();
     public $search_order = array();
-    public $search_limit = 0;
 
-    public function load_all_messages($search=array(),$order=array(),$limit_batch=0){
+    public function load_all_messages($search=array(),$order=array(),$limit_batch=0,$limit_start=0){
         $this->search_params = $search;
         $this->search_order = $order;
-        $this->search_limit = $limit_batch;
 
         $sql = "SELECT m.*, m.last_active AS `message_time`, mr.read_time, sa.shub_extension FROM `"._support_hub_DB_PREFIX."shub_message` m ";
         $sql .= " LEFT JOIN `"._support_hub_DB_PREFIX."shub_message_read` mr ON ( m.shub_message_id = mr.shub_message_id AND mr.user_id = ".get_current_user_id()." )";
@@ -1093,19 +1165,24 @@ class SupportHub {
             $sql .= " AND (`title` LIKE '%".esc_sql($search['generic'])."%'";
             $sql .= " OR `summary` LIKE '%".esc_sql($search['generic'])."%' )";
         }
+        if(isset($search['not_in']) && is_array($search['not_in']) && count($search['not_in'])){
+            foreach($search['not_in'] as $key=>$val){
+                $search['not_in'][$key] = (int)$val;
+            }
+            $sql .= " AND m.shub_message_id NOT IN ( " . implode(',',$search['not_in']) . " ) ";
+        }
         if(empty($order)){
-            $sql .= " ORDER BY `last_active` DESC ";
+            $sql .= " ORDER BY `priority` DESC, `last_active` ASC ";
         }else{
             switch($order['orderby']){
                 case 'shub_column_time':
-                    $sql .= " ORDER BY `last_active` ";
+                    $sql .= " ORDER BY `priority` DESC, `last_active` ";
                     $sql .= $order['order'] == 'asc' ? 'ASC' : 'DESC';
                     break;
             }
         }
-        if($limit_batch){
-            $sql .= " LIMIT ".$this->limit_start.', '.$limit_batch;
-            $this->limit_start += $limit_batch;
+        if((int)$limit_batch>0){
+            $sql .= " LIMIT ".(int)$limit_start.', '.(int)$limit_batch;
         }
         global $wpdb;
         $this->all_messages = $wpdb->get_results($sql, ARRAY_A);
@@ -1160,6 +1237,7 @@ CREATE TABLE {$wpdb->prefix}shub_message (
   shub_link varchar(255) NOT NULL,
   shub_data text NOT NULL,
   shub_status tinyint(1) NOT NULL DEFAULT '0',
+  priority int(2) NOT NULL DEFAULT '0',
   user_id int(11) NOT NULL DEFAULT '0',
   shub_user_id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY  shub_message_id (shub_message_id),

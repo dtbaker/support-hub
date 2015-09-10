@@ -51,15 +51,19 @@ class shub_message extends SupportHub_message{
 					$first_comment = current($comments);
 				    if(!empty($first_comment['username'])) {
 					    $comment_user = new SupportHubUser_Envato();
-					    $res = $comment_user->load_by( 'user_username', $first_comment['username']);
+					    $res = $comment_user->load_by( 'envato_username', $first_comment['username']);
 					    if(!$res){
-						    $comment_user -> create_new();
-						    if(!$comment_user->get('user_username'))$comment_user -> update('user_username', $first_comment['username']);
-						    $comment_user -> update_user_data(array(
-							    'image' => $first_comment['profile_image_url'],
-							    'envato' => $first_comment,
-						    ));
+                            $res = $comment_user->load_by( 'user_username', $first_comment['username']);
+                            if(!$res) {
+                                $comment_user->create_new();
+                            }
 					    }
+                        if (!$comment_user->get('user_username')) $comment_user->update('user_username', $first_comment['username']);
+                        if (!$comment_user->get('envato_username')) $comment_user->update('envato_username', $first_comment['username']);
+                        $comment_user->update_user_data(array(
+                            'image' => $first_comment['profile_image_url'],
+                            'envato' => $first_comment,
+                        ));
 					    $shub_user_id = $comment_user->get('shub_user_id');
 				    }
 					$this->update('shub_user_id', $shub_user_id);
@@ -215,55 +219,19 @@ class shub_message extends SupportHub_message{
 		return array();
 	}
 
-    public function message_sidebar_data(){
+    public function get_message_sidebar_data($product_data, $item_data){
 
-        // find if there is a product here
-        $shub_product_id = $this->get_product_id();
-        $product_data = array();
-        $item_data = array();
-        $item = $this->get('item');
-        if(!$shub_product_id && $item){
-            $shub_product_id = $item->get('shub_product_id');
-            $item_data = $item->get('item_data');
-            if(!is_array($item_data))$item_data = array();
+        $data = parent::get_message_sidebar_data($product_data, $item_data);
+        unset($data['message_details']['subject']);
+        if($item_data && !empty($item_data['item'])){
+            $data['message_details']['item'] = array(
+                'Item',
+                '<a href="'.(isset( $item_data['url'] ) ? $item_data['url'] : $this->get_link()).'" target="_blank">'.htmlspecialchars( $item_data['item'] ).'</a>'
+            );
         }
-        if($shub_product_id) {
-            $shub_product = new SupportHubProduct();
-            $shub_product->load( $shub_product_id );
-            $product_data = $shub_product->get( 'product_data' );
-        }
-        ?>
-        <img src="<?php echo plugins_url('extensions/envato/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon">
-        <?php
-        if($shub_product_id && !empty($product_data['image'])) {
-            ?>
-            <img src="<?php echo $product_data['image'];?>" class="shub_message_account_icon">
-            <?php
-        }
-        ?>
-        <br/>
-        <strong><?php _e('Account:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('account') ? $this->get('account')->get( 'account_name' ) : 'N/A' ); ?></a> <br/>
-        <strong><?php _e('Time:');?></strong> <?php echo shub_print_date( $this->get('last_active'), true ); ?>  <br/>
-
-        <?php
-        if($item_data){
-            ?>
-            <strong><?php _e('Item:');?></strong>
-            <a href="<?php echo isset( $item_data['url'] ) ? $item_data['url'] : $this->get_link(); ?>"
-               target="_blank"><?php
-                echo htmlspecialchars( $item_data['item'] ); ?></a>
-            <br/>
-            <?php
-        }
-
-        /*$data = $this->get('shub_data');
-        if(!empty($data['buyer_and_author']) && $data['buyer_and_author'] && $data['buyer_and_author'] !== 'false'){
-            // hmm - this doesn't seem to be a "purchased" flag.
-            ?>
-            <strong>PURCHASED</strong><br/>
-            <?php
-        }*/
+        return $data;
     }
+
 
     public function get_user_hints($user_hints = array()){
         $comments         = $this->get_comments();

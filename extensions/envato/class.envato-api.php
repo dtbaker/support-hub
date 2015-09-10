@@ -59,6 +59,9 @@ class envato_api_basic{
 			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO, 'envato', 'API Call: '.$endpoint,$response['body']);
 		    $header = $response['headers'];
 		    $body = @json_decode($response['body'],true);
+            if(!$body){
+                SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'envato', 'API Error, unable to JSON decode: '.$endpoint. ' '.(isset($response['response']['code']) ? $response['response']['code'] .' / ': '').(isset($response['body']) ? $response['body'] : ''));
+            }
 			return $body;
 		}else if(is_array($response) && isset($response['response']['code']) && $response['response']['code']){
 			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR, 'envato', 'API Error: '.$endpoint. ' '.(isset($response['response']['code']) ? $response['response']['code'] .' / ': '').(isset($response['body']) ? $response['body'] : ''), $response);

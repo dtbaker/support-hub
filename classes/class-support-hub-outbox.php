@@ -122,11 +122,11 @@ class SupportHubOutbox{
 		}
 	}
 
-    public function send_queued(){
+    public function send_queued($force=false){
         if($this->shub_outbox_id){
             // check the status of it.
             // todo - find any ones that are stuck in 'SENDING' status for too long and send those as well.
-            if($this->get('shub_status') == _SHUB_OUTBOX_STATUS_QUEUED){
+            if($force || $this->get('shub_status') == _SHUB_OUTBOX_STATUS_QUEUED){
                 $managers = SupportHub::getInstance()->message_managers;
                 if(!empty($this->shub_extension) && isset($managers[$this->shub_extension]) && $managers[$this->shub_extension]->is_enabled()){
                     // find the message manager responsible for this message and fire off the reply.
@@ -137,7 +137,7 @@ class SupportHubOutbox{
                         $this->update('shub_status', _SHUB_OUTBOX_STATUS_SENDING);
                         // sweet! we're here, send the reply.
                         ob_start();
-                        $status = $message->send_queued_comment_reply($this->shub_message_comment_id,$this);
+                        $status = $message->send_queued_comment_reply($this->shub_message_comment_id, $this, true);
                         $errors = ob_get_clean();
                         if($status){
                             // success! it worked! flag it as sent.

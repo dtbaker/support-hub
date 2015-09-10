@@ -289,7 +289,7 @@ class SupportHubExtra{
 		</ul>
 		<div class="extra_details_message"></div>
 		<p>
-			<a href="#" class="shub_request_extra_generate btn btn-primary btn-xs button"<?php foreach($data as $key=>$val){
+			<a href="#" class="shub_request_extra_generate btn btn-primary btn-xs button shub_button_loading"<?php foreach($data as $key=>$val){
 				echo ' data-'.$key.'="'.esc_attr($val).'"';
 			} ?>><?php _e( 'Generate Message' ); ?></a>
 			<a href="#" class="shub_request_extra btn btn-default btn-xs button"><?php _e( 'Cancel' ); ?></a>
