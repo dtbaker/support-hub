@@ -893,9 +893,14 @@ class SupportHub {
 	    load_plugin_textdomain( $domain , FALSE , dirname( plugin_basename( $this->file ) ) . '/lang/' );
 	}
 
-
-	public function message_user_summary($user_hints, $current_extension, $message_object){
+	public function get_message_user_summary($user_hints, $current_extension, $message_object){
 		// here we hunt down other messages from this user and bring them back to the UI
+
+        $return = array(
+            'extra_datas' => array(),
+            'user_details' => array(),
+        );
+
 		$user_details = array();
 		$other_messages = array();
 
@@ -962,31 +967,9 @@ class SupportHub {
                         $user_hints['shub_user_id'][] = $extra_shub_user_id;
                     }
                 }
-                $extra_datas = $extra_datas + $this_extras;
+                $return['extra_datas'] = $return['extra_datas'] + $this_extras;
             }
 		}
-		foreach($extra_datas as $extra_data){
-            if(isset($extras[$extra_data->get('shub_extra_id')])) {
-                ?>
-                <div>
-                    <strong><?php echo htmlspecialchars($extras[$extra_data->get('shub_extra_id')]->get('extra_name')); ?>
-                        :</strong>
-                    <?php
-                    switch ($extras[$extra_data->get('shub_extra_id')]->get('field_type')) {
-                        case 'encrypted':
-                            echo '(encrypted)';
-                            break;
-                        default:
-                            echo shub_forum_text($extra_data->get('extra_value'), false);
-                    }
-                    ?>
-                </div>
-                <?php
-            }
-		}
-
-        // work out if this user has a valid support period
-        $support_period = false;
 
         $user_bits = array();
         //$user_bits[] = array('Support Pack','UNKNOWN');
@@ -1014,6 +997,7 @@ class SupportHub {
                                     'summary' => $message['title'],
                                     'time' => $message['last_active'],
                                     'network' => $message['shub_extension'],
+                                    'icon' => $this->message_managers[$message['shub_extension']]->get_friendly_icon(),
                                     'message_id' => $message['shub_message_id'],
                                     'message_comment_id' => 0,
                                     'message_status' => $message['shub_status'],
@@ -1040,6 +1024,7 @@ class SupportHub {
                                     'summary' => $comment['message_text'],
                                     'time' => $comment['time'],
                                     'network' => $comment['shub_extension'],
+                                    'icon' => $this->message_managers[$comment['shub_extension']]->get_friendly_icon(),
                                     'message_id' => $comment['shub_message_id'],
                                     'message_comment_id' => $comment['shub_message_comment_id'],
                                     'message_status' => $comment['shub_status'],
@@ -1121,54 +1106,13 @@ class SupportHub {
             }
         }
 
+        $return['user_bits'] = $user_bits;
+        $return['user_details'] = $user_details;
+        $return['other_messages'] = $other_messages;
 
-        ?> <ul class="linked_user_details"> <?php
-        foreach($user_bits as $user_bit){
-            ?>
-            <li><strong><?php echo $user_bit[0];?>:</strong> <?php echo $user_bit[1];?></li>
-            <?php
-        }
-        ?> </ul>
-        <?php
-        if(count($other_messages)){
-            ?>
-            <div class="shub_other_messages">
-            <strong><?php echo sprintf(__('%d Other Messages:','shub'),count($other_messages));?></strong><br/>
-            <ul>
-            <?php
-            foreach($other_messages as $other_message){
-                ?>
-                <li>
-                    <span class="other_message_time"><?php echo shub_pretty_date($other_message['time']);?></span>
-                    <span class="other_message_status"><?php
-                    if(isset($other_message['message_status'])) {
-                        switch ($other_message['message_status']) {
-                            case _shub_MESSAGE_STATUS_ANSWERED:
-                                echo '<span class="message_status_archived">Archived</span>';
-                                break;
-                            case _shub_MESSAGE_STATUS_UNANSWERED:
-                                echo '<span class="message_status_inbox">Inbox</span>';
-                                break;
-                            case _shub_MESSAGE_STATUS_HIDDEN:
-                                echo '<span class="message_status_hidden">Hidden</span>';
-                                break;
-                            default:
-                                echo 'UNKNOWN?';
-                        }
-                    }
-                    ?>
-                    </span>
-                    <span class="other_message_network">
-                        <?php echo $this->message_managers[$other_message['network']]->get_friendly_icon();?>
-                    </span>
-                    <br/>
-                    <a href="#" class="shub_modal" data-network="<?php echo esc_attr($other_message['network']);?>" data-message_id="<?php echo (int)$other_message['message_id'];?>" data-message_comment_id="<?php echo isset($other_message['message_comment_id']) ? (int)$other_message['message_comment_id'] : '';?>" data-modaltitle="<?php echo esc_attr($other_message['summary']);?>"><?php echo esc_html($other_message['summary']);?></a>
-                </li>
-                <?php
-            }
-            ?></ul>
-            </div><?php
-        }
+
+
+        return $return;
 
 	}
 

@@ -194,72 +194,20 @@ class shub_ucm_message extends SupportHub_message{
 		}
 		return array();
 	}
-    public function message_sidebar_data($type = 'full'){
 
-        // find if there is a product here
-        $shub_product_id = $this->get_product_id();
-        $product_data = array();
-        $item_data = array();
-        $item = $this->get('item');
-        if(!$shub_product_id && $item){
-            $shub_product_id = $item->get('shub_product_id');
-            $item_data = $item->get('item_data');
-            if(!is_array($item_data))$item_data = array();
-        }
-        if($shub_product_id) {
-            $shub_product = new SupportHubProduct();
-            $shub_product->load( $shub_product_id );
-            $product_data = $shub_product->get( 'product_data' );
-        }
-        //echo SupportHub::getInstance()->message_managers['ucm']->get_friendly_icon();
-        ?>
-        <img src="<?php echo plugins_url('extensions/ucm/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon">
-        <?php
-        if($shub_product_id && !empty($product_data['image'])) {
-            if(!empty($product_data['url'])){
-                echo '<a href="'.esc_attr($product_data['url']).'" target="_blank">';
-            }
-            ?>
-            <img src="<?php echo $product_data['image'];?>" class="shub_message_account_icon">
-            <?php
-            if(!empty($product_data['url'])){
-                echo '</a>';
-            }
-        }
-        if($type == 'mobile')return;
-        ?>
-        <br/>
-        <strong><?php _e('Subject:');?></strong> <?php echo htmlspecialchars( $this->get('title') );?> <br/>
-        <?php
-        $ticket_data = $this->get('shub_data');
-        if(!empty($ticket_data['reply_from_shub_user_id'])){
-            $staff_member = new SupportHubUser_ucm($ticket_data['reply_from_shub_user_id']);
-            ?>
-            <strong><?php _e('Staff:');?></strong> <?php echo htmlspecialchars($staff_member->get_full_link());?> <br/>
-            <?php
-        }
-        ?>
-        <strong><?php _e('Account:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('account') ? $this->get('account')->get( 'account_name' ) : 'N/A' ); ?></a> <br/>
-        <strong><?php _e('Time:');?></strong> <?php echo shub_print_date( $this->get('last_active'), true ); ?>  <br/>
 
-        <?php if ($item_data && !empty($item_data['item'])){
-            ?>
-            <strong><?php _e('Item:');?></strong>
-            <a href="<?php echo isset( $item_data['url'] ) ? $item_data['url'] : $this->get_link(); ?>"
-               target="_blank"><?php
-                echo htmlspecialchars( $item_data['item'] ); ?></a>
-            <br/>
-            <?php
-        }
+    public function get_message_sidebar_data($product_data, $item_data){
 
-        /*$data = $this->get('shub_data');
-        if(!empty($data['buyer_and_author']) && $data['buyer_and_author'] && $data['buyer_and_author'] !== 'false'){
-            // hmm - this doesn't seem to be a "purchased" flag.
-            ?>
-            <strong>PURCHASED</strong><br/>
-            <?php
-        }*/
+        $data = parent::get_message_sidebar_data($product_data, $item_data);
+        if($item_data && !empty($item_data['item'])){
+            $data['message_details']['item'] = array(
+                'Item',
+                '<a href="'.(isset( $item_data['url'] ) ? $item_data['url'] : $this->get_link()).'" target="_blank">'.htmlspecialchars( $item_data['item'] ).'</a>'
+            );
+        }
+        return $data;
     }
+
 
     public function get_user_hints($user_hints = array()){
         $user_hints['shub_user_id'][] = $this->get('shub_user_id');

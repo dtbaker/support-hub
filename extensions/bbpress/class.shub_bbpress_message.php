@@ -337,86 +337,19 @@ class shub_bbpress_message extends SupportHub_message{
 
 
 
-    public function message_sidebar_data($type = 'full'){
+    public function get_message_sidebar_data($product_data, $item_data){
 
-        // find if there is a product here
-        $shub_product_id = $this->get_product_id();
-        $product_data = array();
-        $item_data = array();
-        $bbpress_item = $this->get('item');
-        if(!$shub_product_id && $bbpress_item){
-            $shub_product_id = $bbpress_item->get('shub_product_id');
-            $item_data = $bbpress_item->get('item_data');
-            if(!is_array($item_data))$item_data = array();
-        }
-        if($shub_product_id) {
-            $shub_product = new SupportHubProduct();
-            $shub_product->load( $shub_product_id );
-            $product_data = $shub_product->get( 'product_data' );
-        }
-        ?>
-        <img src="<?php echo plugins_url('extensions/bbpress/logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon">
-        <?php
-        if($shub_product_id && !empty($product_data['image'])) {
-            if(!empty($product_data['url'])){
-                echo '<a href="'.esc_attr($product_data['url']).'" target="_blank">';
-            }
-            ?>
-            <img src="<?php echo $product_data['image'];?>" class="shub_message_account_icon">
-            <?php
-            if(!empty($product_data['url'])){
-                echo '</a>';
-            }
-        }
-        if($type == 'mobile')return;
-        ?>
-        <br/>
-
-        <strong><?php _e('Thread:');?></strong> <a href="<?php echo $this->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $this->get('title') );?></a> <br/>
-        <strong><?php _e('Account:');?></strong> <?php echo htmlspecialchars( $this->get('account') ? $this->get('account')->get( 'account_name' ) : 'N/A' ); ?> <br/>
-        <strong><?php _e('Time:');?></strong> <?php echo shub_print_date( $this->get('last_active'), true ); ?>  <br/>
-
-        <?php
+        $data = parent::get_message_sidebar_data($product_data, $item_data);
+        $data['message_details']['subject'][0] = 'Thread';
         if($item_data){
-            ?>
-            <strong><?php _e('Item:');?></strong>
-            <a href="<?php echo isset( $item_data['url'] ) ? $item_data['url'] : $this->get_link(); ?>"
-               target="_blank"><?php
-                echo htmlspecialchars( !empty($item_data['post_title']) ? $item_data['post_title'] : '' ); ?></a>
-            <br/>
-            <?php
+            $data['message_details']['item'] = array(
+                'Item',
+                '<a href="'.(isset( $item_data['url'] ) ? $item_data['url'] : $this->get_link()).'" target="_blank">'.htmlspecialchars( !empty($item_data['post_title']) ? $item_data['post_title'] : '' ).'</a>'
+            );
         }
-
-        $data = $this->get('shub_data');
-        if(!empty($data['buyer_and_author']) && $data['buyer_and_author'] && $data['buyer_and_author'] !== 'false'){
-            // hmm - this doesn't seem to be a "purchased" flag.
-            /*?>
-            <strong>PURCHASED</strong><br/>
-            <?php*/
-        }
+        return $data;
     }
 
-    
-    public function get_user_hints($user_hints = array()){
-        $user_hints['shub_user_id'][] = $this->get('shub_user_id');
-        /*
-        $comments         = $this->get_comments();
-        $first_comment = current($comments);
-        if(isset($first_comment['shub_user_id']) && $first_comment['shub_user_id']){
-            $user_hints['shub_user_id'][] = $first_comment['shub_user_id'];
-        }
-        $message_from = @json_decode($first_comment['message_from'],true);
-        if($message_from && isset($message_from['username'])){ //} && $message_from['username'] != $bbpress_message->get('account')->get( 'bbpress_name' )){
-            // this wont work if user changes their username, oh well.
-            $other_users = new SupportHubUser_bbPress();
-            $other_users->load_by_meta('bbpress_username',$message_from['username']);
-            if($other_users->get('shub_user_id') && !in_array($other_users->get('shub_user_id'),$user_hints['shub_user_id'])){
-                // pass these back to the calling method so we can get the correct values.
-                $user_hints['shub_user_id'][] = $other_users->get('shub_user_id');
-            }
-        }*/
-        return $user_hints;
-    }
 
     public function get_user($shub_user_id){
         return new SupportHubUser_bbPress($shub_user_id);

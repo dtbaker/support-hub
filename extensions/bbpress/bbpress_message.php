@@ -11,62 +11,6 @@ if($shub_account_id && $shub_message_id){
 	    $bbpress_message = new shub_bbpress_message( $bbpress, false, $shub_message_id );
         $bbpress_message->output_message_page('popup');
 
-	    /*if($shub_message_id && $bbpress_message->get('shub_message_id') == $shub_message_id && $bbpress_message->get('shub_account_id') == $shub_account_id){
-
-		    $comments         = $bbpress_message->get_comments();
-		    $bbpress_message->mark_as_read();
-
-		    $shub_product_id = $bbpress_message->get('item')->get('shub_product_id');
-		    $product_data = array();
-			if($shub_product_id) {
-				$shub_product = new SupportHubProduct();
-				$shub_product->load( $shub_product_id );
-				$product_data = $shub_product->get( 'product_data' );
-			}
-		    ?>
-
-			<form action="" method="post" id="bbpress_edit_form">
-				<section class="message_sidebar">
-					<header>
-						<a href="<?php echo $bbpress_message->get('link');?>" class="socialbbpress_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Thread' ); ?></a>
-					    <?php if($bbpress_message->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED){  ?>
-						    <a href="#" class="socialbbpress_message_action shub_message_action btn btn-default btn-xs button"
-						       data-action="set-unanswered" data-post="<?php echo esc_attr(json_encode(array(
-								'network' => 'bbpress',
-								'shub_message_id' => $bbpress_message->get('shub_message_id'),
-							)));?>"><?php _e( 'Inbox' ); ?></a>
-					    <?php }else{ ?>
-						    <a href="#" class="socialbbpress_message_action shub_message_action btn btn-default btn-xs button"
-						       data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
-								'network' => 'bbpress',
-								'shub_message_id' => $bbpress_message->get('shub_message_id'),
-							)));?>"><?php _e( 'Archive' ); ?></a>
-					    <?php } ?>
-					</header>
-
-					<img src="<?php echo plugins_url('extensions/bbpress/bbpress-logo.png', _DTBAKER_SUPPORT_HUB_CORE_FILE_);?>" class="shub_message_account_icon"> <br/>
-
-				    <strong><?php _e('Account:');?></strong> <a href="<?php echo $bbpress_message->get_link(); ?>" target="_blank"><?php echo htmlspecialchars( $bbpress_message->get('bbpress_account') ? $bbpress_message->get('bbpress_account')->get( 'bbpress_name' ) : 'N/A' ); ?></a> <br/>
-
-					<strong><?php _e('Date:');?></strong> <?php echo shub_print_date( $bbpress_message->get('last_active'), false ); ?>  <br/>
-
-				    <?php
-
-					// find out the user details, purchases and if they have any other open messages.
-				    $user_hints = array();
-				    $user_hints['shub_user_id'] = $bbpress_message->get('shub_user_id');
-					SupportHub::getInstance()->message_user_summary($user_hints, 'bbpress', $bbpress_message);
-					do_action('supporthub_message_header', 'bbpress', $bbpress_message);
-					?>
-				</section>
-				<section class="message_content">
-				    <?php
-				    $bbpress_message->full_message_output(true);
-				    ?>
-				</section>
-		    </form>
-
-	    <?php }*/
     }
 }
 

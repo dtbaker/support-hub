@@ -311,7 +311,51 @@ class SupportHub_message{
 
 
     public function get_link(){ return '';} // link to external support system
-    public function message_sidebar_data(){ echo '';}
+    public function get_message_sidebar_data($product_data, $item_data){
+
+        // find out the user details, purchases and if they have any other open messages.
+        $user_hints = array(
+            'shub_user_id' => array()
+        );
+        // this seeds the linked shub_user_ids before passing it to the bigger method that hunts down other possible linked user ids.
+        $user_hints = $this->get_user_hints($user_hints);
+        $data = SupportHub::getInstance()->get_message_user_summary($user_hints, $this->network, $this);
+
+        if(!isset($data['message_details']))$data['message_details']=array();
+        $data['message_details']['subject'] = array(
+            'Subject',
+            '<a href="'.$this->get_link().'" target="_blank">'.htmlspecialchars( $this->get('title') ).'</a>'
+        );
+        $data['message_details']['account'] = array(
+            'Account',
+            htmlspecialchars( $this->get('account') ? $this->get('account')->get( 'account_name' ) : 'N/A' )
+        );
+        $data['message_details']['time'] = array(
+            'Time',
+            shub_print_date( $this->get('last_active'), true )
+        );
+        return $data;
+    }
+    public function get_user_hints($user_hints){
+        $user_hints['shub_user_id'][] = $this->get('shub_user_id');
+        /*
+        $comments         = $this->get_comments();
+        $first_comment = current($comments);
+        if(isset($first_comment['shub_user_id']) && $first_comment['shub_user_id']){
+            $user_hints['shub_user_id'][] = $first_comment['shub_user_id'];
+        }
+        $message_from = @json_decode($first_comment['message_from'],true);
+        if($message_from && isset($message_from['username'])){ //} && $message_from['username'] != $bbpress_message->get('account')->get( 'bbpress_name' )){
+            // this wont work if user changes their username, oh well.
+            $other_users = new SupportHubUser_bbPress();
+            $other_users->load_by_meta('bbpress_username',$message_from['username']);
+            if($other_users->get('shub_user_id') && !in_array($other_users->get('shub_user_id'),$user_hints['shub_user_id'])){
+                // pass these back to the calling method so we can get the correct values.
+                $user_hints['shub_user_id'][] = $other_users->get('shub_user_id');
+            }
+        }*/
+        return $user_hints;
+    }
     public function reply_actions(){ echo '';}
 
     public function get_product_id(){
@@ -344,6 +388,34 @@ class SupportHub_message{
                 $this->mark_as_read();
             }
 
+
+            // icon for this account.
+            $icons = SupportHub::getInstance()->message_managers[$this->network]->get_friendly_icon('shub_message_account_icon');
+            // icon for the linked product
+            $shub_product_id = $this->get_product_id();
+            $product_data = array();
+            $item_data = array();
+            $bbpress_item = $this->get('item');
+            if(!$shub_product_id && $bbpress_item){
+                $shub_product_id = $bbpress_item->get('shub_product_id');
+                $item_data = $bbpress_item->get('item_data');
+                if(!is_array($item_data))$item_data = array();
+            }
+            if($shub_product_id) {
+                $shub_product = new SupportHubProduct();
+                $shub_product->load( $shub_product_id );
+                $product_data = $shub_product->get( 'product_data' );
+            }
+            if($shub_product_id && !empty($product_data['image'])) {
+                if(!empty($product_data['url'])){
+                    $icons .=  '<a href="'.esc_attr($product_data['url']).'" target="_blank">';
+                }
+                $icons .= '<img src="'. esc_attr($product_data['image']).'" class="shub_message_account_icon">';
+                if(!empty($product_data['url'])){
+                    $icons .=  '</a>';
+                }
+            }
+
             ?>
 
             <div class="message_edit_form" data-network="<?php echo $this->network;?>">
@@ -365,10 +437,12 @@ class SupportHub_message{
                             )));?>"><?php _e( 'Archive' ); ?></a>
                         <?php } ?>
                         <span class="responsive_sidebar_summary">
-                        <?php $this->message_sidebar_data('mobile'); ?>
+                        <?php echo $icons;
+                        // todo - what other details need to show in mobile view?
+                        ?>
                         </span>
 
-                        <a href="#" class="shub_view_full_message_sidebar btn btn-default btn-xs button alignright"><?php _e( 'Show More Details' ); ?></a>
+                        <a href="#" class="shub_view_full_message_sidebar btn btn-default btn-xs button alignright"><?php _e( 'More Details' ); ?></a>
                     </nav>
                     <header>
                         <a href="<?php echo $this->get_link(); ?>" class="social_view_external btn btn-default btn-xs button" target="_blank"><?php _e( 'View Comment' ); ?></a>
@@ -390,13 +464,112 @@ class SupportHub_message{
                     </header>
                     <aside class="message_sidebar">
                         <?php
-                        $this->message_sidebar_data();
-                        // find out the user details, purchases and if they have any other open messages.
-                        $user_hints = array(
-                            'shub_user_id' => array()
-                        );
-                        $user_hints = $this->get_user_hints($user_hints);
-                        SupportHub::getInstance()->message_user_summary($user_hints, $this->network, $this);
+                        echo $icons;
+                        echo '<br/>';
+
+                        // this method does all the magic of getting the linked user ids and other messages
+                        $data = $this->get_message_sidebar_data($product_data, $item_data);
+
+                        if(!empty($data['message_details'])) {
+                            ?>
+                            <div class="message_sidebar_details">
+                            <?php
+                            foreach ($data['message_details'] as $message_details) {
+                                ?>
+                                <div>
+                                    <strong><?php echo htmlspecialchars($message_details[0]); ?>:</strong>
+                                    <?php echo $message_details[1]; ?>
+                                </div>
+                                <?php
+                            }
+                            ?>
+                            </div>
+                            <?php
+                        }
+                        if(!empty($data['extra_datas'])) {
+                            ?>
+                            <div class="message_sidebar_extra_data">
+                            <?php
+                            foreach ($data['extra_datas'] as $extra_data) {
+                                if (isset($extras[$extra_data->get('shub_extra_id')])) {
+                                    ?>
+                                    <div>
+                                        <strong><?php echo htmlspecialchars($extras[$extra_data->get('shub_extra_id')]->get('extra_name')); ?>:</strong>
+                                        <?php
+                                        switch ($extras[$extra_data->get('shub_extra_id')]->get('field_type')) {
+                                            case 'encrypted':
+                                                echo '(encrypted)';
+                                                break;
+                                            default:
+                                                echo shub_forum_text($extra_data->get('extra_value'), false);
+                                        }
+                                        ?>
+                                    </div>
+                                    <?php
+                                }
+                            }
+                            ?>
+                            </div>
+                            <?php
+                        }
+                        if(!empty($data['user_bits'])) {
+                            ?>
+                            <ul class="linked_user_details"> <?php
+                                foreach ($data['user_bits'] as $user_bit) {
+                                    ?>
+                                    <li><strong><?php echo $user_bit[0]; ?>:</strong> <?php echo $user_bit[1]; ?></li>
+                                    <?php
+                                }
+                                ?>
+                            </ul>
+                            <?php
+                        }
+                        if(!empty($data['other_messages'])) {
+                            ?>
+                            <div class="shub_other_messages">
+                                <strong><?php echo sprintf(__('%d Other Messages:', 'shub'), count($data['other_messages'])); ?></strong><br/>
+                                <ul>
+                                    <?php
+                                    foreach ($data['other_messages'] as $other_message) {
+                                        ?>
+                                        <li>
+                                            <span class="other_message_time"><?php echo shub_pretty_date($other_message['time']); ?></span>
+                                            <span class="other_message_status"><?php
+                                                if (isset($other_message['message_status'])) {
+                                                    switch ($other_message['message_status']) {
+                                                        case _shub_MESSAGE_STATUS_ANSWERED:
+                                                            echo '<span class="message_status_archived">Archived</span>';
+                                                            break;
+                                                        case _shub_MESSAGE_STATUS_UNANSWERED:
+                                                            echo '<span class="message_status_inbox">Inbox</span>';
+                                                            break;
+                                                        case _shub_MESSAGE_STATUS_HIDDEN:
+                                                            echo '<span class="message_status_hidden">Hidden</span>';
+                                                            break;
+                                                        default:
+                                                            echo 'UNKNOWN?';
+                                                    }
+                                                }
+                                                ?>
+                                            </span>
+                                            <span class="other_message_network">
+                                                <?php echo $other_message['icon']; ?>
+                                            </span>
+                                            <br/>
+                                            <a href="#" class="shub_modal"
+                                               data-network="<?php echo esc_attr($other_message['network']); ?>"
+                                               data-message_id="<?php echo (int)$other_message['message_id']; ?>"
+                                               data-message_comment_id="<?php echo isset($other_message['message_comment_id']) ? (int)$other_message['message_comment_id'] : ''; ?>"
+                                               data-modaltitle="<?php echo esc_attr($other_message['summary']); ?>"><?php echo esc_html($other_message['summary']); ?></a>
+                                        </li>
+                                        <?php
+                                    }
+                                    ?>
+                                </ul>
+                                </div>
+                            <?php
+                        }
+
                         do_action('supporthub_message_header', $this->network, $this);
                         ?>
 
