@@ -394,7 +394,7 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                     if($this->layout_type == 'continuous'){
                         ?>
                         <div id="shub_continuous_more">
-                            <a href="#" class="shub_message_load_content btn btn-default btn-xs button"
+                            <a href="#" class="shub_message_load_content btn btn-default btn-xs button shub_button_loading"
                                data-action="next-continuous-message" data-target="#shub_table_contents" data-post="<?php echo esc_attr(json_encode(array(
                             )));?>"><?php _e('Load More','support_hub');?></a>
 

@@ -5,6 +5,8 @@ class shub_envato extends SupportHub_extension {
 
 
 	public function init(){
+
+
 		if(isset($_GET[_SHUB_ENVATO_OAUTH_DOING_FLAG]) && strlen($_GET[_SHUB_ENVATO_OAUTH_DOING_FLAG]) > 0){
 			// we're doing an oauth callback, grab the code and redirect back to the login url.
 			if(!headers_sent() && !session_id()){
@@ -365,11 +367,55 @@ class shub_envato extends SupportHub_extension {
 	}
 
 
+    public function extra_get_login_methods($network, $account_id, $message_id, $extra_ids){
+
+        $return = array(
+            'network' => $this->id,
+            'allow_others' => true,
+            'message' => 'To continue please login using your Envato account.',
+            'account_buttons' => array(),
+        );
+        $accounts = $this->get_accounts();
+
+        $_SESSION['shub_oauth_doing_envato'] = array(
+            'url' => str_replace('&done','',$_SERVER['REQUEST_URI']),
+        );
+        foreach($accounts as $this_account_id => $account) {
+            if (isset($accounts[$account_id])) {
+                if($account_id == $this_account_id) {
+                    // we use this API to generate the login url.
+                    $shub_envato_account = new shub_envato_account($account['shub_account_id']);
+                    // found the account, pull in the API and build the url
+                    $api = $shub_envato_account->get_api();
+                    $login_url = $api->get_authorization_url();
+                    $return['account_buttons'][$this_account_id] = '<a href="' . esc_attr($login_url) . '" class="submit_button">Login with Envato</a>';
+                }
+            } else {
+                // we present the user with a choice of accounts they can login to.
+                // we use this API to generate the login url.
+                $shub_envato_account = new shub_envato_account($account['shub_account_id']);
+                // found the account, pull in the API and build the url
+                $api = $shub_envato_account->get_api();
+                $login_url = $api->get_authorization_url();
+                $return['account_buttons'][$this_account_id] = '<a href="' . esc_attr($login_url) . '" class="submit_button">Login to <strong>'.esc_html($account['account_name']).'</strong> with Envato</a>';
+            }
+        }
+        // we work out if we can login using this particular network extension
+        // and if we will allow other network extensions to login as well, or if we require envato to work
+        // e.g. we might need them to verify their purchase, so they HAVE to login using envato. If they are just sending us details, then they COULD also login via Google to verify their email matches.
+
+        return $return;
+    }
 
 	public function extra_process_login($network, $account_id, $message_id, $extra_ids){
-		if($network != 'envato')dir('Incorrect network in request_extra_login() - this should not happen');
-		$accounts = $this->get_accounts();
-		if(!isset($accounts[$account_id])){
+        $accounts = $this->get_accounts();
+        if($network != $this->id){
+            // we're logging in under a different network.
+            // e.g. a bbpress post is trying to login as an envato user.
+            // this gets tricky!!
+
+        }
+        if(!isset($accounts[$account_id])){
 			die('Invalid account, please report this error.');
 		}
 		if(false) {
@@ -378,6 +424,7 @@ class shub_envato extends SupportHub_extension {
 			ob_start();
 			$shub_message->output_message_list( false );
 			return array(
+                'logged_in' => true,
 				'message' => ob_get_clean(),
 			);
 		}
@@ -397,6 +444,7 @@ class shub_envato extends SupportHub_extension {
                     $_SESSION['shub_oauth_envato'] = false;
                 }
 				return array(
+                    'logged_in' => true,
 					'message' => ob_get_clean(),
 				);
 
@@ -532,17 +580,20 @@ class shub_envato extends SupportHub_extension {
                                     }
 									$shub_message->output_message_list(false);
 									return array(
+                                        'logged_in' => true,
 										'message' => ob_get_clean(),
 									);
 
 								}else{
 									SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','OAuth Login Fail - Username mismatch','User '.var_export($api_result,true).' tried to login and gain access to ticket message ' .$message_id.': '.var_export($comment_data,true));
-									echo "Sorry, unable to verify identity. Please submit a new support message if you require assistance. <br><br> ";
 									$item_data = $shub_message->get('item')->get('item_data');
 									if($item_data && $item_data['url']) {
 										echo '<a href="' . $item_data['url'].'/comments' . (!empty($comment_data['id']) ? '/'.$comment_data['id'] : '') .'">Please click here to return to the Item Comment</a>';
 									}
-									return false;
+                                    return array(
+                                        'logged_in' => false,
+                                        'message' => "Sorry, unable to verify identity. Please submit a new support message if you require assistance. ",
+                                    );
 								}
 							}
 
@@ -554,18 +605,12 @@ class shub_envato extends SupportHub_extension {
 					}
 
 				}else {
-					$login_url                           = $api->get_authorization_url();
-					$_SESSION['shub_oauth_doing_envato'] = array(
-						'url' => str_replace('&done','',$_SERVER['REQUEST_URI']),
-					);
-					?>
-                    <p>
-                        To continue please login using your Envato account.
-                    </p>
-					<a href="<?php echo esc_attr( $login_url );?>" class="submit_button">Login with Envato</a>
-				<?php
+					// not logged in.
+                    return false;
 				}
-			}
+			}else{
+                echo 'Account '.$account_id.' not found';exit;
+            }
 		}
 		return false;
 	}

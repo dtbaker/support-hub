@@ -298,6 +298,13 @@ ucm.social = {
             return false;
         }).delegate('.shub_message_load_content','click',function(){
             // action a message (archive / unarchive)
+            if(jQuery(this).hasClass('shub_button_loading')){
+                // we show some progress indicator
+                var loading_button = dtbaker_loading_button(this);
+                if(!loading_button){
+                    return false;
+                }
+            }
             var post_data = {
                 action: 'support_hub_' + jQuery(this).data('action'),
                 wp_nonce: support_hub.wp_nonce,
@@ -317,6 +324,11 @@ ucm.social = {
                 dataType: 'html',
                 success: function(r){
                     target.append(r);
+                },
+                complete: function(){
+                    if(typeof loading_button != 'undefined'){
+                        loading_button.done();
+                    }
                 }
             });
             return false;
@@ -337,7 +349,7 @@ ucm.social = {
 
         // on page scroll we align the inline-sidebar with the viewport.
         var inline_views = [];
-        jQuery('.shub_table_inline .shub_extension_message').each(function(){
+        jQuery('#shub_table_inline .shub_extension_message').each(function(){
             inline_views.push({
                 pos: jQuery(this).position(),
                 height: jQuery(this).height(),

@@ -350,6 +350,8 @@ Thanks.';
 					ob_start();
 
 					include $SupportHub->get_template('shub_external_header.php');
+                    $all_login_methods = array();
+                    $login_form_actions = '';
 					if(isset($SupportHub->message_managers[$network])){
                         // todo: offer them another way to login to the system.
                         // e.g. someone might want to login using Facebook to access their Envato feed
@@ -358,12 +360,58 @@ Thanks.';
                         // but for now we only allow login from the network we started with.
                         // ooooooooooo maybe we can have the generic extra_process_login method show a list of available login methods? and the individual networks can override this if needed
                         // hmm.. ideas ideas..
-						$login_status = $SupportHub->message_managers[$network]->extra_process_login($network, $account_id, $message_id, $extra_ids);
+						$login_methods = $SupportHub->message_managers[$network]->extra_get_login_methods($network, $account_id, $message_id, $extra_ids);
+                        $allow_other_logins = true;
+                        if($login_methods && !empty($login_methods['account_buttons'])){
+                            $all_login_methods[] = $login_methods;
+                            if(isset($login_methods['allow_others']) && !$login_methods['allow_others']){
+                                $allow_other_logins = false;
+                            }
+                        }
+                        if($allow_other_logins){
+                            // loop over other message managers and find any other login methods.
+                            foreach($SupportHub->message_managers as $this_network => $message_manager) {
+                                $login_methods = $message_manager->extra_get_login_methods($network, $account_id, $message_id, $extra_ids);
+                                if ($login_methods && !empty($login_methods['account_buttons'])) {
+                                    if (isset($login_methods['allow_others']) && !$login_methods['allow_others']) {
+                                        // this 3rd party login method (e.g. envato) is taking over and forcing the user to login using it, rather than the current extensions login method.
+                                        // this happens when for example a "tweet" needs to verify a purchase, so we need to force the user to login with Envato to do that.
+                                        $all_login_methods = array();
+                                        $all_login_methods[] = $login_methods;
+                                        break;
+                                    } else {
+                                        $all_login_methods[] = $login_methods;
+                                    }
+                                }
+                            }
+                        }
+                        foreach($all_login_methods as $all_login_method){
+
+                            // generate the login form to display below (if the user hasn't logged in before yet.
+                            $login_form_actions .= wpautop($all_login_method['message']);
+                            foreach($all_login_method['account_buttons'] as $this_account_id => $this_account_button){
+
+                                // we check if the user has logged in using this account before.
+                                if($all_login_method['network'] && isset($SupportHub->message_managers[$all_login_method['network']])){
+                                    $login_status = $SupportHub->message_managers[$all_login_method['network']]->extra_process_login($network, $this_account_id, $message_id, $extra_ids);
+                                    if($login_status && !empty($login_status['logged_in'])){
+                                        // we have a successful login.
+                                        break;
+                                    }else if($login_status){
+                                        print_r($login_status);exit;
+                                    }
+                                }
+                                // login button for this particular account.
+                                $login_form_actions .= $this_account_button;
+                            }
+                        }
+
+
 					}else{
 						die('Invalid message manager');
 					}
 
-					if($login_status) {
+                    if($login_status && !empty($login_status['logged_in'])){
 						// the user is logged in and their identity has been verified by one of the 3rd party plugins.
 						// we can now safely accept their additoinal information and append it to this ticket.
 						$extras = self::get_all_extras();
@@ -435,7 +483,8 @@ Thanks.';
 						}
 						include $SupportHub->get_template('shub_extra_request_form.php');
 					}else{
-						// we display the login form during request_extra_login()
+						// we build up this login form in the above loop.
+                        echo $login_form_actions;
 					}
 					include $SupportHub->get_template('shub_external_footer.php');
 					echo ob_get_clean();

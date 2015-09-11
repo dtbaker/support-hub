@@ -225,6 +225,7 @@ class SupportHub_extension{
         }
     }
 
+	public function extra_get_login_methods($network, $account_id, $message_id, $extra_ids){ return false; }
 	public function extra_process_login($network, $account_id, $message_id, $extra_ids){ return false; }
 	public function extra_save_data($extra, $value, $network, $account_id, $message_id){ return false; }
 	public function extra_send_message($message, $network, $account_id, $message_id){ return false; }
