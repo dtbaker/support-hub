@@ -72,9 +72,18 @@ class SupportHub_message{
             $this->{$key} = $val;
         }
         if(!$this->account && $this->get('shub_account_id')){
-            $this->account = SupportHub::getInstance()->message_managers[$this->network]->get_account($this->get('shub_account_id'));
+	        if(!$this->network){
+		        // manually look up which network we are in
+		        $account_temp = shub_get_single('shub_account','shub_account_id',$this->get('shub_account_id'));
+		        if($account_temp && !empty($account_temp['shub_extension'])){
+			        $this->network = $account_temp['shub_extension'];
+		        }
+	        }
+	        if($this->network){
+		        $this->account = SupportHub::getInstance()->message_managers[$this->network]->get_account($this->get('shub_account_id'));
+	        }
         }
-        if(!$this->item && $this->get('shub_item_id')) {
+        if(!$this->item && $this->get('shub_item_id') && $this->account) {
             $this->item = $this->account->get_item($this->get('shub_item_id'));
         }
         return $this->shub_message_id;
@@ -799,5 +808,9 @@ class SupportHub_message{
         }
         return $return;
     }
+
+	public function get_network(){
+		return $this->network;
+	}
 
 }

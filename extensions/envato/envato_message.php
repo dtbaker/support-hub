@@ -6,7 +6,7 @@ if(!isset($shub_account_id) || !isset($shub_message_id)){
 if($shub_account_id && $shub_message_id){
 	$envato = new shub_envato_account($shub_account_id);
     if($shub_account_id && $envato->get('shub_account_id') == $shub_account_id){
-	    $envato_message = new shub_message( $envato, false, $shub_message_id );
+	    $envato_message = new shub_envato_message( $envato, false, $shub_message_id );
         $envato_message->output_message_page('popup');
 
     }

@@ -1,6 +1,6 @@
 <?php
 
-class shub_message extends SupportHub_message{
+class shub_envato_message extends SupportHub_message{
 
     protected $network = 'envato';
 

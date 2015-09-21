@@ -398,7 +398,9 @@ Thanks.';
                                         // we have a successful login.
                                         break;
                                     }else if($login_status){
-                                        print_r($login_status);exit;
+	                                    if(!empty($login_status['message'])){
+		                                    $login_form_actions = $login_status['message'].$login_form_actions;
+	                                    }
                                     }
                                 }
                                 // login button for this particular account.

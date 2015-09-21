@@ -177,6 +177,7 @@
 .shub_message_body{
     margin-left: 40px;
     overflow: auto;
+    word-break: break-word;
 }
 .shub_message_title{
     font-weight: bold;

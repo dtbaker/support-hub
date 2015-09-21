@@ -379,8 +379,8 @@ class SupportHub {
                             $response['message'] = 'Please request at least one Extra Detail';
                         }else{
 
-                            $shub_message = new shub_message( false, false, $message_id );
-                            if($message_id && $shub_message->get('shub_message_id') == $message_id){
+                            $shub_message = $this->get_message_object( $message_id );
+                            if($message_id && $shub_message && $shub_message->get('shub_message_id') == $message_id){
                                 // build the message up
                                 $message = SupportHubExtra::build_message(array(
                                     'network' => $_REQUEST['network'],
@@ -1111,6 +1111,7 @@ class SupportHub {
         $return['user_bits'] = $user_bits;
         $return['user_details'] = $user_details;
         $return['other_messages'] = $other_messages;
+        $return['shub_user_id'] = $user_hints['shub_user_id'];
 
 
 
@@ -1509,6 +1510,20 @@ EOT;
         $wpdb->hide_errors();
     }
 
+
+	public function get_message_object($shub_message_id){
+		$message_temp = shub_get_single('shub_message','shub_message_id',$shub_message_id);
+		if($message_temp && !empty($message_temp['shub_account_id'])) {
+			$account_temp = shub_get_single( 'shub_account', 'shub_account_id', $message_temp['shub_account_id'] );
+			if ( $account_temp && ! empty( $account_temp['shub_extension'] ) ) {
+				$network = $account_temp['shub_extension'];
+				if(isset($this->message_managers[$network])){
+					return $this->message_managers[$network]->get_message(false, false, $shub_message_id);
+				}
+			}
+		}
+		return false;
+	}
 
 
 }
