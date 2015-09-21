@@ -589,7 +589,7 @@ class SupportHub_message{
                     <?php
                     // we display the first "primary" message (from the ucm_message table) followed by comments from the ucm_message_comment table.
                     //$this->full_message_output(true);
-                    $this->output_message_list();
+                    $this->output_message_list( true, $data );
                     ?>
                 </section>
                 <section class="message_request_extra">
@@ -607,7 +607,7 @@ class SupportHub_message{
     }
 
 
-    public function output_message_list( $allow_reply = true ){
+    public function output_message_list( $allow_reply = true, $sidebar_data = array() ){
         $message_id = $this->get('shub_message_id');
         $comments         = $this->get_comments();
         $x=0;
@@ -721,9 +721,11 @@ class SupportHub_message{
                      <?php echo $reply_shub_user->get_full_link(); ?>
                 </div>
                 <div class="shub_message_body">
-                    <textarea placeholder="Write a reply..."></textarea>
+	                <div class="shub_message_reply_header"></div>
+                    <textarea placeholder="Write a reply..." class="shub_message_reply_text"></textarea>
+	                <div class="shub_message_reply_footer"></div>
 
-                    <div class="shub_message_buttons">
+	                <div class="shub_message_buttons">
                         <a href="#" class="shub_request_extra btn btn-default btn-xs button"
                            data-modaltitle="<?php _e('Request Extra Details'); ?>" data-action="request_extra_details"
                            data-network="<?php echo $this->network; ?>"
@@ -739,7 +741,7 @@ class SupportHub_message{
                             'network' => $this->network,
                             'last_activity' => $this->get('last_active'),
                         ))); ?>" class="btn button shub_send_message_reply_button shub_hide_when_no_message shub_button_loading"><?php _e('Send'); ?></button>
-                    </div
+                    </div>
                 </div>
                 <div class="shub_message_actions shub_hide_when_no_message">
                     <div>
@@ -754,12 +756,31 @@ class SupportHub_message{
                         <input id="message_reply_private_<?php echo $message_id; ?>" type="checkbox" name="private"
                                data-reply="yes" value="1">
                     </div>
-                    <div>
-                        <label
-                            for="message_reply_notify_email_<?php echo $message_id; ?>"><?php _e('Notify Via Email', 'shub'); ?></label>
-                        <input id="message_reply_notify_email_<?php echo $message_id; ?>" type="checkbox" name="notify_email"
-                               data-reply="yes" value="1">
-                    </div>
+	                <?php
+	                // find all the email addresses linked to this particular message account.
+	                if($sidebar_data && !empty($sidebar_data['shub_user_id']) && is_array($sidebar_data['shub_user_id'])){
+		                foreach($sidebar_data['shub_user_id'] as $linked_shub_user_id){
+			                $linked_shub_user_id = (int)$linked_shub_user_id;
+			                if($linked_shub_user_id) {
+				                $linked_shub_user = new SupportHubUser( $linked_shub_user_id );
+				                if($linked_shub_user->get('user_email')) {
+					                ?>
+					                <div>
+						                <label
+							                for="message_reply_notify_email_<?php echo $message_id; ?>_<?php echo $linked_shub_user_id; ?>"><?php echo sprintf( __( 'Notify Via Email (%s)', 'shub' ), $linked_shub_user->get( 'user_email' ) ); ?></label>
+						                <input
+							                id="message_reply_notify_email_<?php echo $message_id; ?>_<?php echo $linked_shub_user_id; ?>"
+							                type="checkbox" name="notify_email"
+							                data-reply="yes" value="<?php echo $linked_shub_user_id; ?>">
+						                <div class="shub_message_reply_extra">
+							                <textarea placeholder="Write a reply..." data-reply="yes" name="notify_email_text_<?php echo $linked_shub_user_id; ?>"></textarea>
+						                </div>
+					                </div>
+					                <?php
+				                }
+			                }
+		                }
+	                } ?>
                     <div>
                         <label
                             for="message_reply_debug_<?php echo $message_id; ?>"><?php _e('Enable Debug Mode', 'shub'); ?></label>

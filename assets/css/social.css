@@ -224,6 +224,9 @@
     min-height:2em;
     resize: vertical;
 }
+.shub_message_reply_box .shub_message_actions textarea{
+    width:50%;
+}
 #TB_ajaxContent{
     padding-top:0;
 }

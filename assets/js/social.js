@@ -64,8 +64,8 @@ ucm.social = {
                         window.location = r.redirect;
                     }else if(r && typeof r.message != 'undefined'){
                         // got a successful message response, paste that into the next available 'reply' box on the window.
-                        $f.find('.shub_message_reply textarea').val(r.message);
-                        setTimeout(function(){$f.find('.shub_message_reply textarea').keyup();},100);
+                        $f.find('.shub_message_reply textarea.shub_message_reply_text').val(r.message);
+                        setTimeout(function(){$f.find('.shub_message_reply textarea.shub_message_reply_text').keyup();},100);
                         $f.find('.shub_request_extra').first().click(); // swap back to message screen.
                     }else{
                         $f.find('.extra_details_message').text("Unknown error, please try again: "+r);
@@ -137,7 +137,7 @@ ucm.social = {
             }
 
             var pt = jQuery(this).parents('.shub_message_reply_box').first();
-            var txt = pt.find('textarea');
+            var txt = pt.find('textarea.shub_message_reply_text');
             var message = txt.val();
             if(message.length > 0){
                 //txt[0].disabled = true;

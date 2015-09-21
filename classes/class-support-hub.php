@@ -962,7 +962,8 @@ class SupportHub {
                     // example: if two users submit
                     $extra_shub_user_id = $this_extra->get('shub_user_id');
                     if(!empty($extra_shub_user_id) && !in_array($extra_shub_user_id,$user_hints['shub_user_id'])){
-                        echo " <br><br><Br>Error: Displaying extra data for the user '$extra_shub_user_id' when that user ID isn't already in the list. Please report this bug to dtbaker.<br><br><br> ";
+	                    // this happens when the admin might reply in the 'extra data' area and cause an extra data entry to be generated for the admin shub_user_id
+                        echo " <br><br><Br>Error: Did the admin reply to this Extra Data Request? Displaying extra data for the user '$extra_shub_user_id' when that user ID isn't already in the list. Please report this bug to dtbaker.<br><br><br> ";
                         // moved the user_hints loop to the top to build up the user id list first.
                         $user_hints['shub_user_id'][] = $extra_shub_user_id;
                     }
@@ -974,6 +975,7 @@ class SupportHub {
         $user_bits = array();
         //$user_bits[] = array('Support Pack','UNKNOWN');
         if(!empty($user_hints['shub_user_id'])){
+	        $user_hints['shub_user_id'] = array_unique($user_hints['shub_user_id']);
             foreach($user_hints['shub_user_id'] as $shub_user_id) {
                 $user = new SupportHubUser($shub_user_id);
                 if($user->get('shub_user_id')) {
