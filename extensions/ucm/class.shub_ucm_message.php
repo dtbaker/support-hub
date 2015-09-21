@@ -4,6 +4,8 @@ class shub_ucm_message extends SupportHub_message{
 
     protected $network = 'ucm';
 
+	public $messages_are_public = false;
+
 	public function load_by_network_key($network_key, $ticket, $type, $debug = false){
 
 		switch($type){
@@ -135,7 +137,7 @@ class shub_ucm_message extends SupportHub_message{
         if(isset($user_data['reply_options']) && is_array($user_data['reply_options'])){
             foreach($user_data['reply_options'] as $reply_option){
                 if(isset($reply_option['title'])){
-                    echo '<div>';
+                    echo '<div class="shub_message_reply_action">';
                     echo '<label for="">'.htmlspecialchars($reply_option['title']).'</label>';
                     if(isset($reply_option['field']) && is_array($reply_option['field'])){
                         $reply_option['field']['name'] = 'extra-'.$reply_option['field']['name'];

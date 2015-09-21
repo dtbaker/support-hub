@@ -82,37 +82,39 @@ a,a:link,a:visited{
 	</fieldset>
 	<?php } ?>
 	<?php if(!isset($_GET['done'])){ ?>
-	<fieldset class="shub_extra_details">
-		<legend>Please Provide Additional Details:</legend>
-		<?php
-		foreach($extras as $extra){
-			if($extra->get('extra_description')){
+		<?php if(count($extras)){ ?>
+		<fieldset class="shub_extra_details">
+			<legend>Please Provide Additional Details:</legend>
+			<?php
+			foreach($extras as $extra){
+				if($extra->get('extra_description')){
+					?>
+					<div>
+						<em><?php echo htmlspecialchars($extra->get('extra_description'));?></em>
+						<br/>
+					</div>
+				<?php }
+				if(isset($extra_previous_data_errors[$extra->get('shub_extra_id')])){
+					?>
+					<div class="error">
+						<em><?php echo htmlspecialchars($extra_previous_data_errors[$extra->get('shub_extra_id')]);?></em>
+						<br/>
+					</div>
+					<?php
+				}
 				?>
 				<div>
-					<em><?php echo htmlspecialchars($extra->get('extra_description'));?></em>
-					<br/>
-				</div>
-			<?php }
-			if(isset($extra_previous_data_errors[$extra->get('shub_extra_id')])){
-				?>
-				<div class="error">
-					<em><?php echo htmlspecialchars($extra_previous_data_errors[$extra->get('shub_extra_id')]);?></em>
-					<br/>
+					<label for="extra_<?php echo $extra->get('shub_extra_id');?>"><?php echo htmlspecialchars($extra->get('extra_name'));?>:</label>
+					<?php shub_module_form::generate_form_element(array(
+						'type' => $extra->get('field_type') ? $extra->get('field_type') : 'text',
+						'name' => 'extra['.$extra->get('shub_extra_id').']',
+						'value' => isset($extra_previous_data[$extra->get('shub_extra_id')]) ? $extra_previous_data[$extra->get('shub_extra_id')] : '',
+					)); ?>
 				</div>
 				<?php
-			}
-			?>
-			<div>
-				<label for="extra_<?php echo $extra->get('shub_extra_id');?>"><?php echo htmlspecialchars($extra->get('extra_name'));?>:</label>
-				<?php shub_module_form::generate_form_element(array(
-					'type' => $extra->get('field_type') ? $extra->get('field_type') : 'text',
-					'name' => 'extra['.$extra->get('shub_extra_id').']',
-					'value' => isset($extra_previous_data[$extra->get('shub_extra_id')]) ? $extra_previous_data[$extra->get('shub_extra_id')] : '',
-				)); ?>
-			</div>
-			<?php
-		} ?>
-	</fieldset>
+			} ?>
+		</fieldset>
+		<?php } ?>
 	<fieldset class="shub_extra_notes">
 		<legend>Any more information? (optional)</legend>
 		<div>

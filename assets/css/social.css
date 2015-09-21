@@ -203,7 +203,8 @@
     font-weight: normal;
     color:#999;
 }
-.shub_message_actions{
+.shub_message_actions,
+.shub_message_reply_actions{
     font-size: 0.9em;
     margin-left: 40px;
     padding: 0 0 5px 0;
@@ -224,8 +225,27 @@
     min-height:2em;
     resize: vertical;
 }
-.shub_message_reply_box .shub_message_actions textarea{
+.shub_message_reply_box .shub_message_reply_actions > .shub_message_reply_action{
+    float:right;
+    clear:right;
     width:50%;
+}
+.shub_message_reply_box .shub_message_reply_actions:after{
+    content:'';
+    position: relative;
+    display: table;
+    clear:right;
+}
+.shub_message_reply_box .shub_message_reply_actions .shub_message_reply_action_options{
+    display: none;
+}
+.shub_message_reply_box .shub_message_reply_action_has_options.shub_message_reply_activated{
+    border:1px solid #CCC;
+    padding: 5px;
+    margin:5px 0;
+}
+.shub_message_reply_box .shub_message_reply_actions .shub_message_reply_activated > .shub_message_reply_action_options{
+    display: block;
 }
 #TB_ajaxContent{
     padding-top:0;

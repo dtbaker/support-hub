@@ -259,42 +259,84 @@ class SupportHub {
                                         $extra_data = array();
                                         foreach ($_POST as $key => $val) {
                                             if (strpos($key, 'extra-') !== false) {
-                                                $extra_data[substr($key, 6)] = $val;
+                                                $extra_data[substr($key, 6)] = $val; // remove the 'extra-' portion from this key.
                                             }
                                         }
-                                        $outbox->update_outbox_data(array(
+//	                                    print_r($extra_data); print_r( $_POST ); exit;
+	                                    $outbox->update_outbox_data(array(
                                             'debug' => $debug,
                                             'extra' => $extra_data,
                                         ));
-                                        $message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
-                                        if (!$message_comment_id) {
-                                            $return['message'] .= 'Failed to queue comment reply in database.';
-                                            $return['error'] = true;
-                                        }else{
-                                            // successfully queued. do we archive?
-                                            if(!empty($_POST['archive'])){
-                                                $shub_extension_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
-                                            }
-                                        }
+	                                    if(!empty($_POST['private'])){
+		                                    // we're just adding a private reply. don't send this to the extension message queue just add it to the comment database.
+		                                    $message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, false, true);
+		                                    if (!$message_comment_id) {
+			                                    $return['message'] .= 'Failed to queue private comment reply in database.';
+			                                    $return['error'] = true;
+		                                    }else {
 
-                                        $outbox->update(array(
-                                            'shub_extension' => $_REQUEST['network'],
-                                            'shub_account_id' => $account_id,
-                                            'shub_message_id' => $_REQUEST['message-id'],
-                                            'shub_message_comment_id' => $message_comment_id,
-                                        ));
+			                                    // now if it was a private message, do we send a public notice message as well?
+			                                    if ( ! empty( $_POST['private_public_message'] ) && ! empty( $_POST['private_public_message_text'] ) ) {
+				                                    // queue a new public message to this outbox!
+				                                    $message_comment_id = $shub_extension_message->queue_reply( $account_id, $_POST['private_public_message_text'], $debug, $extra_data, $outbox->get( 'shub_outbox_id' ) );
+				                                    $outbox->update( array(
+					                                    'shub_extension'          => $_REQUEST['network'],
+					                                    'shub_account_id'         => $account_id,
+					                                    'shub_message_id'         => $_REQUEST['message-id'],
+					                                    'shub_message_comment_id' => $message_comment_id,
+				                                    ) );
 
-                                        if ($debug) {
-                                            // send the message straight away and show any debug output
-                                            echo $outbox->send_queued(true);
-                                            $return['message'] .= ob_get_clean();
-                                            // dont send an shub_outbox_id in debug mode
-                                            // this will keep the 'message' window open and not shrink it down so we can better display debug messages.
+				                                    if ( $debug ) {
+					                                    // send the message straight away and show any debug output
+					                                    echo $outbox->send_queued( true );
+					                                    $return['message'] .= ob_get_clean();
+					                                    // dont send an shub_outbox_id in debug mode
+					                                    // this will keep the 'message' window open and not shrink it down so we can better display debug messages.
 
-                                        } else {
-                                            //set_message( _l( 'message sent and conversation archived.' ) );
-                                            $return['shub_outbox_id'] = $outbox->get('shub_outbox_id');
-                                        }
+				                                    } else {
+					                                    //set_message( _l( 'message sent and conversation archived.' ) );
+					                                    $return['shub_outbox_id'] = $outbox->get( 'shub_outbox_id' );
+				                                    }
+			                                    }else{
+				                                    // don't need the outbox queue because we're not sending anything externally.
+				                                    $outbox->delete();
+			                                    }
+		                                    }
+	                                    }else{
+		                                    // just sending a normal public reply.
+		                                    $message_comment_id = $shub_extension_message->queue_reply($account_id, $message, $debug, $extra_data, $outbox->get('shub_outbox_id'));
+		                                    if (!$message_comment_id) {
+			                                    $return['message'] .= 'Failed to queue comment reply in database.';
+			                                    $return['error'] = true;
+		                                    }else {
+			                                    $outbox->update( array(
+				                                    'shub_extension'          => $_REQUEST['network'],
+				                                    'shub_account_id'         => $account_id,
+				                                    'shub_message_id'         => $_REQUEST['message-id'],
+				                                    'shub_message_comment_id' => $message_comment_id,
+			                                    ) );
+
+			                                    if ( $debug ) {
+				                                    // send the message straight away and show any debug output
+				                                    echo $outbox->send_queued( true );
+				                                    $return['message'] .= ob_get_clean();
+				                                    // dont send an shub_outbox_id in debug mode
+				                                    // this will keep the 'message' window open and not shrink it down so we can better display debug messages.
+
+			                                    } else {
+				                                    //set_message( _l( 'message sent and conversation archived.' ) );
+				                                    $return['shub_outbox_id'] = $outbox->get( 'shub_outbox_id' );
+			                                    }
+		                                    }
+	                                    }
+
+	                                    if(empty($return['error']) && !empty($_POST['archive'])){
+		                                    // successfully queued. do we archive?
+		                                    $shub_extension_message->update('shub_status',_shub_MESSAGE_STATUS_ANSWERED);
+	                                    }
+
+
+
 
                                     }
                                 }

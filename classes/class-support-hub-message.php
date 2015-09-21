@@ -17,6 +17,13 @@ class SupportHub_message{
     public $shub_message_id = false; // the current user id in our system.
     public $details = array();
 
+	/**
+	 * @var bool
+	 * this flag tells us if the messages we reply to are going to be "public" e.g. Facebook, Envato, Twitter.
+	 * if this flag is set true then we give the user the option of a "private"  message on composing a reply.
+	 */
+	public $messages_are_public = true;
+
     public $json_fields = array('shub_data','comments');
 
     private function reset(){
@@ -267,7 +274,7 @@ class SupportHub_message{
     }
 
 
-    public function queue_reply($network_key, $message, $debug = false, $extra_data = array(), $shub_outbox_id = false){
+    public function queue_reply($network_key, $message, $debug = false, $extra_data = array(), $shub_outbox_id = false, $private = false){
         if($this->account && $this->shub_message_id) {
 
 
@@ -285,6 +292,7 @@ class SupportHub_message{
                 'shub_outbox_id' => $shub_outbox_id,
                 'network_key' => '',
                 'time' => time(),
+                'private' => $private ? 1 : 0,
                 'message_text' => $message,
                 'user_id' => get_current_user_id(),
             ));
@@ -743,20 +751,44 @@ class SupportHub_message{
                         ))); ?>" class="btn button shub_send_message_reply_button shub_hide_when_no_message shub_button_loading"><?php _e('Send'); ?></button>
                     </div>
                 </div>
-                <div class="shub_message_actions shub_hide_when_no_message">
-                    <div>
+                <div class="shub_message_reply_actions shub_hide_when_no_message">
+                    <div class="shub_message_reply_action">
                         <label
-                            for="message_reply_archive_<?php echo $message_id; ?>"><?php _e('Archive After Reply', 'shub'); ?></label>
+                            for="message_reply_archive_<?php echo $message_id; ?>"><?php _e('Archive Message', 'shub'); ?></label>
                         <input id="message_reply_archive_<?php echo $message_id; ?>" type="checkbox" name="archive"
                                data-reply="yes" value="1" checked>
                     </div>
-                    <div>
-                        <label
-                            for="message_reply_private_<?php echo $message_id; ?>"><?php _e('Mark As Private', 'shub'); ?></label>
-                        <input id="message_reply_private_<?php echo $message_id; ?>" type="checkbox" name="private"
-                               data-reply="yes" value="1">
-                    </div>
-	                <?php
+	                <?php if($this->messages_are_public) { ?>
+		                <div class="shub_message_reply_action shub_message_reply_action_has_options">
+			                <label
+				                for="message_reply_private_<?php echo $message_id; ?>"><?php _e( 'Mark As Private', 'shub' ); ?></label>
+			                <input id="message_reply_private_<?php echo $message_id; ?>" type="checkbox" name="private"
+			                       data-reply="yes" value="1">
+
+			                <div class="shub_message_reply_action_options">
+				                <div class="shub_message_reply_action shub_message_reply_action_has_options">
+					                <label
+						                for="message_reply_private_public_<?php echo $message_id; ?>"><?php _e( 'Send Public Link', 'shub' ); ?></label>
+					                <input id="message_reply_private_public_<?php echo $message_id; ?>" type="checkbox"
+					                       name="private_public_message"
+					                       data-reply="yes" value="1">
+
+					                <div class="shub_message_reply_action_options">
+						                <p> <?php _e( 'This message will be sent to the user so they can login to view the private message', 'shub' );?> </p>
+				                    <textarea placeholder="Write a reply..." data-reply="yes"
+				                              name="private_public_message_text">Hello, we have sent you a private reply. Please click here to read it: <?php
+					                    echo SupportHubExtra::build_message_link( array(
+						                    'network'    => $this->network,
+						                    'account_id' => (int) $this->get( 'shub_account_id' ),
+						                    'message_id' => (int) $message_id,
+						                    'extra_ids'  => array( '0' ), // as string so hash works.
+					                    ) ); ?> Thank You</textarea>
+					                </div>
+				                </div>
+			                </div>
+		                </div>
+		                <?php
+	                }
 	                // find all the email addresses linked to this particular message account.
 	                if($sidebar_data && !empty($sidebar_data['shub_user_id']) && is_array($sidebar_data['shub_user_id'])){
 		                foreach($sidebar_data['shub_user_id'] as $linked_shub_user_id){
@@ -765,15 +797,21 @@ class SupportHub_message{
 				                $linked_shub_user = new SupportHubUser( $linked_shub_user_id );
 				                if($linked_shub_user->get('user_email')) {
 					                ?>
-					                <div>
+					                <div class="shub_message_reply_action shub_message_reply_action_has_options">
 						                <label
 							                for="message_reply_notify_email_<?php echo $message_id; ?>_<?php echo $linked_shub_user_id; ?>"><?php echo sprintf( __( 'Notify Via Email (%s)', 'shub' ), $linked_shub_user->get( 'user_email' ) ); ?></label>
 						                <input
 							                id="message_reply_notify_email_<?php echo $message_id; ?>_<?php echo $linked_shub_user_id; ?>"
 							                type="checkbox" name="notify_email"
 							                data-reply="yes" value="<?php echo $linked_shub_user_id; ?>">
-						                <div class="shub_message_reply_extra">
-							                <textarea placeholder="Write a reply..." data-reply="yes" name="notify_email_text_<?php echo $linked_shub_user_id; ?>"></textarea>
+						                <div class="shub_message_reply_action_options">
+							                <textarea placeholder="Write a reply..." data-reply="yes" name="notify_email_text_<?php echo $linked_shub_user_id; ?>">Hello, we have sent you a private reply. Please click here to read it: <?php
+								                echo SupportHubExtra::build_message_link(array(
+									                'network' => $this->network,
+									                'account_id' => (int)$this->get('shub_account_id'),
+									                'message_id' => (int)$message_id,
+									                'extra_ids' => array('0'), // as string so hash works.
+								                )); ?> Thank You</textarea>
 						                </div>
 					                </div>
 					                <?php
@@ -781,7 +819,7 @@ class SupportHub_message{
 			                }
 		                }
 	                } ?>
-                    <div>
+                    <div class="shub_message_reply_action">
                         <label
                             for="message_reply_debug_<?php echo $message_id; ?>"><?php _e('Enable Debug Mode', 'shub'); ?></label>
                         <input id="message_reply_debug_<?php echo $message_id; ?>" type="checkbox" name="debug"

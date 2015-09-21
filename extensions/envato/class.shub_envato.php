@@ -619,7 +619,7 @@ class shub_envato extends SupportHub_extension {
 						$url = $shub_message->get_link();
 						$return = array(
 							'logged_in' => false,
-							'message' => "<p>Sorry, unable to verify identity. Please submit a new support message if you require assistance.</p> ",
+							'message' => "<p>Sorry, unable to verify identity. Please ensure your Envato account email address and username match this particular support ticket. Please send through a new support ticket if you require assistance. </p> ",
 						);
 						if($url){
 							$return['message'] .= '<p><a href="' . esc_attr($url) .'">Please click here to return to the previous page</a></p>';

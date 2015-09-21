@@ -303,17 +303,20 @@ class SupportHubExtra{
 	public static function build_message_hash($network, $account_id, $message_id, $extra_ids){
 		return $network.':'.$account_id.':'.$message_id.':'.implode(',',$extra_ids).':'.md5(NONCE_SALT.serialize(func_get_args()));
 	}
+	public static function build_message_link($data){
+		return add_query_arg(_SUPPORT_HUB_LINK_REQUEST_EXTRA,self::build_message_hash(
+			$data['network'],
+			$data['account_id'],
+			$data['message_id'],
+			$data['extra_ids']
+		),home_url());
+	}
 	public static function build_message($data){
 		return 'Hello,
 
 please send through some more details and we can assist:
 
-<a href="' . add_query_arg(_SUPPORT_HUB_LINK_REQUEST_EXTRA,self::build_message_hash(
-			$data['network'],
-			$data['account_id'],
-			$data['message_id'],
-			$data['extra_ids']
-		),home_url()) . '">click here</a>.
+<a href="' . self::build_message_link($data) . '">click here</a>.
 
 Thanks.';
 	}
@@ -335,7 +338,6 @@ Thanks.';
 				$legit_hash = self::build_message_hash($network, $account_id, $message_id, $extra_ids);
 				if($legit_hash == $_REQUEST[_SUPPORT_HUB_LINK_REQUEST_EXTRA]){
 					// woo we have a legit hash. continue.
-
 					if (!session_id()) {
 						if(headers_sent()){
 							echo "Warning: session headers already sent, unable to proceed, please report this error.";

@@ -88,13 +88,15 @@ ucm.social = {
                 }
                 while (b && (b != a.prop('scrollHeight')));
             }
-            // show the reply buttons and actions if we have content.
-            var txt = a.val();
-            var $replybox = a.parents('.shub_message_reply').first();
-            if(txt.length > 0){
-                $replybox.addClass('shub_has_message_text');
-            }else{
-                $replybox.removeClass('shub_has_message_text');
+            if(a.hasClass('shub_message_reply_text')) {
+                // show the reply buttons and actions if we have content.
+                var txt = a.val();
+                var $replybox = a.parents('.shub_message_reply').first();
+                if (txt.length > 0) {
+                    $replybox.addClass('shub_has_message_text');
+                } else {
+                    $replybox.removeClass('shub_has_message_text');
+                }
             }
 
             a.height(a.prop('scrollHeight') + 10);
@@ -339,6 +341,15 @@ ucm.social = {
             var $s = jQuery(this).parents('section').first();
             $s.find('nav').hide();
             $s.find('header,aside').show();
+            return false;
+        }).delegate('.shub_message_reply_action_has_options [data-reply="yes"]','change',function(){
+            var $s = jQuery(this).parents('.shub_message_reply_action').first();
+            if(jQuery(this).is(':checked')){
+                $s.addClass('shub_message_reply_activated');
+                $s.find('textarea').keyup();
+            }else{
+                $s.removeClass('shub_message_reply_activated');
+            }
             return false;
         });
 
