@@ -945,18 +945,18 @@ class SupportHub {
 
 		// pull out the 'extra data' linked to this ticket
 		$extras = SupportHubExtra::get_all_extras();
-		$extra_datas = array();
+		$extra_data_duplicate_check = array();
 		foreach($extras as $extra_id => $extra){
             $shub_user_ids = !empty($user_hints['shub_user_id']) ? $user_hints['shub_user_id'] : array(0);
             // stop duplicate values (if a user submits two support tickets with different email addresses and the same data, the extra data will be inserted into the database under his new user account, but it will show up here as a linked data info account, so we prevent duplicate data showing in this step)
             // todo: highlight data related to this support message, fade out data related to other support messages
-            $this_data = array();
             foreach($shub_user_ids as $shub_user_id) {
                 $this_extras = array();
                 foreach($extra->get_data($current_extension, $message_object->get('shub_account_id'), $message_object->get('shub_message_id'), $shub_user_id) as $this_extra){
-                    if(!in_array($this_extra->get('extra_value'),$this_data)){
+	                //echo " $shub_user_id - ".$this_extra->get('extra_value')."<br>";
+                    if(!in_array($this_extra->get('extra_value'),$extra_data_duplicate_check)){
                         $this_extras[] = $this_extra;
-                        $this_data[] = $this_extra->get('extra_value');
+	                    $extra_data_duplicate_check[] = $this_extra->get('extra_value');
                     }
                     // build up the list of linked user accounts based on user data.
                     // example: if two users submit
@@ -967,7 +967,7 @@ class SupportHub {
                         $user_hints['shub_user_id'][] = $extra_shub_user_id;
                     }
                 }
-                $return['extra_datas'] = $return['extra_datas'] + $this_extras;
+	            $return['extra_datas'] = array_merge($return['extra_datas'],$this_extras);
             }
 		}
 

@@ -941,65 +941,6 @@ class shub_envato extends SupportHub_extension {
 		return $status;
 
 	}
-	public function extra_save_data($extra, $value, $network, $account_id, $message_id){
-		$shub_message = new shub_envato_message( false, false, $message_id );
-		$shub_user_id = !empty($_SESSION['shub_oauth_envato']['shub_user_id']) ? $_SESSION['shub_oauth_envato']['shub_user_id'] : $shub_message->get('shub_user_id');
-		if(is_array($value) && !empty($value['extra_data']['valid_purchase_code'])){
-			// we're saving a previously validated (Above) purchase code.
-			// create a shub user for this purchase and return success along with the purchase data to show
-			$comment_user = new SupportHubUser_Envato();
-		    $res = false;
-		    if(!empty($value['extra_data']['buyer'])){
-			    $res = $comment_user->load_by( 'user_username', $value['extra_data']['buyer']);
-		    }
-		    if(!$res) {
-			    $comment_user->create_new();
-			    $comment_user->update( 'user_username', $value['extra_data']['buyer'] );
-		    }
-		    $user_data = $comment_user->get('user_data');
-			if(!is_array($user_data))$user_data=array();
-		    if(!isset($user_data['envato_codes']))$user_data['envato_codes']=array();
-			$user_data_codes = array();
-			$user_data_codes[$value['data']] = $value['extra_data'];
-		    $user_data['envato_codes'] = array_merge($user_data['envato_codes'], $user_data_codes);
-		    $comment_user->update_user_data($user_data);
-			$shub_user_id = $comment_user->get('shub_user_id');
-		}
-
-		$extra->save_and_link(
-			array(
-				'extra_value' => is_array($value) && !empty($value['data']) ? $value['data'] : $value,
-				'extra_data' => is_array($value) && !empty($value['extra_data']) ? $value['extra_data'] : false,
-			),
-			$network,
-			$account_id,
-			$message_id,
-			$shub_user_id
-		);
-
-	}
-	public function extra_send_message($message, $network, $account_id, $message_id){
-		// save this message in the database as a new comment.
-		// set the 'private' flag so we know this comment has been added externally to the API scrape.
-		$shub_message = new shub_envato_message( false, false, $message_id );
-		$existing_comments = $shub_message->get_comments();
-		shub_update_insert('shub_message_comment_id',false,'shub_message_comment',array(
-		    'shub_message_id' => $shub_message->get('shub_message_id'),
-		    'private' => 1,
-		    'message_text' => $message,
-			'time' => time(),
-		    'shub_user_id' => !empty($_SESSION['shub_oauth_envato']['shub_user_id']) ? $_SESSION['shub_oauth_envato']['shub_user_id'] : $shub_message->get('shub_user_id'),
-	    ));
-		// mark the main message as unread so it appears at the top.
-		$shub_message->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);
-		$shub_message->update('last_active',time());
-		// todo: update the 'summary' to reflect this latest message?
-		$shub_message->update('summary',$message);
-
-		// todo: post a "Thanks for providing information, we will reply soon" message on Envato comment page
-
-	}
-
     public function filter_message_user_sidebar($user_bits, $shub_user_ids){
         // find purchases for these user ids and if they are in a valid support term.
         if(!empty($shub_user_ids) && is_array($shub_user_ids)){

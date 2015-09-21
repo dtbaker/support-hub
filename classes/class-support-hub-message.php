@@ -496,6 +496,7 @@ class SupportHub_message{
                             <?php
                         }
                         if(!empty($data['extra_datas'])) {
+	                        $extras = SupportHubExtra::get_all_extras();
                             ?>
                             <div class="message_sidebar_extra_data">
                             <?php

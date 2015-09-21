@@ -229,6 +229,10 @@ class SupportHubExtra{
 	}
 
 	/** static stuff **/
+
+	/**
+	 * @return SupportHubExtra[]
+	 */
 	public static function get_all_extras(){
 		$return = array();
 		$data = shub_get_multiple('shub_extra',array(),'shub_extra_id','extra_order');
@@ -455,31 +459,46 @@ Thanks.';
 							}
 						}
 						if(!$has_data_error && (!empty($extra_previous_notes) || !empty($extra_previous_data_validated))) {
-							// user has input something
-							// build up the private message to store in the system
-							$message = '';
-							foreach($extras as $extra_id => $extra) {
-								if ( isset( $extra_previous_data_validated[ $extra_id ] ) ) {
-									$message .= $extra->add_message_segment($extra_previous_data_validated[ $extra_id ]);
+
+							$shub_message = $SupportHub->get_message_object($message_id);
+							if($shub_message) {
+								$shub_user_id = !empty( $_SESSION['shub_oauth_envato']['shub_user_id'] ) ? $_SESSION['shub_oauth_envato']['shub_user_id'] : $shub_message->get( 'shub_user_id' );
+								// user has input something
+								// build up the private message to store in the system
+								$message = '';
+								foreach ( $extras as $extra_id => $extra ) {
+									if ( isset( $extra_previous_data_validated[ $extra_id ] ) ) {
+										$message .= $extra->add_message_segment( $extra_previous_data_validated[ $extra_id ] );
+									}
 								}
-							}
-							if(!empty($extra_previous_notes)){
-								$message .= '<p>'. shub_forum_text($extra_previous_notes).'</p>';
-								$extra_previous_notes = false;
-							}
-							// pass it through to the message managers to store this information!
-							// (e.g. envato module will validate the 'purchase_code' and return a possible error)
-							foreach($extras as $extra_id => $extra){
-								if(isset($extra_previous_data_validated[$extra_id])) {
-									$status = $SupportHub->message_managers[ $network ]->extra_save_data( $extra, $extra_previous_data_validated[$extra_id], $network, $account_id, $message_id );
-									unset($extra_previous_data[$extra_id]);
+								if ( ! empty( $extra_previous_notes ) ) {
+									$message .= '<p>' . shub_forum_text( $extra_previous_notes ) . '</p>';
+									$extra_previous_notes = false;
 								}
+								// pass it through to the message managers to store this information!
+								// (e.g. envato module will validate the 'purchase_code' and return a possible error)
+								foreach ( $extras as $extra_id => $extra ) {
+									if ( isset( $extra_previous_data_validated[ $extra_id ] ) ) {
+										//$SupportHub->message_managers[ $network ]->extra_save_data( $extra, $extra_previous_data_validated[ $extra_id ], $network, $account_id, $message_id, $shub_message, $shub_user_id );
+										$extra->save_and_link(
+											array(
+												'extra_value' => is_array($extra_previous_data_validated[ $extra_id ]) && !empty($extra_previous_data_validated[ $extra_id ]['data']) ? $extra_previous_data_validated[ $extra_id ]['data'] : $extra_previous_data_validated[ $extra_id ],
+												'extra_data' => is_array($extra_previous_data_validated[ $extra_id ]) && !empty($extra_previous_data_validated[ $extra_id ]['extra_data']) ? $extra_previous_data_validated[ $extra_id ]['extra_data'] : false,
+											),
+											$network,
+											$account_id,
+											$message_id,
+											$shub_user_id
+										);
+										unset( $extra_previous_data[ $extra_id ] );
+									}
+								}
+								// all done! save our message in the db
+								$SupportHub->message_managers[ $network ]->extra_send_message( $message, $network, $account_id, $message_id, $shub_message, $shub_user_id );
+								// redirect browser to a done page.
+								header( "Location: " . $_SERVER['REQUEST_URI'] . '&done' );
+								exit;
 							}
-							// all done! save our message in the db
-							$SupportHub->message_managers[ $network ]->extra_send_message( $message, $network, $account_id, $message_id );
-							// redirect browser to a done page.
-							header("Location: ".$_SERVER['REQUEST_URI'].'&done');
-							exit;
 
 
 						}
