@@ -307,32 +307,12 @@ ucm.social = {
                     return false;
                 }
             }
-            var post_data = {
-                action: 'support_hub_' + jQuery(this).data('action'),
-                wp_nonce: support_hub.wp_nonce,
-                form_auth_key: ucm.form_auth_key
-            };
-            var button_post = jQuery(this).data('post');
-            for(var i in button_post){
-                if(button_post.hasOwnProperty(i)){
-                    post_data[i] = button_post[i];
-                }
-            }
-            var target = jQuery(jQuery(this).data('target'));
-            jQuery.ajax({
-                url: ajaxurl,
-                method: 'POST',
-                data: post_data,
-                dataType: 'html',
-                success: function(r){
-                    target.append(r);
-                },
-                complete: function(){
-                    if(typeof loading_button != 'undefined'){
-                        loading_button.done();
-                    }
+            ucm.social.load_content(jQuery(this).data('action'), jQuery(this).data('target'), jQuery(this).data('post'), function(){
+                if(typeof loading_button != 'undefined'){
+                    loading_button.done();
                 }
             });
+
             return false;
         }).delegate('.swap_layout_type','click',function(){
             jQuery('#layout_type').val(jQuery(this).data('layout-type')).parents('form').get(0).submit();
@@ -505,22 +485,94 @@ ucm.social = {
 
         }
     },
+    build_post_data: function(action){
+        return {
+            action: 'support_hub_' + action,
+            wp_nonce: support_hub.wp_nonce,
+            form_auth_key: ucm.form_auth_key
+        };
+    },
+    load_content: function(action, target, button_post, callback){
+        var post_data = ucm.social.build_post_data(action);
+        if(button_post) {
+            for (var i in button_post) {
+                if (button_post.hasOwnProperty(i)) {
+                    post_data[i] = button_post[i];
+                }
+            }
+        }
+        $target = jQuery(target);
+        jQuery.ajax({
+            url: ajaxurl,
+            method: 'POST',
+            data: post_data,
+            dataType: 'html',
+            success: function(r){
+                $target.append(r);
+            },
+            complete: function(){
+                if(typeof callback == 'function')callback();
+
+            }
+        });
+    },
     message_status_changed: function(network, message_id, message_status){
 
         var element = jQuery('.shub_extension_message[data-message-id=' + message_id + ']');
         var element_action = element.prev('.shub_extension_message_action').first();
         //var json = {'network': network, 'shub_message_id': message_id};
         //'<a href="#" class="shub_message_action" data-action="set-unanswered">Undo</a>');
-        element_action.find('.action_content').html('Message Archived.').append($('<a/>', {
-            'class': 'shub_message_action',
-            'data-action': 'set-unanswered',
-            'data-post': {'network': network, 'shub_message_id': message_id}
-        }));
+        element_action.find('.action_content').html('Message Archived.')
+            .append(
+                jQuery('<a/>', {
+                    'class': 'shub_message_action',
+                    'href': '#',
+                    'data-action': 'set-unanswered'
+                })
+                    .data('post',{
+                        network: network,
+                        shub_message_id: message_id
+                    })
+                    .text('Undo')
+            )
+            .append(
+                jQuery('<a/>', {
+                    'class': 'shub_message_view',
+                    'href': '#'
+                })
+                    .text('View Message')
+                    .click(function(){
+                        // load the message again from the server into the empty message container.
+                        var post_data = ucm.social.build_post_data('load-message');
+                        post_data['layout_type'] = element.is('div') ? 'continuous' : 'table';
+                        post_data['network'] = network;
+                        post_data['message_id'] = message_id;
+                        jQuery.ajax({
+                            url: ajaxurl,
+                            method: 'POST',
+                            data: post_data,
+                            dataType: 'html',
+                            success: function(r){
+                                element.replaceWith(r);
+                            },
+                            complete: function(){
+                                if(element.is('div')){
+                                    element.show();
+                                    element_action.slideUp();
+                                }else{
+                                    element.show();
+                                    element_action.hide();
+                                }
+                            }
+                        });
+                        return false;
+                    })
+            );
         if(element.is('div')){
-            element.slideUp(function(){element.remove();});
+            element.slideUp(function(){element.html('');});
             element_action.slideDown();
         }else{
-            element.remove();
+            element.html('');
             element_action.show();
         }
         element_action.data('undo-type','answered');

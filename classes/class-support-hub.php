@@ -53,6 +53,7 @@ class SupportHub {
 		add_action( 'wp_ajax_support_hub_resend_outbox_message' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_delete_outbox_message' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_next-continuous-message' , array( $this, 'admin_ajax' ) );
+		add_action( 'wp_ajax_support_hub_load-message' , array( $this, 'admin_ajax' ) );
 
         add_filter('set-screen-option', array( $this, 'set_screen_options' ), 10, 3);
 
@@ -154,6 +155,29 @@ class SupportHub {
                             echo '<div class="no-items" style="text-align:center">';
                             $myListTable->no_items();
                             echo '</div>';
+                        }
+                    }
+
+                    break;
+                case 'load-message':
+
+                    if(!empty($_REQUEST['network']) && !empty($_REQUEST['message_id'])){
+	                    $this_search = array();
+                        $this_search['shub_message_id'] = (int)$_REQUEST['message_id'];;
+                        SupportHub::getInstance()->load_all_messages($this_search, array(), 1);
+                        $all_messages = SupportHub::getInstance()->all_messages;
+
+                        $myListTable = new SupportHubMessageList(array(
+                            'screen' => 'shub_inbox'
+                        ));
+                        $myListTable->set_layout_type('continuous');
+                        $myListTable->set_only_inner(true);
+                        $myListTable->set_data($all_messages);
+                        $myListTable->prepare_items();
+                        if ( $myListTable->has_items() ) {
+                            $myListTable->display_rows();
+                        } else {
+                            echo 'No item found';
                         }
                     }
 
