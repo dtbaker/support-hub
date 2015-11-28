@@ -192,7 +192,6 @@ class SupportHub_account{
     }
 
     public function save_account_data($user_data){
-	    print_r($user_data);envato_username
         $this->update('account_data',$user_data);
 
     }

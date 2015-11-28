@@ -504,6 +504,26 @@ ucm.social = {
             });
 
         }
+    },
+    message_status_changed: function(network, message_id, message_status){
+
+        var element = jQuery('.shub_extension_message[data-message-id=' + message_id + ']');
+        var element_action = element.prev('.shub_extension_message_action').first();
+        //var json = {'network': network, 'shub_message_id': message_id};
+        //'<a href="#" class="shub_message_action" data-action="set-unanswered">Undo</a>');
+        element_action.find('.action_content').html('Message Archived.').append($('<a/>', {
+            'class': 'shub_message_action',
+            'data-action': 'set-unanswered',
+            'data-post': {'network': network, 'shub_message_id': message_id}
+        }));
+        if(element.is('div')){
+            element.slideUp(function(){element.remove();});
+            element_action.slideDown();
+        }else{
+            element.remove();
+            element_action.show();
+        }
+        element_action.data('undo-type','answered');
     }
 
 };
