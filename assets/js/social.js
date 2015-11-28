@@ -200,10 +200,10 @@ ucm.social = {
                                         element_action.find('.action_content').html('Failed to send message. Please check logs.');
                                     });
                                     if(element.is('div')){
-                                        element.slideUp(function(){element.remove();});
+                                        element.slideUp();
                                         element_action.slideDown();
                                     }else{
-                                        element.remove();
+                                        element.hide();
                                         element_action.show();
                                     }
                                     var pos = element_action.position();
@@ -227,10 +227,10 @@ ucm.social = {
                                             element_action.find('.action_content').html('Failed to send message. Please check logs.');
                                         });
                                         if(element.is('div')){
-                                            element.slideUp(function(){element.remove();});
+                                            element.slideUp();
                                             element_action.slideDown();
                                         }else{
-                                            element.remove();
+                                            element.hide();
                                             element_action.show();
                                         }
                                         var pos = element_action.position();

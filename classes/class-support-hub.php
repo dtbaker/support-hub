@@ -944,11 +944,19 @@ class SupportHub {
         );
 
 		$user_details = array();
-		$other_messages = array();
+		$other_messages = array(); // messages started by this user
 
         if(!empty($user_hints['shub_user_id']) && !is_array($user_hints['shub_user_id'])){
             $user_hints['shub_user_id'] = array($user_hints['shub_user_id']);
         }
+
+		$user_ids = count($user_hints['shub_user_id']);
+		?>
+		<div class="shub_debug">
+			Starting User Hints: <br/>
+			<?php print_r($user_hints); ?>
+		</div>
+		<?php
 
         $possible_new_user_ids = array();
         do {
@@ -984,6 +992,15 @@ class SupportHub {
                 }
             }
         }while(count($possible_new_user_ids));
+
+		if(count($user_hints['shub_user_id']) != $user_ids) {
+			?>
+			<div class="shub_debug">
+				Possible New User Ids: <br/>
+				<?php print_r( $user_hints ); ?>
+			</div>
+			<?php
+		}
 
 		// pull out the 'extra data' linked to this ticket
 		$extras = SupportHubExtra::get_all_extras();
@@ -1046,6 +1063,7 @@ class SupportHub {
                                     'message_id' => $message['shub_message_id'],
                                     'message_comment_id' => 0,
                                     'message_status' => $message['shub_status'],
+	                                'primary' => true, // this is the main message created by this user.
                                 );
                             }
                         }
@@ -1054,7 +1072,7 @@ class SupportHub {
                         'shub_user_id' => $shub_user_id
                     ), 'shub_message_comment_id');*/
 
-                    $sql = "SELECT smc.*, sa.shub_extension, sm.shub_status FROM `" . _support_hub_DB_PREFIX . "shub_message_comment` smc ";
+                    $sql = "SELECT smc.*, sa.shub_extension, sm.shub_status, sm.shub_user_id AS parent_shub_user_id FROM `" . _support_hub_DB_PREFIX . "shub_message_comment` smc ";
                     $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_message` sm USING (shub_message_id)  ";
                     $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_account` sa USING (shub_account_id) WHERE 1 ";
                     $sql .= " AND smc.`shub_user_id` = " . (int)$user->get('shub_user_id');
@@ -1065,7 +1083,7 @@ class SupportHub {
                     if (is_array($comments)) {
                         foreach ($comments as $comment) {
                             if (!isset($other_messages[$comment['shub_message_id']])) {
-                                $other_messages[$comment['shub_message_id']] = array(
+	                            $other_messages[$comment['shub_message_id']] = array(
                                     'link' => '?page=support_hub_main&network='.$comment['shub_extension'].'&message_id='.$comment['shub_message_id'].'&message_comment_id='.$comment['shub_message_comment_id'],
                                     'summary' => $comment['message_text'],
                                     'time' => $comment['time'],
@@ -1074,18 +1092,20 @@ class SupportHub {
                                     'message_id' => $comment['shub_message_id'],
                                     'message_comment_id' => $comment['shub_message_comment_id'],
                                     'message_status' => $comment['shub_status'],
+		                            'primary' => ($comment['parent_shub_user_id'] == $user->get('shub_user_id'))
                                 );
                             }
                         }
                     }
 
                     // for debugging:
-                    $user_bits[] = array('shub_user_id',$user->get('shub_user_id'));
+                    //$user_bits[] = array('shub_user_id',$user->get('shub_user_id'));
 
-                    if (!empty($user->details['user_fname'])) {
-                        $user_bits[] = array('FName', esc_html($user->details['user_fname']));
-                    }
-                    if (!empty($user->details['user_lname'])) {
+                    if (!empty($user->details['user_fname']) && !empty($user->details['user_lname'])) {
+                        $user_bits[] = array('Name', esc_html($user->details['user_fname'].' '.$user->details['user_lname']));
+                    }else if (!empty($user->details['user_fname'])) {
+                        $user_bits[] = array('Name', esc_html($user->details['user_fname']));
+                    }else if (!empty($user->details['user_lname'])) {
                         $user_bits[] = array('LName', esc_html($user->details['user_lname']));
                     }
                     if (!empty($user->details['user_username'])) {
@@ -1156,8 +1176,6 @@ class SupportHub {
         $return['user_details'] = $user_details;
         $return['other_messages'] = $other_messages;
         $return['shub_user_id'] = $user_hints['shub_user_id'];
-
-
 
         return $return;
 

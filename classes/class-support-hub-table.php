@@ -439,7 +439,10 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
             case 'continuous':
             case 'inline':
                 if (is_array($item) && !empty($item['shub_extension']) && $message_manager = SupportHub::getInstance()->message_managers[$item['shub_extension']]) {
-                    echo '<div class="shub_extension_message_action"><div class="action_content"></div></div>';
+                    echo '<div ';
+	                echo ' data-network="' . $message_manager->id . '"';
+	                echo ' data-message-id="' . $item['shub_message_id'] . '"';
+	                echo ' class="shub_extension_message_action"><div class="action_content"></div></div>';
                     echo '<div';
                     echo ' class="shub_extension_message"';
                     echo ' data-network="' . $message_manager->id . '"';
@@ -457,16 +460,22 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                 }
                 break;
             default:
-                echo '<tr class="shub_extension_message_action"><td class="action_content" colspan="'.$this->get_column_count().'"></td></tr>';
-                echo '<tr';
                 if (is_array($item) && !empty($item['shub_extension']) && $message_manager = SupportHub::getInstance()->message_managers[$item['shub_extension']]) {
+	                echo '<tr ';
+	                echo ' data-network="' . $message_manager->id . '"';
+	                echo ' data-message-id="' . $item['shub_message_id'] . '"';
+	                echo ' class="shub_extension_message_action"><td class="action_content" colspan="'.$this->get_column_count().'"></td></tr>';
+	                echo '<tr';
                     echo ' class="shub_extension_message ';
                     echo  $this->row_count++%2 ? 'alternate' : '';
                     echo ' "';
                     echo ' data-network="' . $message_manager->id . '"';
                     echo ' data-message-id="' . $item['shub_message_id'] . '"';
+	                echo '>';
+                }else{
+	                // shouldn't happen.
+	                echo '<tr>';
                 }
-                echo '>';
                 $this->single_row_columns($item);
                 echo '</tr>';
                 break;

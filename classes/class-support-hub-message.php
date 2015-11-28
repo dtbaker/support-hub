@@ -542,45 +542,55 @@ class SupportHub_message{
                             </ul>
                             <?php
                         }
-                        if(!empty($data['other_messages'])) {
+                        if(!empty($data['other_messages']) || !empty($data['other_related_messages'])) {
+	                        // sort messages by time.
+	                        uasort($data['other_messages'], function($a,$b){
+		                        return $a['time'] < $b['time'];
+	                        });
+	                        $count = !empty($data['other_messages']) ? count($data['other_messages']) : 0;
+	                        $count += !empty($data['other_related_messages']) ? count($data['other_related_messages']) : 0;
                             ?>
                             <div class="shub_other_messages">
-                                <strong><?php echo sprintf(_n('%d Other Message:', '%d Other Messages:', count($data['other_messages']), 'support_hub'), count($data['other_messages'])); ?></strong><br/>
+                                <strong><?php echo sprintf(_n('%d Other Message:', '%d Other Messages:', $count, 'support_hub'), $count); ?></strong><br/>
                                 <ul>
                                     <?php
-                                    foreach ($data['other_messages'] as $other_message) {
-                                        ?>
-                                        <li>
-                                            <span class="other_message_time"><?php echo shub_pretty_date($other_message['time']); ?></span>
+                                    if(!empty($data['other_messages'])) {
+	                                    foreach ( $data['other_messages'] as $other_message ) {
+		                                    ?>
+		                                    <li>
+			                                    <span
+				                                    class="other_message_time"><?php echo shub_pretty_date( $other_message['time'] ); ?></span>
                                             <span class="other_message_status"><?php
-                                                if (isset($other_message['message_status'])) {
-                                                    switch ($other_message['message_status']) {
-                                                        case _shub_MESSAGE_STATUS_ANSWERED:
-                                                            echo '<span class="message_status_archived">Archived</span>';
-                                                            break;
-                                                        case _shub_MESSAGE_STATUS_UNANSWERED:
-                                                            echo '<span class="message_status_inbox">Inbox</span>';
-                                                            break;
-                                                        case _shub_MESSAGE_STATUS_HIDDEN:
-                                                            echo '<span class="message_status_hidden">Hidden</span>';
-                                                            break;
-                                                        default:
-                                                            echo 'UNKNOWN?';
-                                                    }
-                                                }
-                                                ?>
+	                                            if ( isset( $other_message['message_status'] ) ) {
+		                                            switch ( $other_message['message_status'] ) {
+			                                            case _shub_MESSAGE_STATUS_ANSWERED:
+				                                            echo '<span class="message_status_archived">Archived</span>';
+				                                            break;
+			                                            case _shub_MESSAGE_STATUS_UNANSWERED:
+				                                            echo '<span class="message_status_inbox">Inbox</span>';
+				                                            break;
+			                                            case _shub_MESSAGE_STATUS_HIDDEN:
+				                                            echo '<span class="message_status_hidden">Hidden</span>';
+				                                            break;
+			                                            default:
+				                                            echo 'UNKNOWN?';
+		                                            }
+	                                            }
+	                                            ?>
                                             </span>
                                             <span class="other_message_network">
                                                 <?php echo $other_message['icon']; ?>
                                             </span>
-                                            <br/>
-                                            <a href="<?php echo esc_attr($other_message['link']); ?>" target="_blank" class="shub_modal"
-                                               data-network="<?php echo esc_attr($other_message['network']); ?>"
-                                               data-message_id="<?php echo (int)$other_message['message_id']; ?>"
-                                               data-message_comment_id="<?php echo isset($other_message['message_comment_id']) ? (int)$other_message['message_comment_id'] : ''; ?>"
-                                               data-modaltitle="<?php echo esc_attr($other_message['summary']); ?>"><?php echo esc_html($other_message['summary']); ?></a>
-                                        </li>
-                                        <?php
+			                                    <br/>
+			                                    <a href="<?php echo esc_attr( $other_message['link'] ); ?>"
+			                                       target="_blank" class="shub_modal"
+			                                       data-network="<?php echo esc_attr( $other_message['network'] ); ?>"
+			                                       data-message_id="<?php echo (int) $other_message['message_id']; ?>"
+			                                       data-message_comment_id="<?php echo isset( $other_message['message_comment_id'] ) ? (int) $other_message['message_comment_id'] : ''; ?>"
+			                                       data-modaltitle="<?php echo esc_attr( $other_message['summary'] ); ?>"><?php echo esc_html( $other_message['summary'] ); ?></a>
+		                                    </li>
+		                                    <?php
+	                                    }
                                     }
                                     ?>
                                 </ul>

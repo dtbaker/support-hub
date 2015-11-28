@@ -377,18 +377,20 @@ Thanks.';
                         if($allow_other_logins){
                             // loop over other message managers and find any other login methods.
                             foreach($SupportHub->message_managers as $this_network => $message_manager) {
-                                $login_methods = $message_manager->extra_get_login_methods($network, $account_id, $message_id, $extra_ids);
-                                if ($login_methods && !empty($login_methods['account_buttons'])) {
-                                    if (isset($login_methods['allow_others']) && !$login_methods['allow_others']) {
-                                        // this 3rd party login method (e.g. envato) is taking over and forcing the user to login using it, rather than the current extensions login method.
-                                        // this happens when for example a "tweet" needs to verify a purchase, so we need to force the user to login with Envato to do that.
-                                        $all_login_methods = array();
-                                        $all_login_methods[] = $login_methods;
-                                        break;
-                                    } else {
-                                        $all_login_methods[] = $login_methods;
-                                    }
-                                }
+	                            if($this_network != $network) {
+		                            $login_methods = $message_manager->extra_get_login_methods( $network, $account_id, $message_id, $extra_ids );
+		                            if ( $login_methods && ! empty( $login_methods['account_buttons'] ) ) {
+			                            if ( isset( $login_methods['allow_others'] ) && ! $login_methods['allow_others'] ) {
+				                            // this 3rd party login method (e.g. envato) is taking over and forcing the user to login using it, rather than the current extensions login method.
+				                            // this happens when for example a "tweet" needs to verify a purchase, so we need to force the user to login with Envato to do that.
+				                            $all_login_methods   = array();
+				                            $all_login_methods[] = $login_methods;
+				                            break;
+			                            } else {
+				                            $all_login_methods[] = $login_methods;
+			                            }
+		                            }
+	                            }
                             }
                         }
                         foreach($all_login_methods as $all_login_method){

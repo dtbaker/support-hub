@@ -156,6 +156,9 @@ class SupportHub_account{
                     // merge data with existing.
                     $existing_data = $this->get('account_data');
                     if(!is_array($existing_data))$existing_data=array();
+	                foreach($existing_data as $key=>$val){
+		                if(is_numeric($key))unset($existing_data[$key]);
+	                }
                     $value = array_merge($existing_data,$value);
                 }
             }
@@ -189,6 +192,7 @@ class SupportHub_account{
     }
 
     public function save_account_data($user_data){
+	    print_r($user_data);envato_username
         $this->update('account_data',$user_data);
 
     }

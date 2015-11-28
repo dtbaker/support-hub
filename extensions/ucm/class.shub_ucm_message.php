@@ -201,6 +201,10 @@ class shub_ucm_message extends SupportHub_message{
     public function get_message_sidebar_data($product_data, $item_data){
 
         $data = parent::get_message_sidebar_data($product_data, $item_data);
+	    $data['message_details']['ucm_ticket_id'] = array(
+		    'Ticket ID',
+		    '<a href="'.$this->get_link().'" target="_blank">'.htmlspecialchars( $this->get('network_key') ).'</a>'
+	    );
         if($item_data && !empty($item_data['item'])){
             $data['message_details']['item'] = array(
                 'Item',

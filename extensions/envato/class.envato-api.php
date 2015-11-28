@@ -155,7 +155,7 @@ class envato_api_basic{
 	}
 
 	private $ch = false;
-	private $cookies = array();
+	public $cookies = array();
 	private $cookie_file = false;
 	public function curl_init($cookies = true) {
 		if ( ! function_exists( 'curl_init' ) ) {

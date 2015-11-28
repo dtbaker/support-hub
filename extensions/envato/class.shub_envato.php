@@ -343,16 +343,29 @@ class shub_envato extends SupportHub_extension {
                     if($envato_username){
                         foreach($envato_username as $envato_username1) {
                             if (!empty($envato_username1)) {
+	                            ?>
+	                            <div class="shub_debug">
+		                            Envato Username for <?php echo $shub_user_id;?>: <?php echo htmlspecialchars($envato_username1);?>
+	                            </div>
+	                            <?php
                                 // todo - display multiple.
                                 $details['user']['username'] = $envato_username1;
                                 $details['user']['url'] = 'http://themeforest.net/user/' . $envato_username1;
                                 // see if we can find any other matching user accounts for this username
                                 $other_users = new SupportHubUser_Envato();
-                                $other_users->load_by('user_username',$envato_username1);
-                                if($other_users->get('shub_user_id') && !in_array($other_users->get('shub_user_id'),$user_hints['shub_user_id'])){
-                                    // pass these back to the calling method so we can get the correct values.
-                                    $details['user_ids'][$other_users->get('shub_user_id')] = $other_users->get('shub_user_id');
-                                }
+                                $result = $other_users->load_by('user_username',$envato_username1);
+	                            if(is_array($result) && count($result) > 1){
+		                            // got more than 1 match back from this user request
+		                            foreach($result as $key=>$val){
+			                            if(!in_array($val['shub_user_id'],$user_hints['shub_user_id'])){
+				                            // pass these back to the calling method so we can get the correct values.
+				                            $details['user_ids'][$val['shub_user_id']] = $val['shub_user_id'];
+			                            }
+		                            }
+	                            }else if($other_users->get('shub_user_id') && !in_array($other_users->get('shub_user_id'),$user_hints['shub_user_id'])){
+			                            // pass these back to the calling method so we can get the correct values.
+			                            $details['user_ids'][$other_users->get('shub_user_id')] = $other_users->get('shub_user_id');
+	                            }
                             }
                         }
                     }
