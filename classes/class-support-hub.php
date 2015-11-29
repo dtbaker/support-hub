@@ -220,20 +220,11 @@ class SupportHub {
                             // we hide the element and provide an 'undo' placeholder in its place.
                             // if it's a row we just hide it, if it's a div we slide it up nicely.
                             ?>
-                            var element = jQuery('.shub_extension_message[data-message-id=<?php echo (int)$_REQUEST['shub_message_id']; ?>]');
-                            var element_action = element.prev('.shub_extension_message_action').first();
-                            element_action.find('.action_content').html('Message Moved to Inbox. <a href="#" class="shub_message_action" data-action="set-answered" data-post="<?php echo esc_attr(json_encode(array(
-                                'network' => $_REQUEST['network'],
-                                'shub_message_id' => (int)$_REQUEST['shub_message_id'],
-                            )));?>">Undo</a>');
-                            if(element.is('div')){
-                            element.slideUp(function(){element.remove();});
-                            element_action.slideDown();
-                            }else{
-                            element.remove();
-                            element_action.show();
-                            }
-                            element_action.data('undo-type','unanswered');
+	                        if(typeof ucm != 'undefined' && typeof ucm.social != 'undefined'){
+	                            ucm.social.message_status_changed( '<?php echo esc_js($_REQUEST['network']);?>', <?php echo (int)$_REQUEST['shub_message_id'];?>,  <?php echo _shub_MESSAGE_STATUS_UNANSWERED;?>);
+	                        }else{
+	                            alert('Failed to load scripts correctly');
+	                        }
                             <?php
                         }
                     }

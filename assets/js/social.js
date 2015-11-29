@@ -193,11 +193,14 @@ ucm.social = {
                                     var element_action = element.prev('.shub_extension_message_action').first();
                                     element_action.find('.action_content').html('Sending message...');
                                     t.queue_watch.add(r.shub_outbox_id, element_action, function(){
-                                        // successfully sent
-                                        element_action.find('.action_content').html('Message Sent!');
+                                        // successfully sent.
+                                        // fire off the 'change_status' callback so we get a nice 'View' callback.
+                                        t.message_status_changed(post_data.network, post_data['message-id'], 'sent');
+                                        //element_action.find('.action_content').html('Message Sent!');
                                     }, function(){
                                         // failed to send
-                                        element_action.find('.action_content').html('Failed to send message. Please check logs.');
+                                        t.message_status_changed(post_data.network, post_data['message-id'], 'error');
+                                        //element_action.find('.action_content').html('Failed to send message. Please check logs.');
                                     });
                                     if(element.is('div')){
                                         element.slideUp();
@@ -522,25 +525,44 @@ ucm.social = {
         var element_action = element.prev('.shub_extension_message_action').first();
         //var json = {'network': network, 'shub_message_id': message_id};
         //'<a href="#" class="shub_message_action" data-action="set-unanswered">Undo</a>');
-        element_action.find('.action_content').html('Message Archived.')
+        var message_view = 'View Message';
+        var data_action = '';
+        var message_text = '';
+        switch(message_status){
+            case 'sent':
+                message_text = 'Message Sent.';
+                break;
+            case 'error':
+                message_text = 'Failed to send message. Please check logs.';
+                break;
+            case 0: // message status chagned to unanswered (inbox)
+                data_action = 'set-answered';
+                message_text = 'Message Moved to Inbox.';
+                break;
+            case 1: // message status changed to answered (archived)
+                data_action = 'set-unanswered';
+                message_text = 'Message Archived.';
+                break;
+        }
+        element_action.find('.action_content').text(message_text)
             .append(
-                jQuery('<a/>', {
+                data_action ? jQuery('<a/>', {
                     'class': 'shub_message_action',
                     'href': '#',
-                    'data-action': 'set-unanswered'
+                    'data-action': data_action
                 })
                     .data('post',{
                         network: network,
                         shub_message_id: message_id
                     })
-                    .text('Undo')
+                    .text('Undo') : jQuery('<span/>')
             )
             .append(
                 jQuery('<a/>', {
                     'class': 'shub_message_view',
                     'href': '#'
                 })
-                    .text('View Message')
+                    .text(message_view)
                     .click(function(){
                         // load the message again from the server into the empty message container.
                         var post_data = ucm.social.build_post_data('load-message');
@@ -557,7 +579,7 @@ ucm.social = {
                             },
                             complete: function(){
                                 if(element.is('div')){
-                                    element.show();
+                                    element.slideDown();
                                     element_action.slideUp();
                                 }else{
                                     element.show();
@@ -575,7 +597,6 @@ ucm.social = {
             element.html('');
             element_action.show();
         }
-        element_action.data('undo-type','answered');
     }
 
 };
