@@ -718,11 +718,11 @@ class SupportHub_message{
                         <button data-post="<?php echo esc_attr(json_encode(array(
                             'action' => "support_hub_resend_outbox_message",
                             'shub_outbox_id' => $comment['shub_outbox_id'],
-                        ))); ?>" class="btn button shub_message_action_button"><?php _e('Re-Send'); ?></button>
+                        ))); ?>" class="btn button shub_message_action_button shub_button_loading"><?php _e('Re-Send'); ?></button>
                         <button data-post="<?php echo esc_attr(json_encode(array(
                             'action' => "support_hub_delete_outbox_message",
                             'shub_outbox_id' => $comment['shub_outbox_id'],
-                        ))); ?>" class="btn button shub_message_action_button"><?php _e('Delete Message'); ?></button>
+                        ))); ?>" class="btn button shub_message_action_button shub_button_loading"><?php _e('Delete Message'); ?></button>
                     <?php } ?>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 ucm = typeof ucm == 'undefined' ? {} : ucm;
 ucm.social = {
 
+    current_shub_message_id: 0,
     modal_url: '',
     init: function(){
         var t = this;
@@ -101,6 +102,13 @@ ucm.social = {
 
             a.height(a.prop('scrollHeight') + 10);
         }).delegate('.shub_message_action_button','click',function(){
+            if(jQuery(this).hasClass('shub_button_loading')){
+                // we show some progress indicator
+                var loading_button = dtbaker_loading_button(this);
+                if(!loading_button){
+                    return false;
+                }
+            }
             var pt = jQuery(this).parents('.shub_message_actions').first();
             var post_data = {
                 action: 'support_hub_message-actions',
@@ -181,7 +189,20 @@ ucm.social = {
                         }else if(r && typeof r.shub_outbox_id != 'undefined' && r.shub_outbox_id){
                             // successfully queued the message reply for sending.
                             // slide up this window and show a "queued" message, similar to archiving a message.
-                            // this is for when we are in "inline" view and not when the message has been opened in a popup.
+
+                            // we fire off the 'change message' status change.
+                            t.message_status_changed(post_data.network, post_data['message-id'], 'queued');
+                            t.queue_watch.add(r.shub_outbox_id, false, function(){
+                                // successfully sent.
+                                // fire off the 'change_status' callback so we get a nice 'View' callback.
+                                t.message_status_changed(post_data.network, post_data['message-id'], 'sent');
+                                //element_action.find('.action_content').html('Message Sent!');
+                            }, function(){
+                                // failed to send
+                                t.message_status_changed(post_data.network, post_data['message-id'], 'error');
+                                //element_action.find('.action_content').html('Failed to send message. Please check logs.');
+                            });
+                            return;
 
                             // work out if we are in a popup.
                             var test = jQuery(pt).parents('.shub_extension_message').first();
@@ -381,6 +402,9 @@ ucm.social = {
         for(var i in data){
             if(data.hasOwnProperty(i) && i != 'modaltitle'){
                 url += '&' + i + '=' + data[i];
+                if(i == 'message_id'){
+                    ucm.social.current_shub_message_id = data[i];
+                }
             }
         }
         url += '&width=' + Math.min(800,(jQuery(window).width()-400));
@@ -390,6 +414,8 @@ ucm.social = {
 
     queue_watch: {
         queue: [],
+        last_queue_length:0,
+        last_queue_length_same_count:0,
         add: function(shub_outbox_id, element, success_callback, fail_callback){
             this.queue.push(
                 {
@@ -399,6 +425,8 @@ ucm.social = {
                     fail_callback: fail_callback
                 }
             );
+            this.last_queue_length = 0;
+            this.last_queue_length_same_count = 1;
             var menu_count = jQuery('#shub_menu_outbox_count');
             if(menu_count.get(0)){
                 var new_count = parseInt(menu_count.data('count')) + 1;
@@ -422,8 +450,6 @@ ucm.social = {
                 data: post_data,
                 dataType: 'json',
                 success: function(r){
-
-
                     for(var x = 0; x < t.queue.length; x++){
                         if(typeof t.queue[x] != 'undefined') {
                             // find this shub_outbox_id in the queue response from server.
@@ -473,12 +499,18 @@ ucm.social = {
                         }
                     }
                     jQuery('#shub_menu_outbox_count').text(queue_length); // (t.queue.length); //.parents('li').first().show();
+                    if(queue_length == t.last_queue_length){
+                        t.last_queue_length_same_count++;
+                    }else{
+                        t.last_queue_length = queue_length;
+                        t.last_queue_length_same_count=1;
+                    }
 
                     t.watching = false;
                     if(has_pending) {
                         setTimeout(function () {
                             t.watch();
-                        }, 2000);
+                        }, t.last_queue_length_same_count * 1000);
                     }
                 },
                 error: function(){
@@ -528,7 +560,13 @@ ucm.social = {
         var message_view = 'View Message';
         var data_action = '';
         var message_text = '';
+        var allow_undo = true, allow_view = true, allow_related = true;
         switch(message_status){
+            case 'queued':
+                message_text = 'Sending message... Please wait...';
+                allow_undo = allow_view = allow_related = false;
+                //support_hub.layout_type...
+                break;
             case 'sent':
                 message_text = 'Message Sent.';
                 break;
@@ -544,29 +582,37 @@ ucm.social = {
                 message_text = 'Message Archived.';
                 break;
         }
-        element_action.find('.action_content').text(message_text)
-            .append(
-                data_action ? jQuery('<a/>', {
-                    'class': 'shub_message_action',
-                    'href': '#',
-                    'data-action': data_action
-                })
-                    .data('post',{
-                        network: network,
-                        shub_message_id: message_id
+        var $action_content = element_action.find('.action_content');
+        $action_content.text(message_text);
+        if(allow_undo) {
+            $action_content.append(
+                data_action
+                    ?
+                    jQuery('<a/>', {
+                        'class': 'shub_message_action',
+                        'href': '#',
+                        'data-action': data_action
                     })
-                    .text('Undo') : jQuery('<span/>')
-            )
-            .append(
+                        .data('post', {
+                            network: network,
+                            shub_message_id: message_id
+                        })
+                        .text('Undo')
+                    :
+                    jQuery('<span/>')
+            );
+        }
+        if(allow_view) {
+            $action_content.append(
                 jQuery('<a/>', {
                     'class': 'shub_message_view',
                     'href': '#'
                 })
                     .text(message_view)
-                    .click(function(){
+                    .click(function () {
                         // load the message again from the server into the empty message container.
                         var post_data = ucm.social.build_post_data('load-message');
-                        post_data['layout_type'] = element.is('div') ? 'continuous' : 'table';
+                        post_data['layout_type'] = support_hub.layout_type; //element.is('div') ? 'continuous' : 'table';
                         post_data['network'] = network;
                         post_data['message_id'] = message_id;
                         jQuery.ajax({
@@ -574,14 +620,14 @@ ucm.social = {
                             method: 'POST',
                             data: post_data,
                             dataType: 'html',
-                            success: function(r){
+                            success: function (r) {
                                 element.replaceWith(r);
                             },
-                            complete: function(){
-                                if(element.is('div')){
+                            complete: function () {
+                                if (element.is('div')) {
                                     element.slideDown();
                                     element_action.slideUp();
-                                }else{
+                                } else {
                                     element.show();
                                     element_action.hide();
                                 }
@@ -590,6 +636,62 @@ ucm.social = {
                         return false;
                     })
             );
+        }
+        if(allow_related) {
+            // build up a list of other related messages to display
+            // the idea is "You just replied to this message! Great! Here's some others from this same user."
+            var post_data = ucm.social.build_post_data('load-related-messages');
+            post_data['network'] = network;
+            post_data['shub_message_id'] = message_id;
+            jQuery.ajax({
+                url: ajaxurl,
+                method: 'POST',
+                data: post_data,
+                dataType: 'json',
+                success: function (r) {
+                    // find out how many are inbox/archived.
+                    var messages_inbox = [], messages_archived = [];
+                    for(var i in r){
+                        if(r.hasOwnProperty(i) && typeof r[i].message_status != 'undefined' && typeof r[i].full_link != 'undefined'){
+                            switch(parseInt(r[i].message_status)){
+                                case 1: // _shub_MESSAGE_STATUS_ANSWERED
+                                    messages_archived.push(r[i]);
+                                    break;
+                                case 0: // _shub_MESSAGE_STATUS_UNANSWERED
+                                    messages_inbox.push(r[i]);
+                                    break;
+                            }
+                        }
+                    }
+                    if(messages_inbox.length > 0){
+                        var $related = jQuery('<div class="shub_status_related_messages">' + messages_inbox.length + ' Other Inbox Messages: </div>').appendTo($action_content);
+                        var $related_list = jQuery('<ul/>').appendTo($related);
+                        $related_list.append(jQuery.map(messages_inbox, function(tt){
+                            if(tt && typeof tt.full_link != 'undefined') {
+                                return jQuery('<li/>',{'data-message-id': tt.message_id,class:'shub_related_message_small'})
+                                    .append('<span/>',{class:'other_message_time', text: tt.date_time})
+                                    .append( jQuery('<span/>',{class:'other_message_status'}).append(tt.message_status_html) )
+                                    .append( jQuery('<span/>',{class:'other_message_network'}).append(tt.icon) )
+                                    .append(tt.full_link);
+                            }
+                        }));
+                    }
+                    if(messages_archived.length > 0){
+                        var $related = jQuery('<div class="shub_status_related_messages">' + messages_archived.length + ' Archived Messages: </div>').appendTo($action_content);
+                        var $related_list = jQuery('<ul/>').appendTo($related);
+                        $related_list.append(jQuery.map(messages_archived, function(tt){
+                            if(tt && typeof tt.full_link != 'undefined') {
+                                return jQuery('<li/>',{'data-message-id': tt.message_id,class:'shub_related_message_small'})
+                                    .append('<span/>',{class:'other_message_time', text: tt.date_time})
+                                    .append( jQuery('<span/>',{class:'other_message_status'}).append(tt.message_status_html) )
+                                    .append( jQuery('<span/>',{class:'other_message_network'}).append(tt.icon) )
+                                    .append(tt.full_link);
+                            }
+                        }));
+                    }
+                }
+            });
+        }
         if(element.is('div')){
             element.slideUp(function(){element.html('');});
             element_action.slideDown();

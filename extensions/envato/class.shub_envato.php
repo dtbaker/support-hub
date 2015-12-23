@@ -343,11 +343,14 @@ class shub_envato extends SupportHub_extension {
                     if($envato_username){
                         foreach($envato_username as $envato_username1) {
                             if (!empty($envato_username1)) {
-	                            ?>
-	                            <div class="shub_debug">
-		                            Envato Username for <?php echo $shub_user_id;?>: <?php echo htmlspecialchars($envato_username1);?>
-	                            </div>
-	                            <?php
+	                            if(SUPPORT_HUB_DEBUG && !defined('DOING_AJAX')) {
+		                            ?>
+		                            <div class="shub_debug">
+			                            Envato Username for <?php echo $shub_user_id; ?>
+			                            : <?php echo htmlspecialchars( $envato_username1 ); ?>
+		                            </div>
+		                            <?php
+	                            }
                                 // todo - display multiple.
                                 $details['user']['username'] = $envato_username1;
                                 $details['user']['url'] = 'http://themeforest.net/user/' . $envato_username1;

@@ -54,6 +54,7 @@ class SupportHub {
 		add_action( 'wp_ajax_support_hub_delete_outbox_message' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_next-continuous-message' , array( $this, 'admin_ajax' ) );
 		add_action( 'wp_ajax_support_hub_load-message' , array( $this, 'admin_ajax' ) );
+		add_action( 'wp_ajax_support_hub_load-related-messages' , array( $this, 'admin_ajax' ) );
 
         add_filter('set-screen-option', array( $this, 'set_screen_options' ), 10, 3);
 
@@ -180,6 +181,42 @@ class SupportHub {
                             echo 'No item found';
                         }
                     }
+
+                    break;
+                case 'load-related-messages':
+	                if (!headers_sent()) header('Content-type: text/javascript');
+                    if(!empty($_REQUEST['network']) && !empty($_REQUEST['shub_message_id'])){
+	                    if(isset($this->message_managers[$_REQUEST['network']])){
+		                    $shub_extension_message = $this->message_managers[$_REQUEST['network']]->get_message(false, false, $_REQUEST['shub_message_id']);
+		                    if ($shub_extension_message->get('shub_message_id') == $_REQUEST['shub_message_id']) {
+			                    $data = $shub_extension_message->get_message_sidebar_data(array(), array());
+			                    $result = array();
+			                    // copied from class-support-hub-message.php 
+			                    if(!empty($data['other_messages']) || !empty($data['other_related_messages'])) {
+				                    // sort messages by time.
+				                    uasort( $data['other_messages'], function ( $a, $b ) {
+					                    return $a['time'] < $b['time'];
+				                    } );
+				                    $count = !empty( $data['other_messages'] ) ? count( $data['other_messages'] ) : 0;
+				                    $count += !empty( $data['other_related_messages'] ) ? count( $data['other_related_messages'] ) : 0;
+				                    if(!empty($data['other_messages'])) {
+					                    foreach ( $data['other_messages'] as $other_message ) {
+						                    $other_message['date_time'] = shub_pretty_date( $other_message['time'] );
+						                    $other_message['full_link'] = '<a href="'. esc_attr( $other_message['link'] ) .'"
+			                                       target="_blank" class="shub_modal"
+			                                       data-network="'. esc_attr( $other_message['network'] ) .'"
+			                                       data-message_id="'. (int) $other_message['message_id'] .'"
+			                                       data-message_comment_id="'. (isset( $other_message['message_comment_id'] ) ? (int) $other_message['message_comment_id'] : '') .'"
+			                                       data-modaltitle="'. esc_attr( $other_message['summary'] ) .'">'. esc_html( $other_message['summary'] ) .'</a>';
+						                    $result[] = $other_message;
+					                    }
+				                    }
+			                    }
+			                    echo json_encode($result);
+		                    }
+	                    }
+                    }
+					exit;
 
                     break;
                 case 'set-answered':
@@ -527,6 +564,7 @@ class SupportHub {
 
 		wp_localize_script( 'support-hub', 'support_hub', array(
 			'wp_nonce' => wp_create_nonce('support-hub-nonce'),
+			'layout_type' => SupportHub::getInstance()->get_current_layout_type(),
 		) );
 
     	wp_enqueue_script( 'support-hub' );
@@ -961,12 +999,14 @@ class SupportHub {
         }
 
 		$user_ids = count($user_hints['shub_user_id']);
-		?>
-		<div class="shub_debug">
-			Starting User Hints: <br/>
-			<?php print_r($user_hints); ?>
-		</div>
-		<?php
+		if(SUPPORT_HUB_DEBUG && !defined('DOING_AJAX')) {
+			?>
+			<div class="shub_debug">
+				Starting User Hints: <br/>
+				<?php print_r( $user_hints ); ?>
+			</div>
+			<?php
+		}
 
         $possible_new_user_ids = array();
         do {
@@ -1004,12 +1044,14 @@ class SupportHub {
         }while(count($possible_new_user_ids));
 
 		if(count($user_hints['shub_user_id']) != $user_ids) {
-			?>
-			<div class="shub_debug">
-				Possible New User Ids: <br/>
-				<?php print_r( $user_hints ); ?>
-			</div>
-			<?php
+			if(SUPPORT_HUB_DEBUG && !defined('DOING_AJAX')) {
+				?>
+				<div class="shub_debug">
+					Possible New User Ids: <br/>
+					<?php print_r( $user_hints ); ?>
+				</div>
+				<?php
+			}
 		}
 
 		// pull out the 'extra data' linked to this ticket
@@ -1595,6 +1637,15 @@ EOT;
 			}
 		}
 		return false;
+	}
+
+	public function get_current_layout_type(){
+		$available_types = array('continuous','inline','table');
+		$layout_type = isset($_REQUEST['layout_type']) ? $_REQUEST['layout_type'] : 'continuous';
+		if(!in_array($layout_type,$available_types)){
+			$layout_type = 'continuous';
+		}
+		return $layout_type;
 	}
 
 

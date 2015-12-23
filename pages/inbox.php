@@ -15,7 +15,8 @@
         }
     }
 
-    $layout_type = isset($_REQUEST['layout_type']) ? $_REQUEST['layout_type'] : 'continuous';
+
+    $layout_type = SupportHub::getInstance()->get_current_layout_type();
 
 	// grab a mysql resource from all available social plugins (hardcoded for now - todo: hook)
 	$search = isset($_REQUEST['search']) && is_array($_REQUEST['search']) ? $_REQUEST['search'] : array();
@@ -32,7 +33,7 @@
     }else{
         $order = array(
             'orderby' => 'shub_column_time',
-            'order' => 'asc',
+            'order' => 'desc',
         );
     }
 
