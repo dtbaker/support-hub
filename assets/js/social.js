@@ -564,7 +564,7 @@ ucm.social = {
         switch(message_status){
             case 'queued':
                 message_text = 'Sending message... Please wait...';
-                allow_undo = allow_view = allow_related = false;
+                allow_undo = allow_view = false;
                 //support_hub.layout_type...
                 break;
             case 'sent':
@@ -582,7 +582,10 @@ ucm.social = {
                 message_text = 'Message Archived.';
                 break;
         }
-        var $action_content = element_action.find('.action_content');
+        var $action_content_wrapper = element_action.find('.action_content'), $action_content = $action_content_wrapper.find('.action_content_message');
+        if(!$action_content.length){
+            $action_content = jQuery('<div/>',{class:'action_content_message'}).appendTo($action_content_wrapper);
+        }
         $action_content.text(message_text);
         if(allow_undo) {
             $action_content.append(
@@ -604,6 +607,17 @@ ucm.social = {
         }
         if(allow_view) {
             $action_content.append(
+                jQuery('<a/>', {
+                    'class': 'shub_modal shub_message_view',
+                    'href': '#',
+                    text: message_view,
+                    'data-network': network,
+                    'data-message_id': message_id,
+                    'data-message_comment_id': 0,
+                    'data-modaltitle': message_view
+                })
+            );
+            /*$action_content.append(
                 jQuery('<a/>', {
                     'class': 'shub_message_view',
                     'href': '#'
@@ -635,9 +649,12 @@ ucm.social = {
                         });
                         return false;
                     })
-            );
+            );*/
         }
         if(allow_related) {
+            var $related_wrapper= jQuery('<div/>',{class:'action_content_related'})
+                .appendTo($action_content_wrapper);
+
             // build up a list of other related messages to display
             // the idea is "You just replied to this message! Great! Here's some others from this same user."
             var post_data = ucm.social.build_post_data('load-related-messages');
@@ -663,31 +680,45 @@ ucm.social = {
                             }
                         }
                     }
+                    if(messages_inbox.length > 0 || messages_archived.length > 0){
+                        var $related_buttons = jQuery('<span/>',{class:'other_related_messages_buttons',text:'Other Messages:'})
+                            .prependTo($related_wrapper);
+                    }
                     if(messages_inbox.length > 0){
-                        var $related = jQuery('<div class="shub_status_related_messages">' + messages_inbox.length + ' Other Inbox Messages: </div>').appendTo($action_content);
-                        var $related_list = jQuery('<ul/>').appendTo($related);
-                        $related_list.append(jQuery.map(messages_inbox, function(tt){
+                        //var $related = jQuery('<div class="shub_status_related_messages">' + messages_inbox.length + ' Other Inbox Messages: </div>').appendTo($related_wrapper);
+                        var $related_inbox_messages = jQuery('<ul/>',{class:'related_messages'}).appendTo($related_wrapper)
+                            .append(jQuery.map(messages_inbox, function(tt){
                             if(tt && typeof tt.full_link != 'undefined') {
                                 return jQuery('<li/>',{'data-message-id': tt.message_id,class:'shub_related_message_small'})
-                                    .append('<span/>',{class:'other_message_time', text: tt.date_time})
-                                    .append( jQuery('<span/>',{class:'other_message_status'}).append(tt.message_status_html) )
+                                    .append( jQuery('<span/>',{class:'other_message_time', text: tt.date_time}) )
+                                    //.append( jQuery('<span/>',{class:'other_message_status'}).append(tt.message_status_html) )
                                     .append( jQuery('<span/>',{class:'other_message_network'}).append(tt.icon) )
                                     .append(tt.full_link);
                             }
                         }));
+                        jQuery('<a/>',{href:'#',text:messages_inbox.length + ' inbox'}).click(function(e){
+                            e.preventDefault();
+                            $related_inbox_messages.toggleClass('related_shown');
+                            return false;
+                        }).appendTo($related_buttons);
                     }
                     if(messages_archived.length > 0){
-                        var $related = jQuery('<div class="shub_status_related_messages">' + messages_archived.length + ' Archived Messages: </div>').appendTo($action_content);
-                        var $related_list = jQuery('<ul/>').appendTo($related);
-                        $related_list.append(jQuery.map(messages_archived, function(tt){
+                        //var $related = jQuery('<div class="shub_status_related_messages">' + messages_archived.length + ' Archived Messages: </div>').appendTo($related_wrapper);
+                        var $related_archived_messages = jQuery('<ul/>',{class:'related_messages'}).appendTo($related_wrapper)
+                            .append(jQuery.map(messages_archived, function(tt){
                             if(tt && typeof tt.full_link != 'undefined') {
                                 return jQuery('<li/>',{'data-message-id': tt.message_id,class:'shub_related_message_small'})
-                                    .append('<span/>',{class:'other_message_time', text: tt.date_time})
-                                    .append( jQuery('<span/>',{class:'other_message_status'}).append(tt.message_status_html) )
+                                    .append( jQuery('<span/>',{class:'other_message_time', text: tt.date_time}) )
+                                    //.append( jQuery('<span/>',{class:'other_message_status'}).append(tt.message_status_html) )
                                     .append( jQuery('<span/>',{class:'other_message_network'}).append(tt.icon) )
                                     .append(tt.full_link);
                             }
                         }));
+                        jQuery('<a/>',{href:'#',text:messages_archived.length + ' archived'}).click(function(e){
+                            e.preventDefault();
+                            $related_archived_messages.toggleClass('related_shown');
+                            return false;
+                        }).appendTo($related_buttons);
                     }
                 }
             });
