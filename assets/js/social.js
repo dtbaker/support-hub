@@ -651,7 +651,7 @@ ucm.social = {
                     })
             );*/
         }
-        if(allow_related) {
+        if(allow_related && !$action_content_wrapper.find('.action_content_related').length) {
             var $related_wrapper= jQuery('<div/>',{class:'action_content_related'})
                 .appendTo($action_content_wrapper);
 
