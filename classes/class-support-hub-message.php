@@ -546,7 +546,7 @@ class SupportHub_message{
 	                        // sort messages by time.
 	                        uasort($data['other_messages'], function($a,$b){
 		                        // sort by unanswered status first and then mesage time.
-		                        return $a['message_status'] == _shub_MESSAGE_STATUS_UNANSWERED ? -1 : $a['time'] < $b['time'];
+		                        return ($a['message_status'] == _shub_MESSAGE_STATUS_UNANSWERED || $b['message_status'] == _shub_MESSAGE_STATUS_UNANSWERED) ? -1 : $a['time'] < $b['time'];
 	                        });
 	                        $count = !empty($data['other_messages']) ? count($data['other_messages']) : 0;
 	                        $count += !empty($data['other_related_messages']) ? count($data['other_related_messages']) : 0;
