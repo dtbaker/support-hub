@@ -267,6 +267,7 @@ ucm.social = {
                 if(typeof loading_button != 'undefined'){
                     loading_button.done();
                 }
+                ucm.social.set_inline_view();
             });
 
             return false;
@@ -496,11 +497,12 @@ ucm.social = {
         var message_view = 'View Message';
         var data_action = '';
         var message_text = '';
-        var allow_undo = true, allow_view = true, allow_related = true;
+        var allow_undo = true, allow_view = true, allow_related = true, allow_scroll = false;
         switch(message_status){
             case 'queued':
                 message_text = 'Sending message... Please wait...';
                 allow_undo = allow_view = false;
+                allow_scroll = true;
                 //support_hub.layout_type...
                 break;
             case 'sent':
@@ -522,9 +524,6 @@ ucm.social = {
         if(!$action_content.length){
             $action_content = jQuery('<div/>',{class:'action_content_message'}).appendTo($action_content_wrapper);
         }
-        var pos = element_action.position();
-
-        if(jQuery(window).scrollTop()>pos.top-10)jQuery(window).scrollTop(pos.top-10);
 
 
         // todo: find all instances of linked messages on the screen and update their status.
@@ -667,11 +666,25 @@ ucm.social = {
             });
         }
         if(element.is('div')){
-            element.slideUp(function(){element.html('');});
+            element.slideUp(function(){
+                element.html('');
+                if(allow_scroll){
+                    var pos = element_action.position();
+                    if(pos) {
+                        if (jQuery(window).scrollTop() > pos.top - 10)jQuery(window).scrollTop(pos.top - 10);
+                    }
+                }
+            });
             element_action.slideDown();
         }else{
             element.html('');
             element_action.show();
+            if(allow_scroll){
+                var pos = element_action.position();
+                if(pos) {
+                    if (jQuery(window).scrollTop() > pos.top - 10)jQuery(window).scrollTop(pos.top - 10);
+                }
+            }
         }
     }
 
