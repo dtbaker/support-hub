@@ -186,8 +186,6 @@ ucm.social = {
                             // successfully queued the message reply for sending.
                             // slide up this window and show a "queued" message, similar to archiving a message.
 
-                            ucm.social.close_modal();
-
                             // we fire off the 'change message' status change.
                             t.message_status_changed(post_data.network, post_data['message-id'], 'queued');
                             t.queue_watch.add(r.shub_outbox_id, false, function(){
@@ -522,6 +520,10 @@ ucm.social = {
         }
         var pos = element_action.position();
         if(jQuery(window).scrollTop()>pos.top-10)jQuery(window).scrollTop(pos.top-10);
+
+        ucm.social.close_modal();
+
+        // todo: find all instances of linked messages on the screen and update their status.
 
         $action_content.text(message_text);
         if(allow_undo) {
