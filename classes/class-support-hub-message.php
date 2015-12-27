@@ -545,7 +545,8 @@ class SupportHub_message{
                         if(!empty($data['other_messages']) || !empty($data['other_related_messages'])) {
 	                        // sort messages by time.
 	                        uasort($data['other_messages'], function($a,$b){
-		                        return $a['time'] < $b['time'];
+		                        // sort by status first and then mesage time.
+		                        return $a['message_status'] < $b['message_status'] ? true : $a['time'] < $b['time'];
 	                        });
 	                        $count = !empty($data['other_messages']) ? count($data['other_messages']) : 0;
 	                        $count += !empty($data['other_related_messages']) ? count($data['other_related_messages']) : 0;
