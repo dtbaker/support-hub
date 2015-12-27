@@ -633,7 +633,7 @@ ucm.social = {
                             if(tt && typeof tt.full_link != 'undefined') {
                                 return jQuery('<li/>',{'data-message-id': tt.message_id,class:'shub_related_message_small'})
                                     .append( jQuery('<span/>',{class:'other_message_time', text: tt.date_time}) )
-                                    //.append( jQuery('<span/>',{class:'other_message_status'}).append(tt.message_status_html) )
+                                    .append( jQuery('<span/>',{class:'other_message_status'}).append(tt.message_status_html) )
                                     .append( jQuery('<span/>',{class:'other_message_network'}).append(tt.icon) )
                                     .append(tt.full_link);
                             }
@@ -651,7 +651,7 @@ ucm.social = {
                             if(tt && typeof tt.full_link != 'undefined') {
                                 return jQuery('<li/>',{'data-message-id': tt.message_id,class:'shub_related_message_small'})
                                     .append( jQuery('<span/>',{class:'other_message_time', text: tt.date_time}) )
-                                    //.append( jQuery('<span/>',{class:'other_message_status'}).append(tt.message_status_html) )
+                                    .append( jQuery('<span/>',{class:'other_message_status'}).append(tt.message_status_html) )
                                     .append( jQuery('<span/>',{class:'other_message_network'}).append(tt.icon) )
                                     .append(tt.full_link);
                             }

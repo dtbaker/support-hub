@@ -339,6 +339,11 @@ class SupportHub_message{
         $data = SupportHub::getInstance()->get_message_user_summary($user_hints, $this->network, $this);
 
         if(!isset($data['message_details']))$data['message_details']=array();
+
+        $data['message_details']['status'] = array(
+            'Status',
+            $this->get_message_status_html(),
+        );
         $data['message_details']['subject'] = array(
             'Subject',
             '<a href="'.$this->get_link().'" target="_blank">'.htmlspecialchars( $this->get('title') ).'</a>'
@@ -353,6 +358,22 @@ class SupportHub_message{
         );
         return $data;
     }
+	public function get_message_status_html($status=false){
+		if($status)$status = $this->get('message_status');
+		switch ( $status ) {
+			case _shub_MESSAGE_STATUS_ANSWERED:
+				return '<span class="message_status_archived">Archived</span>';
+				break;
+			case _shub_MESSAGE_STATUS_UNANSWERED:
+				return '<span class="message_status_inbox">Inbox</span>';
+				break;
+			case _shub_MESSAGE_STATUS_HIDDEN:
+				return '<span class="message_status_hidden">Hidden</span>';
+				break;
+			default:
+				return 'UNKNOWN?';
+		}
+	}
     public function get_user_hints($user_hints){
         $user_hints['shub_user_id'][] = $this->get('shub_user_id');
         /*
@@ -572,19 +593,7 @@ class SupportHub_message{
 				                                    class="other_message_time"><?php echo shub_pretty_date( $other_message['time'] ); ?></span>
                                             <span class="other_message_status"><?php
 	                                            if ( isset( $other_message['message_status'] ) ) {
-		                                            switch ( $other_message['message_status'] ) {
-			                                            case _shub_MESSAGE_STATUS_ANSWERED:
-				                                            echo '<span class="message_status_archived">Archived</span>';
-				                                            break;
-			                                            case _shub_MESSAGE_STATUS_UNANSWERED:
-				                                            echo '<span class="message_status_inbox">Inbox</span>';
-				                                            break;
-			                                            case _shub_MESSAGE_STATUS_HIDDEN:
-				                                            echo '<span class="message_status_hidden">Hidden</span>';
-				                                            break;
-			                                            default:
-				                                            echo 'UNKNOWN?';
-		                                            }
+		                                            echo $this->get_message_status_html($other_message['message_status']);
 	                                            }
 	                                            ?>
                                             </span>
@@ -597,7 +606,7 @@ class SupportHub_message{
 			                                       data-network="<?php echo esc_attr( $other_message['network'] ); ?>"
 			                                       data-message_id="<?php echo (int) $other_message['message_id']; ?>"
 			                                       data-message_comment_id="<?php echo isset( $other_message['message_comment_id'] ) ? (int) $other_message['message_comment_id'] : ''; ?>"
-			                                       data-modaltitle="<?php echo esc_attr( $other_message['summary'] ); ?>"><?php echo esc_html( $other_message['summary'] ); ?></a>
+			                                       data-modaltitle="<?php echo esc_attr( $other_message['title'] ); ?>"><?php echo esc_html( $other_message['title'] ); ?></a>
 		                                    </li>
 		                                    <?php
 	                                    }

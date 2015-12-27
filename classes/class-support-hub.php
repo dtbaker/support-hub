@@ -204,12 +204,13 @@ class SupportHub {
 				                    if(!empty($data['other_messages'])) {
 					                    foreach ( $data['other_messages'] as $other_message ) {
 						                    $other_message['date_time'] = shub_pretty_date( $other_message['time'] );
+						                    $other_message['message_status_html'] = $shub_extension_message->get_message_status_html($other_message['message_status']);
 						                    $other_message['full_link'] = '<a href="'. esc_attr( $other_message['link'] ) .'"
 			                                       target="_blank" class="shub_modal"
 			                                       data-network="'. esc_attr( $other_message['network'] ) .'"
 			                                       data-message_id="'. (int) $other_message['message_id'] .'"
 			                                       data-message_comment_id="'. (isset( $other_message['message_comment_id'] ) ? (int) $other_message['message_comment_id'] : '') .'"
-			                                       data-modaltitle="'. esc_attr( $other_message['summary'] ) .'">'. esc_html( $other_message['summary'] ) .'</a>';
+			                                       data-modaltitle="'. esc_attr( $other_message['title'] ) .'">'. esc_html( $other_message['title'] ) .'</a>';
 						                    $result[] = $other_message;
 					                    }
 				                    }
@@ -1111,6 +1112,7 @@ class SupportHub {
                                 $other_messages[$message['shub_message_id']] = array(
                                     'link' => '?page=support_hub_main&network='.$message['shub_extension'].'&message_id='.$message['shub_message_id'],
                                     'summary' => $message['title'],
+	                                'title' => $message['title'],
                                     'time' => $message['last_active'],
                                     'network' => $message['shub_extension'],
                                     'icon' => $this->message_managers[$message['shub_extension']]->get_friendly_icon(),
@@ -1126,7 +1128,7 @@ class SupportHub {
                         'shub_user_id' => $shub_user_id
                     ), 'shub_message_comment_id');*/
 
-                    $sql = "SELECT smc.*, sa.shub_extension, sm.shub_status, sm.shub_user_id AS parent_shub_user_id FROM `" . _support_hub_DB_PREFIX . "shub_message_comment` smc ";
+                    $sql = "SELECT smc.*, sm.title, sa.shub_extension, sm.shub_status, sm.shub_user_id AS parent_shub_user_id FROM `" . _support_hub_DB_PREFIX . "shub_message_comment` smc ";
                     $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_message` sm USING (shub_message_id)  ";
                     $sql .= " LEFT JOIN `" . _support_hub_DB_PREFIX . "shub_account` sa USING (shub_account_id) WHERE 1 ";
                     $sql .= " AND smc.`shub_user_id` = " . (int)$user->get('shub_user_id');
@@ -1139,6 +1141,7 @@ class SupportHub {
                             if (!isset($other_messages[$comment['shub_message_id']])) {
 	                            $other_messages[$comment['shub_message_id']] = array(
                                     'link' => '?page=support_hub_main&network='.$comment['shub_extension'].'&message_id='.$comment['shub_message_id'].'&message_comment_id='.$comment['shub_message_comment_id'],
+                                    'title' => $comment['title'],
                                     'summary' => $comment['message_text'],
                                     'time' => $comment['time'],
                                     'network' => $comment['shub_extension'],
