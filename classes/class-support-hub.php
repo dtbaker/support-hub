@@ -74,6 +74,8 @@ class SupportHub {
 
 	public function shub_init(){
 
+		define('SUPPORT_HUB_DEBUG',current_user_can( 'manage_options' ));
+
 		if ( ! wp_next_scheduled( 'support_hub_cron_job' ) ) {
 			wp_schedule_event( time(), 'minutes_5', 'support_hub_cron_job' );
 		}

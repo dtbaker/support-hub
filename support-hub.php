@@ -36,7 +36,6 @@ define('_SUPPORT_HUB_PASSWORD_FIELD_FUZZ','-password-');
 define('_DTBAKER_SUPPORT_HUB_CORE_FILE_',__FILE__);
 
 
-define('SUPPORT_HUB_DEBUG',current_user_can( 'manage_options' ));
 
 // Include core files that do all the magic
 require_once( 'classes/class-support-hub.php' );
