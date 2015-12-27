@@ -152,12 +152,8 @@ ucm.social = {
             if(message.length > 0){
                 //txt[0].disabled = true;
                 // show a loading message in place of the box..
-                var post_data = {
-                    action: 'support_hub_send-message-reply',
-                    wp_nonce: support_hub.wp_nonce,
-                    message: message,
-                    form_auth_key: ucm.form_auth_key
-                };
+                var post_data = t.build_post_data('send-message-reply');
+                post_data.message = message;
                 var button_post = jQuery(this).data('post');
                 for(var i in button_post){
                     if(button_post.hasOwnProperty(i)){
@@ -190,6 +186,8 @@ ucm.social = {
                             // successfully queued the message reply for sending.
                             // slide up this window and show a "queued" message, similar to archiving a message.
 
+                            ucm.social.close_modal();
+
                             // we fire off the 'change message' status change.
                             t.message_status_changed(post_data.network, post_data['message-id'], 'queued');
                             t.queue_watch.add(r.shub_outbox_id, false, function(){
@@ -202,70 +200,6 @@ ucm.social = {
                                 t.message_status_changed(post_data.network, post_data['message-id'], 'error');
                                 //element_action.find('.action_content').html('Failed to send message. Please check logs.');
                             });
-                            return;
-
-                            // work out if we are in a popup.
-                            var test = jQuery(pt).parents('.shub_extension_message').first();
-                            if(test.length){
-                                // we are inline. slide this up and go for it.
-
-                                (function(){
-                                    var element = jQuery(pt).parents('.shub_extension_message').first();
-                                    var element_action = element.prev('.shub_extension_message_action').first();
-                                    element_action.find('.action_content').html('Sending message...');
-                                    t.queue_watch.add(r.shub_outbox_id, element_action, function(){
-                                        // successfully sent.
-                                        // fire off the 'change_status' callback so we get a nice 'View' callback.
-                                        t.message_status_changed(post_data.network, post_data['message-id'], 'sent');
-                                        //element_action.find('.action_content').html('Message Sent!');
-                                    }, function(){
-                                        // failed to send
-                                        t.message_status_changed(post_data.network, post_data['message-id'], 'error');
-                                        //element_action.find('.action_content').html('Failed to send message. Please check logs.');
-                                    });
-                                    if(element.is('div')){
-                                        element.slideUp();
-                                        element_action.slideDown();
-                                    }else{
-                                        element.hide();
-                                        element_action.show();
-                                    }
-                                    var pos = element_action.position();
-                                    if(jQuery(window).scrollTop()>pos.top-10)jQuery(window).scrollTop(pos.top-10);
-                                })();
-                            }else{
-                                // we are in popup. have to close modal and find this message on the page to see if we can slide it up.
-                                // otherwise it will just go away with
-                                var message_row = jQuery('[data-message-id='+post_data['message-id']+'].shub_extension_message');
-                                ucm.social.close_modal();
-                                if(message_row.length){
-                                    (function(){
-                                        var element = message_row; //jQuery(pt).parents('.shub_extension_message').first();
-                                        var element_action = element.prev('.shub_extension_message_action').first();
-                                        element_action.find('.action_content').html('Sending message...');
-                                        t.queue_watch.add(r.shub_outbox_id, element_action, function(){
-                                            // successfully sent
-                                            element_action.find('.action_content').html('Message Sent!');
-                                        }, function(){
-                                            // failed to send
-                                            element_action.find('.action_content').html('Failed to send message. Please check logs.');
-                                        });
-                                        if(element.is('div')){
-                                            element.slideUp();
-                                            element_action.slideDown();
-                                        }else{
-                                            element.hide();
-                                            element_action.show();
-                                        }
-                                        var pos = element_action.position();
-                                        jQuery(window).scrollTop(pos.top-10);
-                                    })();
-                                }else{
-                                    // cant find it on the screen, must have opened a related message.
-                                    // do the queue watch anyway so we can update the outbox number
-                                    t.queue_watch.add(r.shub_outbox_id, false);
-                                }
-                            }
 
                         }else if(r && typeof r.message != 'undefined' && r.message.length > 0){
                             pt.html("Info: "+ r.message);
@@ -586,6 +520,9 @@ ucm.social = {
         if(!$action_content.length){
             $action_content = jQuery('<div/>',{class:'action_content_message'}).appendTo($action_content_wrapper);
         }
+        var pos = element_action.position();
+        if(jQuery(window).scrollTop()>pos.top-10)jQuery(window).scrollTop(pos.top-10);
+
         $action_content.text(message_text);
         if(allow_undo) {
             $action_content.append(
