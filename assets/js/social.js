@@ -485,7 +485,11 @@ ucm.social = {
     },
     message_status_changed: function(network, message_id, message_status){
 
+
+        ucm.social.close_modal();
+
         var element = jQuery('.shub_extension_message[data-message-id=' + message_id + ']');
+        if(!element.length)return;
         var element_action = element.prev('.shub_extension_message_action').first();
         //var json = {'network': network, 'shub_message_id': message_id};
         //'<a href="#" class="shub_message_action" data-action="set-unanswered">Undo</a>');
@@ -519,9 +523,9 @@ ucm.social = {
             $action_content = jQuery('<div/>',{class:'action_content_message'}).appendTo($action_content_wrapper);
         }
         var pos = element_action.position();
+
         if(jQuery(window).scrollTop()>pos.top-10)jQuery(window).scrollTop(pos.top-10);
 
-        ucm.social.close_modal();
 
         // todo: find all instances of linked messages on the screen and update their status.
 
