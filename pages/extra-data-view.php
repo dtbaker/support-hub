@@ -94,6 +94,6 @@ switch($extra->get('field_type')){
 }
 ?>
 
-	<input type="button" name="shub_close_modal" value="Close">
+	<input type="button" class="shub_close_modal" value="Close">
 
 </div>
