@@ -359,7 +359,7 @@ class SupportHub_message{
         return $data;
     }
 	public function get_message_status_html($status=false){
-		if($status)$status = $this->get('shub_status');
+		if($status===false)$status = $this->get('shub_status');
 		switch ( $status ) {
 			case _shub_MESSAGE_STATUS_ANSWERED:
 				return '<span class="message_status_archived">Archived</span>';
