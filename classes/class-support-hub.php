@@ -204,7 +204,7 @@ class SupportHub {
 				                    if(!empty($data['other_messages'])) {
 					                    foreach ( $data['other_messages'] as $other_message ) {
 						                    $other_message['date_time'] = shub_pretty_date( $other_message['time'] );
-						                    $other_message['message_status_html'] = $shub_extension_message->get_message_status_html($other_message['message_status']);
+						                    $other_message['message_status_html'] = $shub_extension_message->get_message_status_html($other_message['shub_status']);
 						                    $other_message['full_link'] = '<a href="'. esc_attr( $other_message['link'] ) .'"
 			                                       target="_blank" class="shub_modal"
 			                                       data-network="'. esc_attr( $other_message['network'] ) .'"
