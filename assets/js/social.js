@@ -15,10 +15,14 @@ ucm.social = {
             var width = jQuery(window).width();
             if(width > 782) {
                 // only show modal on desktop
-                ucm.social.open_modal(jQuery(this).attr('href'), jQuery(this).data('modaltitle'), jQuery(this).data());
+                ucm.social.open_message_modal(jQuery(this).data('modaltitle'), jQuery(this).data());
                 return false;
             }
             return true;
+        }).delegate('.shub_close_modal','click',function(e) {
+            e.preventDefault();
+            ucm.social.close_modal();
+            return false;
         }).delegate('.shub_request_extra', 'click', function(){
             var $f = jQuery(this).parents('.message_edit_form').first();
             // find out how far away this button is from the parent form
@@ -328,14 +332,18 @@ ucm.social = {
 
     },
     close_modal: function(){
+        ucm.social.current_shub_message_id = 0;
         tb_remove();
     },
+    open_message_modal: function(title, data){
+        var url = ajaxurl + '?action=support_hub_modal&wp_nonce=' + support_hub.wp_nonce;
+        ucm.social.open_modal(url, title, data);
+    },
     open_modal: function(url, title, data){
-        url = ajaxurl + '?action=support_hub_modal&wp_nonce=' + support_hub.wp_nonce;
         for(var i in data){
             if(data.hasOwnProperty(i) && i != 'modaltitle'){
                 url += '&' + i + '=' + data[i];
-                if(i == 'message_id'){
+                if(i == 'message_id' || i == 'shub_message_id'){
                     ucm.social.current_shub_message_id = data[i];
                 }
             }
@@ -486,8 +494,9 @@ ucm.social = {
     },
     message_status_changed: function(network, message_id, message_status){
 
-
-        ucm.social.close_modal();
+        if(ucm.social.current_shub_message_id == message_id){
+            ucm.social.close_modal();
+        }
 
         var element = jQuery('.shub_extension_message[data-message-id=' + message_id + ']');
         if(!element.length)return;

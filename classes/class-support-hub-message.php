@@ -538,6 +538,7 @@ class SupportHub_message{
                                         switch ($extras[$extra_data->get('shub_extra_id')]->get('field_type')) {
                                             case 'encrypted':
                                                 echo '(encrypted)';
+												echo '<a class="shub_modal shub_extra_data_view" href="#" data-extra-data-id="'.(int)$extra_data->get('shub_extra_data_id').'" data-modaltitle="View">view</a>';
                                                 break;
                                             default:
                                                 echo shub_forum_text($extra_data->get('extra_value'), false);

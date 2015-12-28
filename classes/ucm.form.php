@@ -132,37 +132,10 @@ class shub_module_form{
 						            this.private_encrypted = sjcl.encrypt(passphrase,private_string);
 						            //console.debug(this.private_encrypted);
 						        },
-						        decrypt_private_key: function(passphrase){
-						            try{
-						                var p = sjcl.decrypt(passphrase,this.private_encrypted);
-						                if(p){
-						                    var j = JSON.parse(p);
-						                    if(j){
-						                        this.private_key = j;
-						                        //console.debug(this.private_key);
-						                        return true;
-						                    }
-						                }
-						            }catch(e){}
-						            return false;
-						        },
 						        encrypt: function(value){
 						            var rsakey = new RSAKey();
 						            rsakey.setPublic(this.public_key, this.e);
 						            return rsakey.encrypt(value);
-						        },
-						        decrypt: function(ciphertext){
-						            var rsakey = new RSAKey();
-						            //console.log(this.public_key);
-						            //console.log(this.e);
-						            //console.log(this.private_key.d);
-						            //console.log(this.private_key.p);
-						            //console.log(this.private_key.q);
-						            //console.log(this.private_key.dmp1);
-						            //console.log(this.private_key.dmq1);
-						            //console.log(this.private_key.coeff);
-						            rsakey.setPrivateEx(this.public_key, this.e, this.private_key.d, this.private_key.p, this.private_key.q, this.private_key.dmp1, this.private_key.dmq1, this.private_key.coeff);
-						            return rsakey.decrypt(ciphertext);
 						        }
 						    };
 						    function do_save(){

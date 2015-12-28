@@ -183,7 +183,31 @@ if($current_extra !== false){
 		                // it worked.
 		                jQuery('#public_key').val(rsa2.public_key);
 		                jQuery('#private_key').val(rsa2.private_encrypted);
-			            jQuery('#encryption_form')[0].submit();
+
+			            // test encryption:
+			            console.log('Encrypting value with password: ' + password);
+			            var testvalue = 'Testing encryption';
+			            console.log('Encrypted private key: ');
+			            console.log(rsa2.private_encrypted);
+			            console.log('Decrypted private key: ');
+			            console.log(rsa2.decrypt_private_key(password));
+			            console.log('Original value is: ');
+			            console.log(testvalue);
+			            var rsakey = new RSAKey();
+			            rsakey.setPublic(rsa2.public_key, rsa2.e);
+			            var encrypted = rsakey.encrypt(testvalue);
+			            console.log('Encrypted value is: ');
+			            console.log(encrypted);
+			            var decrypted = rsa2.decrypt(encrypted);
+			            console.log('Decrypted value is: ');
+			            console.log(decrypted);
+			            if(decrypted == testvalue){
+				            console.log('Successful encryption and decryption. Continue..');
+				            jQuery('#encryption_form')[0].submit();
+			            }else{
+				            alert('Failed to perform test encryption. Please try again or use a different web browser.');
+			            }
+
 
 		            }else{
 		                alert('Encryption generation error');

@@ -160,6 +160,7 @@ class SupportHubExtra{
      */
 	public function save_and_link($data, $shub_extension, $shub_account_id, $shub_message_id, $shub_user_id ){
 		// find if this data exists already in the table.
+		if(empty($data['extra_value']))return;
 		$shub_extra_data_ids = shub_get_multiple('shub_extra_data',array(
 			'shub_extra_id' => $this->shub_extra_id,
 			'extra_value' => $data['extra_value'],
@@ -484,6 +485,20 @@ Thanks.';
 								foreach ( $extras as $extra_id => $extra ) {
 									if ( isset( $extra_previous_data_validated[ $extra_id ] ) ) {
 										//$SupportHub->message_managers[ $network ]->extra_save_data( $extra, $extra_previous_data_validated[ $extra_id ], $network, $account_id, $message_id, $shub_message, $shub_user_id );
+
+										// for encrypted fields we save the current private key along with the encrypted value
+										// this lets us decrypt it later on if the user regenerates a key down the track
+										if($extra->get('field_type') == 'encrypted'){
+											if(!is_array($extra_previous_data_validated[ $extra_id ])){
+												$new = array(
+													'data' => $extra_previous_data_validated[ $extra_id ]
+												);
+												$extra_previous_data_validated[ $extra_id ] = $new;
+											}
+											$extra_previous_data_validated[ $extra_id ]['extra_data']['private_key'] = get_option('shub_encrypt_private_key','');
+										}
+
+
 										$extra->save_and_link(
 											array(
 												'extra_value' => is_array($extra_previous_data_validated[ $extra_id ]) && !empty($extra_previous_data_validated[ $extra_id ]['data']) ? $extra_previous_data_validated[ $extra_id ]['data'] : $extra_previous_data_validated[ $extra_id ],

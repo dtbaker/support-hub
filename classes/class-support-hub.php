@@ -108,7 +108,16 @@ class SupportHub {
 			switch($action){
                 case 'modal':
                     // open a modal popup with the message in it (similar to pages/message.php)
-                    if(isset($_REQUEST['network']) && isset($_REQUEST['message_id']) && (int)$_REQUEST['message_id'] > 0) {
+					if(isset($_REQUEST['extra_data_id']) || isset($_REQUEST['extraDataId'])){
+						$extra_data_id = isset($_REQUEST['extra_data_id']) ? (int)$_REQUEST['extra_data_id'] : (int)$_REQUEST['extraDataId'];
+						$extra_data = new SupportHubExtraData($extra_data_id);
+						if($extra_data->get('shub_extra_data_id') == $extra_data_id){
+							include( trailingslashit( SupportHub::getInstance()->dir ) . 'pages/extra-data-view.php');
+						}else{
+							echo 'Failed';
+						}
+
+					}else if(isset($_REQUEST['network']) && isset($_REQUEST['message_id']) && (int)$_REQUEST['message_id'] > 0) {
                         $network = isset($_GET['network']) ? $_GET['network'] : false;
                         $message_id = isset($_GET['message_id']) ? (int)$_GET['message_id'] : false;
                         $message_comment_id = isset($_GET['message_comment_id']) ? (int)$_GET['message_comment_id'] : false;
@@ -573,6 +582,15 @@ class SupportHub {
     	wp_enqueue_script( 'support-hub' );
     	wp_enqueue_script( 'jquery-timepicker' );
 
+    	wp_enqueue_script( 'rsa-json2', $this->assets_url.'js/json2.js' );
+    	wp_enqueue_script( 'rsa-jsbn', $this->assets_url.'js/jsbn.js' );
+    	wp_enqueue_script( 'rsa-jsbn2', $this->assets_url.'js/jsbn2.js' );
+    	wp_enqueue_script( 'rsa-prng4', $this->assets_url.'js/prng4.js' );
+    	wp_enqueue_script( 'rsa-rng', $this->assets_url.'js/rng.js' );
+    	wp_enqueue_script( 'rsa-rsa', $this->assets_url.'js/rsa.js' );
+    	wp_enqueue_script( 'rsa-rsa2', $this->assets_url.'js/rsa2.js' );
+    	wp_enqueue_script( 'rsa-sjcl', $this->assets_url.'js/sjcl.js' );
+
 		foreach($this->message_managers as $name => $message_manager) {
 			$message_manager->page_assets(true);
 		}
@@ -685,6 +703,9 @@ class SupportHub {
 			}else if($process_action == 'save_encrypted_vault'){
 
 				if(check_admin_referer( 'save-encrypted-vault' ) && !empty($_POST['public_key']) && !empty($_POST['private_key'])){
+
+
+					$_POST    = stripslashes_deep( $_POST );
 
 					update_option('shub_encrypt_public_key',$_POST['public_key']);
 					update_option('shub_encrypt_private_key',$_POST['private_key']);
