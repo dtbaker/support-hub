@@ -429,7 +429,9 @@ span.buyer_badge,
 .buyer_badge.presale {
   background: #bd6716;
 }
-.other_message_status span {
+.message_status_archived,
+.message_status_inbox,
+.message_status_hidden {
   border-radius: 3px;
   display: inline-block;
   color: #FFF;
@@ -437,13 +439,13 @@ span.buyer_badge,
   padding: 0px 5px;
   font-weight: bold;
 }
-.other_message_status .message_status_archived {
+.message_status_archived {
   background: #4f83bd;
 }
-.other_message_status .message_status_inbox {
+.message_status_inbox {
   background: #98bd45;
 }
-.other_message_status .message_status_hidden {
+.message_status_hidden {
   background: #951100;
 }
 .other_message_network .shub_friendly_icon {
