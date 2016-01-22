@@ -16,7 +16,10 @@ class shub_envato_account extends SupportHub_account{
 		if(!empty($api->cookies['envatosession']) && $api->cookies['envatosession'] != $this->get( 'envato_cookie' )){
 			// cookie has changed?
 			mail('dtbaker@gmail.com','Envato Session COokie Changed','old cookie was '."\n\n".$this->get( 'envato_cookie' )."\n\n new cookie is ".$api->cookies['envatosession']);
-			$this->update('envato_cookie',$api->cookies['envatosession']);
+			$this->save_account_data(array(
+				'envato_cookie' => $api->cookies['envatosession']
+			));
+			//$this->update('envato_cookie',$api->cookies['envatosession']);
 		}
         if($account_data && !empty($account_data['username'])){
             // success
