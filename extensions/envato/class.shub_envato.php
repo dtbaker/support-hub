@@ -989,7 +989,7 @@ class shub_envato extends SupportHub_extension {
                                 $user_bits[] = array(
                                     'Purchase',
                                     esc_html($data['envato_item_data']['item']).' on '.shub_print_date($purchase['purchase_time']) .
-                                    ' support until ' . $support_text
+                                    ' support until ' . $support_text . '<span class="envato_purchase_code">' . htmlspecialchars($purchase['purchase_code']) . '</span>'
                                 );
                                 $sale_data = @json_decode($purchase['purchase_data'],true);
                                 if($sale_data && !empty($sale_data['amount'])){

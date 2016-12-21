@@ -466,7 +466,7 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 	                echo '>';
 	                // show the same content from output_message_page() page from the modal popup, but give it a minimal view so it doesn't look too cluttered on the page
 	                $message = $message_manager->get_message( false, false, $item['shub_message_id'] );
-	                $message->output_message_page( 'inline' );
+	                if($message)$message->output_message_page( 'inline' );
 	                echo '</div>';
 
                 }else{
@@ -696,7 +696,7 @@ class SupportHubLogList extends SupportHub_Account_Data_List_Table{
                         echo '</pre></div>';
                         return false;
                     }else{
-                        return $data;
+                        return htmlspecialchars($data);
                     }
 					break;
 				case 'log_time':

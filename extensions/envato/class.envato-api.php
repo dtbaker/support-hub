@@ -105,10 +105,10 @@ class envato_api_basic{
 		$response = $this->get_url($url);
 		if(
             preg_match('#verify_token#',$response) &&
-            preg_match('#"authenticity_token" type="hidden" value="([^"]+)"#',$response,$verify_auth) &&
-            preg_match('#"token" type="hidden" value="([^"]+)"#',$response,$verify_token)
+            preg_match('#name="authenticity_token" value="([^"]+)"#',$response,$verify_auth) &&
+            preg_match('#="token" value="([^"]+)"#',$response,$verify_token)
         ){
-            $verify_result = $this->get_url('http://'.$marketplace.'.net/sso/verify_token',array(
+            $verify_result = $this->get_url('https://'.$marketplace.'.net/sso/verify_token',array(
                 "authenticity_token" => $verify_auth[1],
                 "token" => $verify_token[1],
                 "utf8" => '&#x2713;',
@@ -119,13 +119,14 @@ class envato_api_basic{
 				SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'envato','API Comment Auth Success with '.$marketplace);
 				// send a comment.
 				$page = $this->get_url($comment_url);
-				if(preg_match('#content="([^"]+)" name="csrf-token"#',$page,$matches)){
+				if(preg_match('#name="csrf-token" content="([^"]+)"#',$page,$matches)){
 		            $new_auth_token = $matches[1];
 					$comment_result = $this->get_url($comment_url,array(
 		                "authenticity_token" => $new_auth_token,
 		                "utf8" => '&#x2713;',
 		                "parent_id" => $parent_comment_id,
 		                "content" => $comment_text,
+		                "commit" => 'Reply',
 		            ),array(
 						'X-Requested-With: XMLHttpRequest',
 					));
@@ -145,7 +146,7 @@ class envato_api_basic{
 					SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','Failed to get CSRF token', $page);
 				}
 			}else{
-				SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','API Comment Failed To Get Second Verify Auth');
+				SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','API Comment Failed To Get Second Verify Auth', $verify_result);
 			}
         }else{
 			SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_ERROR,'envato','API Comment Failed To Get Initial Auth', $response);
@@ -184,6 +185,8 @@ class envato_api_basic{
 	}
 	public function get_url($url, $post = false, $extra_headers = array(), $cookies = true) {
 
+		// migrate to ssl
+		$url = str_replace('http:','https:', $url);
 		if($this->ch){
 			curl_close($this->ch);
 		}
@@ -193,7 +196,7 @@ class envato_api_basic{
 			$cookies                        = '';
 			$this->cookies['envatosession'] = $this->_cookie;
 			foreach ( $this->cookies as $key => $val ) {
-				if ( ! strpos( $url, 'account.envato' ) && $key == 'envatosession' ) {
+				if ( ! strpos( $url, 'ccount.envato' ) && $key == 'envatosession' ) {
 					continue;
 				}
 				$cookies = $cookies . $key . '=' . $val . '; ';
