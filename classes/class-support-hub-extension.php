@@ -225,10 +225,69 @@ class SupportHub_extension{
         }
     }
 
+	public function extra_get_login_methods($network, $account_id, $message_id, $extra_ids){ return false; }
 	public function extra_process_login($network, $account_id, $message_id, $extra_ids){ return false; }
-	public function extra_save_data($extra, $value, $network, $account_id, $message_id){ return false; }
-	public function extra_send_message($message, $network, $account_id, $message_id){ return false; }
-    /**
+
+	public function extra_save_data($extra, $value, $network, $account_id, $message_id, $shub_message, $shub_user_id){
+		/*if(is_array($value) && !empty($value['extra_data']['valid_purchase_code'])){
+			// we're saving a previously validated (Above) purchase code.
+			// create a shub user for this purchase and return success along with the purchase data to show
+			$comment_user = new SupportHubUser_Envato();
+			$res = false;
+			if(!empty($value['extra_data']['buyer'])){
+				$res = $comment_user->load_by( 'user_username', $value['extra_data']['buyer']);
+			}
+			if(!$res) {
+				$comment_user->create_new();
+				$comment_user->update( 'user_username', $value['extra_data']['buyer'] );
+			}
+			$user_data = $comment_user->get('user_data');
+			if(!is_array($user_data))$user_data=array();
+			if(!isset($user_data['envato_codes']))$user_data['envato_codes']=array();
+			$user_data_codes = array();
+			$user_data_codes[$value['data']] = $value['extra_data'];
+			$user_data['envato_codes'] = array_merge($user_data['envato_codes'], $user_data_codes);
+			$comment_user->update_user_data($user_data);
+			$shub_user_id = $comment_user->get('shub_user_id');
+		}
+
+		$extra->save_and_link(
+			array(
+				'extra_value' => is_array($value) && !empty($value['data']) ? $value['data'] : $value,
+				'extra_data' => is_array($value) && !empty($value['extra_data']) ? $value['extra_data'] : false,
+			),
+			$network,
+			$account_id,
+			$message_id,
+			$shub_user_id
+		);*/
+
+	}
+
+
+	public function extra_send_message($message, $network, $account_id, $message_id, $shub_message, $shub_user_id){
+		// save this message in the database as a new comment.
+		// set the 'private' flag so we know this comment has been added externally to the API scrape.
+		//$existing_comments = $shub_message->get_comments();
+		$shub_message_comment_id = shub_update_insert('shub_message_comment_id',false,'shub_message_comment',array(
+			'shub_message_id' => $shub_message->get('shub_message_id'),
+			'private' => 1,
+			'message_text' => $message,
+			'time' => time(),
+			'shub_user_id' => $shub_user_id
+		));
+		// mark the main message as unread so it appears at the top.
+		$shub_message->update('shub_status',_shub_MESSAGE_STATUS_UNANSWERED);
+		$shub_message->update('last_active',time());
+		// todo: update the 'summary' to reflect this latest message?
+		$shub_message->update('summary',$message);
+
+		// todo: post a "Thanks for providing information, we will reply soon" message on Envato comment page
+
+		return $shub_message_comment_id;
+	}
+
+	/**
      * @return SupportHub_message
      */
 	public function get_message($account, $item, $message_id){ return false; }

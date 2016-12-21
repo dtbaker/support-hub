@@ -136,6 +136,7 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
 	public $available_networks = array();
 
     public $layout_type = 'table';
+    public $only_inner = false;
 
 	function __construct($args = array()) {
 		$args = wp_parse_args( $args, array(
@@ -368,70 +369,83 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
     public function set_layout_type($layout_type){
         $this->layout_type = $layout_type;
     }
+    public function set_only_inner($flag){
+        $this->only_inner = $flag;
+    }
     public function extra_tablenav( $which ){
     }
+
     public function display() {
         $singular = $this->_args['singular'];
 
-        $this->display_tablenav( 'top' );
 
-        switch($this->layout_type){
-            case 'continuous':
-            case 'inline':
-                ?>
-                <div id="shub_table_inline">
-                    <div id="shub_table_contents">
-                    <?php if ( $this->has_items() ) {
-                        $this->display_rows();
-                    } else {
-                        echo '<div class="no-items" style="text-align:center">';
-                        $this->no_items();
-                        echo '</div>';
-                    }
-                    ?>
-                    </div>
-                    <?php
-                    if($this->layout_type == 'continuous'){
-                        ?>
-                        <div id="shub_continuous_more">
-                            <a href="#" class="shub_message_load_content btn btn-default btn-xs button"
-                               data-action="next-continuous-message" data-target="#shub_table_contents" data-post="<?php echo esc_attr(json_encode(array(
-                            )));?>"><?php _e('Load More','support_hub');?></a>
+	    if($this->only_inner){
+		    if ( $this->has_items() ) {
+			    $this->display_rows();
+		    }
+	    }else {
 
-                        </div>
-                        <?php
-                    }
-                    ?>
-                </div>
-                <?php
-                break;
-            default:
-                ?>
-                <table class="wp-list-table <?php echo implode( ' ', $this->get_table_classes() ); ?>">
-                    <thead>
-                    <tr>
-                        <?php $this->print_column_headers(); ?>
-                    </tr>
-                    </thead>
+		    $this->display_tablenav( 'top' );
 
-                    <tbody id="the-list"<?php
-                    if ( $singular ) {
-                        echo " data-wp-lists='list:$singular'";
-                    } ?>>
-                    <?php $this->display_rows_or_placeholder(); ?>
-                    </tbody>
+		    switch ( $this->layout_type ) {
+			    case 'continuous':
+			    case 'inline':
+				    ?>
+				    <div id="shub_table_inline">
+					    <div id="shub_table_contents">
+						    <?php if ( $this->has_items() ) {
+							    $this->display_rows();
+						    } else {
+							    echo '<div class="no-items" style="text-align:center">';
+							    $this->no_items();
+							    echo '</div>';
+						    }
+						    ?>
+					    </div>
+					    <?php
+					    if ( $this->layout_type == 'continuous' ) {
+						    ?>
+						    <div id="shub_continuous_more">
+							    <a href="#"
+							       class="shub_message_load_content btn btn-default btn-xs button shub_button_loading"
+							       data-action="next-continuous-message" data-target="#shub_table_contents"
+							       data-post="<?php echo esc_attr( json_encode( array() ) ); ?>"><?php _e( 'Load More', 'support_hub' ); ?></a>
 
-                    <tfoot>
-                    <tr>
-                        <?php $this->print_column_headers( false ); ?>
-                    </tr>
-                    </tfoot>
+						    </div>
+						    <?php
+					    }
+					    ?>
+				    </div>
+				    <?php
+				    break;
+			    default:
+				    ?>
+				    <table class="wp-list-table <?php echo implode( ' ', $this->get_table_classes() ); ?>">
+					    <thead>
+					    <tr>
+						    <?php $this->print_column_headers(); ?>
+					    </tr>
+					    </thead>
 
-                </table>
-                <?php
-                break;
-        }
-        $this->display_tablenav( 'bottom' );
+					    <tbody id="the-list"<?php
+					    if ( $singular ) {
+						    echo " data-wp-lists='list:$singular'";
+					    } ?>>
+					    <?php $this->display_rows_or_placeholder(); ?>
+					    </tbody>
+
+					    <tfoot>
+					    <tr>
+						    <?php $this->print_column_headers( false ); ?>
+					    </tr>
+					    </tfoot>
+
+				    </table>
+				    <?php
+				    break;
+		    }
+            $this->display_tablenav( 'bottom' );
+	    }
     }
 
     public function single_row( $item ) {
@@ -439,16 +453,22 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
             case 'continuous':
             case 'inline':
                 if (is_array($item) && !empty($item['shub_extension']) && $message_manager = SupportHub::getInstance()->message_managers[$item['shub_extension']]) {
-                    echo '<div class="shub_extension_message_action"><div class="action_content"></div></div>';
-                    echo '<div';
-                    echo ' class="shub_extension_message"';
-                    echo ' data-network="' . $message_manager->id . '"';
-                    echo ' data-message-id="' . $item['shub_message_id'] . '"';
-                    echo '>';
-                    // show the same content from output_message_page() page from the modal popup, but give it a minimal view so it doesn't look too cluttered on the page
-                    $message = $message_manager->get_message(false, false, $item['shub_message_id']);
-                    $message->output_message_page('inline');
-                    echo '</div>';
+	                if(!$this->only_inner){
+		                echo '<div ';
+		                echo ' data-network="' . $message_manager->id . '"';
+		                echo ' data-message-id="' . $item['shub_message_id'] . '"';
+		                echo ' class="shub_extension_message_action"><div class="action_content"></div></div>';
+	                }
+	                echo '<div';
+	                echo ' class="shub_extension_message"';
+	                echo ' data-network="' . $message_manager->id . '"';
+	                echo ' data-message-id="' . $item['shub_message_id'] . '"';
+	                echo '>';
+	                // show the same content from output_message_page() page from the modal popup, but give it a minimal view so it doesn't look too cluttered on the page
+	                $message = $message_manager->get_message( false, false, $item['shub_message_id'] );
+	                if($message)$message->output_message_page( 'inline' );
+	                echo '</div>';
+
                 }else{
                     echo '<hr>';
                     echo 'Invalid item. Please report bug to dtbaker. <br>';
@@ -457,16 +477,24 @@ class SupportHubMessageList extends SupportHub_Account_Data_List_Table{
                 }
                 break;
             default:
-                echo '<tr class="shub_extension_message_action"><td class="action_content" colspan="'.$this->get_column_count().'"></td></tr>';
-                echo '<tr';
                 if (is_array($item) && !empty($item['shub_extension']) && $message_manager = SupportHub::getInstance()->message_managers[$item['shub_extension']]) {
+	                if(!$this->only_inner){
+		                echo '<tr ';
+		                echo ' data-network="' . $message_manager->id . '"';
+		                echo ' data-message-id="' . $item['shub_message_id'] . '"';
+		                echo ' class="shub_extension_message_action"><td class="action_content" colspan="'.$this->get_column_count().'"></td></tr>';
+	                }
+	                echo '<tr';
                     echo ' class="shub_extension_message ';
                     echo  $this->row_count++%2 ? 'alternate' : '';
                     echo ' "';
                     echo ' data-network="' . $message_manager->id . '"';
                     echo ' data-message-id="' . $item['shub_message_id'] . '"';
+	                echo '>';
+                }else{
+	                // shouldn't happen.
+	                echo '<tr>';
                 }
-                echo '>';
                 $this->single_row_columns($item);
                 echo '</tr>';
                 break;
@@ -668,7 +696,7 @@ class SupportHubLogList extends SupportHub_Account_Data_List_Table{
                         echo '</pre></div>';
                         return false;
                     }else{
-                        return $data;
+                        return htmlspecialchars($data);
                     }
 					break;
 				case 'log_time':

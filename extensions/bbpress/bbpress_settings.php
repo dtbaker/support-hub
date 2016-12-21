@@ -3,8 +3,8 @@
 $current_account = isset($_REQUEST['shub_account_id']) ? (int)$_REQUEST['shub_account_id'] : false;
 $shub_bbpress = SupportHub::getInstance()->message_managers['bbpress'];
 if($current_account !== false){
-	$shub_bbpress_account = new shub_bbpress_account($current_account);
-    if($shub_envato_account->get('shub_extension') != 'bbpress')die('Wrong extension:' .$shub_envato_account->get('shub_extension'));
+	$shub_bbpress_account = $shub_bbpress->get_account($current_account);
+    if($shub_bbpress_account->get('shub_extension') != 'bbpress')die('Wrong extension:' .$shub_bbpress_account->get('shub_extension'));
 	if(isset($_GET['manualrefresh'])){
 
         $network_key = isset( $_REQUEST['network_key'] ) ? (int) $_REQUEST['network_key'] : 0;

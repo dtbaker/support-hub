@@ -35,6 +35,8 @@ define('_SUPPORT_HUB_PASSWORD_FIELD_FUZZ','-password-');
 
 define('_DTBAKER_SUPPORT_HUB_CORE_FILE_',__FILE__);
 
+
+
 // Include core files that do all the magic
 require_once( 'classes/class-support-hub.php' );
 require_once( 'classes/class-support-hub-table.php' );

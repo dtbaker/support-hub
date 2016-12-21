@@ -40,22 +40,33 @@ class SupportHubUser{
 		$this->load($this->{$this->db_primary_key});
 	}
 
-	private static $_latest_load_create = array();
+//	private static $_latest_load_create = array();
 	public function load_by($field, $value){
 		$this->reset();
 		if(!empty($field) && !empty($value) && isset($this->details[$field])){
-			if(isset(self::$_latest_load_create[$field][$value]) && self::$_latest_load_create[$field][$value] > 0){
-				$this->load(self::$_latest_load_create[$field][$value]);
-				return true;
-			}
-			$data = shub_get_single($this->db_table,$field,$value);
+//			if(isset(self::$_latest_load_create[$field][$value]) && self::$_latest_load_create[$field][$value] > 0){
+//				$this->load(self::$_latest_load_create[$field][$value]);
+//				return true;
+//			}
+			//$data = shub_get_single($this->db_table,$field,$value);
+			$data = shub_get_multiple($this->db_table,array($field=>$value),$this->db_primary_key);
 			if(!$data){
 				// check if it was recently created? gets around weird WP caching issue, resuling in mass duplicate of user details on bulk import
-				if(!isset(self::$_latest_load_create[$field]))self::$_latest_load_create[$field]=array();
-				self::$_latest_load_create[$field][$value] = false; // pending creating maybe?
-			}else if($data && isset($data[$field]) && $data[$field] == $value && $data[$this->db_primary_key]){
-				$this->load($data[$this->db_primary_key]);
-				return true;
+//				if(!isset(self::$_latest_load_create[$field]))self::$_latest_load_create[$field]=array();
+//				self::$_latest_load_create[$field][$value] = false; // pending creating maybe?
+			}else if($data){
+				// && isset($data[$field]) && $data[$field] == $value && $data[$this->db_primary_key]){
+				foreach($data as $possible_match) {
+					if(!empty($possible_match[$field]) && strtolower($possible_match[$field]) == strtolower($value) && (int)$possible_match[$this->db_primary_key] > 0) {
+						$this->load( $possible_match[ $this->db_primary_key ] );
+						if ( ! $this->get( 'shub_user_id' ) ) {
+							// didn't work?
+						}else{
+							// successfully loaded one!
+							return $data;
+						}
+					}
+				}
 			}
 		}
 		return false;
@@ -63,16 +74,21 @@ class SupportHubUser{
 	public function load_by_meta($meta_key, $meta_val){
 		$this->reset();
 		if($meta_key && $meta_val){
-			$data = shub_get_single($this->db_table_meta,array('meta_key','meta_val'),array($meta_key,$meta_val));
-			if($data && !empty($data['meta_key']) && !empty($data['meta_val']) && $data['meta_key'] == $meta_key && (int)$data[$this->db_primary_key] > 0){
-				$this->load($data[$this->db_primary_key]);
-                if(!$this->get('shub_user_id')){
-                    // todo: ran into this error where I cleared the user table without clearing the meta table/
-                    // it tries to load a user that doesn't exist
-                    shub_delete_from_db($this->db_table_meta,'shub_user_id',$data[$this->db_primary_key]);
-                    return false;
-                }
-				return true;
+			$data = shub_get_multiple($this->db_table_meta,array('meta_key'=>$meta_key,'meta_val'=>$meta_val),$this->db_primary_key);
+			if($data){
+				foreach($data as $possible_match) {
+					if(!empty($possible_match['meta_key']) && !empty($possible_match['meta_val']) && $possible_match['meta_key'] == $meta_key && (int)$possible_match[$this->db_primary_key] > 0) {
+						$this->load( $possible_match[ $this->db_primary_key ] );
+						if ( ! $this->get( 'shub_user_id' ) ) {
+							// todo: ran into this error where I cleared the user table without clearing the meta table/
+							// it tries to load a user that doesn't exist
+							shub_delete_from_db( $this->db_table_meta, 'shub_user_id', $possible_match[ $this->db_primary_key ] );
+						}else{
+							// successfully loaded one!
+							return $data;
+						}
+					}
+				}
             }else{
 //                echo 'No match'; print_r($data);
             }
@@ -113,9 +129,9 @@ class SupportHubUser{
 	    if(in_array($field,array($this->db_primary_key)))return;
         if($this->{$this->db_primary_key}){
             $this->{$field} = $value;
-	        if(isset(self::$_latest_load_create[$field][$value])){
-		        self::$_latest_load_create[$field][$value] = $this->{$this->db_primary_key};
-	        }
+//	        if(isset(self::$_latest_load_create[$field][$value])){
+//		        self::$_latest_load_create[$field][$value] = $this->{$this->db_primary_key};
+//	        }
 	        if(in_array($field,$this->json_fields)){
 		        $value = json_encode($value);
 	        }

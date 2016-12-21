@@ -160,6 +160,7 @@ class SupportHubExtra{
      */
 	public function save_and_link($data, $shub_extension, $shub_account_id, $shub_message_id, $shub_user_id ){
 		// find if this data exists already in the table.
+		if(empty($data['extra_value']))return;
 		$shub_extra_data_ids = shub_get_multiple('shub_extra_data',array(
 			'shub_extra_id' => $this->shub_extra_id,
 			'extra_value' => $data['extra_value'],
@@ -229,6 +230,10 @@ class SupportHubExtra{
 	}
 
 	/** static stuff **/
+
+	/**
+	 * @return SupportHubExtra[]
+	 */
 	public static function get_all_extras(){
 		$return = array();
 		$data = shub_get_multiple('shub_extra',array(),'shub_extra_id','extra_order');
@@ -299,17 +304,20 @@ class SupportHubExtra{
 	public static function build_message_hash($network, $account_id, $message_id, $extra_ids){
 		return $network.':'.$account_id.':'.$message_id.':'.implode(',',$extra_ids).':'.md5(NONCE_SALT.serialize(func_get_args()));
 	}
+	public static function build_message_link($data){
+		return add_query_arg(_SUPPORT_HUB_LINK_REQUEST_EXTRA,self::build_message_hash(
+			$data['network'],
+			$data['account_id'],
+			$data['message_id'],
+			$data['extra_ids']
+		),home_url());
+	}
 	public static function build_message($data){
 		return 'Hello,
 
 please send through some more details and we can assist:
 
-<a href="' . add_query_arg(_SUPPORT_HUB_LINK_REQUEST_EXTRA,self::build_message_hash(
-			$data['network'],
-			$data['account_id'],
-			$data['message_id'],
-			$data['extra_ids']
-		),home_url()) . '">click here</a>.
+<a href="' . self::build_message_link($data) . '">click here</a>.
 
 Thanks.';
 	}
@@ -331,7 +339,6 @@ Thanks.';
 				$legit_hash = self::build_message_hash($network, $account_id, $message_id, $extra_ids);
 				if($legit_hash == $_REQUEST[_SUPPORT_HUB_LINK_REQUEST_EXTRA]){
 					// woo we have a legit hash. continue.
-
 					if (!session_id()) {
 						if(headers_sent()){
 							echo "Warning: session headers already sent, unable to proceed, please report this error.";
@@ -350,6 +357,8 @@ Thanks.';
 					ob_start();
 
 					include $SupportHub->get_template('shub_external_header.php');
+                    $all_login_methods = array();
+                    $login_form_actions = '';
 					if(isset($SupportHub->message_managers[$network])){
                         // todo: offer them another way to login to the system.
                         // e.g. someone might want to login using Facebook to access their Envato feed
@@ -358,12 +367,62 @@ Thanks.';
                         // but for now we only allow login from the network we started with.
                         // ooooooooooo maybe we can have the generic extra_process_login method show a list of available login methods? and the individual networks can override this if needed
                         // hmm.. ideas ideas..
-						$login_status = $SupportHub->message_managers[$network]->extra_process_login($network, $account_id, $message_id, $extra_ids);
+						$login_methods = $SupportHub->message_managers[$network]->extra_get_login_methods($network, $account_id, $message_id, $extra_ids);
+                        $allow_other_logins = true;
+                        if($login_methods && !empty($login_methods['account_buttons'])){
+                            $all_login_methods[] = $login_methods;
+                            if(isset($login_methods['allow_others']) && !$login_methods['allow_others']){
+                                $allow_other_logins = false;
+                            }
+                        }
+                        if($allow_other_logins){
+                            // loop over other message managers and find any other login methods.
+                            foreach($SupportHub->message_managers as $this_network => $message_manager) {
+	                            if($this_network != $network) {
+		                            $login_methods = $message_manager->extra_get_login_methods( $network, $account_id, $message_id, $extra_ids );
+		                            if ( $login_methods && ! empty( $login_methods['account_buttons'] ) ) {
+			                            if ( isset( $login_methods['allow_others'] ) && ! $login_methods['allow_others'] ) {
+				                            // this 3rd party login method (e.g. envato) is taking over and forcing the user to login using it, rather than the current extensions login method.
+				                            // this happens when for example a "tweet" needs to verify a purchase, so we need to force the user to login with Envato to do that.
+				                            $all_login_methods   = array();
+				                            $all_login_methods[] = $login_methods;
+				                            break;
+			                            } else {
+				                            $all_login_methods[] = $login_methods;
+			                            }
+		                            }
+	                            }
+                            }
+                        }
+                        foreach($all_login_methods as $all_login_method){
+
+                            // generate the login form to display below (if the user hasn't logged in before yet.
+                            $login_form_actions .= wpautop($all_login_method['message']);
+                            foreach($all_login_method['account_buttons'] as $this_account_id => $this_account_button){
+
+                                // we check if the user has logged in using this account before.
+                                if($all_login_method['network'] && isset($SupportHub->message_managers[$all_login_method['network']])){
+                                    $login_status = $SupportHub->message_managers[$all_login_method['network']]->extra_process_login($network, $this_account_id, $message_id, $extra_ids);
+                                    if($login_status && !empty($login_status['logged_in'])){
+                                        // we have a successful login.
+                                        break;
+                                    }else if($login_status){
+	                                    if(!empty($login_status['message'])){
+		                                    $login_form_actions = $login_status['message'].$login_form_actions;
+	                                    }
+                                    }
+                                }
+                                // login button for this particular account.
+                                $login_form_actions .= $this_account_button;
+                            }
+                        }
+
+
 					}else{
 						die('Invalid message manager');
 					}
 
-					if($login_status) {
+                    if($login_status && !empty($login_status['logged_in'])){
 						// the user is logged in and their identity has been verified by one of the 3rd party plugins.
 						// we can now safely accept their additoinal information and append it to this ticket.
 						$extras = self::get_all_extras();
@@ -405,37 +464,67 @@ Thanks.';
 							}
 						}
 						if(!$has_data_error && (!empty($extra_previous_notes) || !empty($extra_previous_data_validated))) {
-							// user has input something
-							// build up the private message to store in the system
-							$message = '';
-							foreach($extras as $extra_id => $extra) {
-								if ( isset( $extra_previous_data_validated[ $extra_id ] ) ) {
-									$message .= $extra->add_message_segment($extra_previous_data_validated[ $extra_id ]);
+
+							$shub_message = $SupportHub->get_message_object($message_id);
+							if($shub_message) {
+								$shub_user_id = !empty( $_SESSION['shub_oauth_envato']['shub_user_id'] ) ? $_SESSION['shub_oauth_envato']['shub_user_id'] : $shub_message->get( 'shub_user_id' );
+								// user has input something
+								// build up the private message to store in the system
+								$message = '';
+								foreach ( $extras as $extra_id => $extra ) {
+									if ( isset( $extra_previous_data_validated[ $extra_id ] ) ) {
+										$message .= $extra->add_message_segment( $extra_previous_data_validated[ $extra_id ] );
+									}
 								}
-							}
-							if(!empty($extra_previous_notes)){
-								$message .= '<p>'. shub_forum_text($extra_previous_notes).'</p>';
-								$extra_previous_notes = false;
-							}
-							// pass it through to the message managers to store this information!
-							// (e.g. envato module will validate the 'purchase_code' and return a possible error)
-							foreach($extras as $extra_id => $extra){
-								if(isset($extra_previous_data_validated[$extra_id])) {
-									$status = $SupportHub->message_managers[ $network ]->extra_save_data( $extra, $extra_previous_data_validated[$extra_id], $network, $account_id, $message_id );
-									unset($extra_previous_data[$extra_id]);
+								if ( ! empty( $extra_previous_notes ) ) {
+									$message .= '<p>' . shub_forum_text( $extra_previous_notes ) . '</p>';
+									$extra_previous_notes = false;
 								}
+								// pass it through to the message managers to store this information!
+								// (e.g. envato module will validate the 'purchase_code' and return a possible error)
+								foreach ( $extras as $extra_id => $extra ) {
+									if ( isset( $extra_previous_data_validated[ $extra_id ] ) ) {
+										//$SupportHub->message_managers[ $network ]->extra_save_data( $extra, $extra_previous_data_validated[ $extra_id ], $network, $account_id, $message_id, $shub_message, $shub_user_id );
+
+										// for encrypted fields we save the current private key along with the encrypted value
+										// this lets us decrypt it later on if the user regenerates a key down the track
+										if($extra->get('field_type') == 'encrypted'){
+											if(!is_array($extra_previous_data_validated[ $extra_id ])){
+												$new = array(
+													'data' => $extra_previous_data_validated[ $extra_id ]
+												);
+												$extra_previous_data_validated[ $extra_id ] = $new;
+											}
+											$extra_previous_data_validated[ $extra_id ]['extra_data']['private_key'] = get_option('shub_encrypt_private_key','');
+										}
+
+
+										$extra->save_and_link(
+											array(
+												'extra_value' => is_array($extra_previous_data_validated[ $extra_id ]) && !empty($extra_previous_data_validated[ $extra_id ]['data']) ? $extra_previous_data_validated[ $extra_id ]['data'] : $extra_previous_data_validated[ $extra_id ],
+												'extra_data' => is_array($extra_previous_data_validated[ $extra_id ]) && !empty($extra_previous_data_validated[ $extra_id ]['extra_data']) ? $extra_previous_data_validated[ $extra_id ]['extra_data'] : false,
+											),
+											$network,
+											$account_id,
+											$message_id,
+											$shub_user_id
+										);
+										unset( $extra_previous_data[ $extra_id ] );
+									}
+								}
+								// all done! save our message in the db
+								$SupportHub->message_managers[ $network ]->extra_send_message( $message, $network, $account_id, $message_id, $shub_message, $shub_user_id );
+								// redirect browser to a done page.
+								header( "Location: " . $_SERVER['REQUEST_URI'] . '&done' );
+								exit;
 							}
-							// all done! save our message in the db
-							$SupportHub->message_managers[ $network ]->extra_send_message( $message, $network, $account_id, $message_id );
-							// redirect browser to a done page.
-							header("Location: ".$_SERVER['REQUEST_URI'].'&done');
-							exit;
 
 
 						}
 						include $SupportHub->get_template('shub_extra_request_form.php');
 					}else{
-						// we display the login form during request_extra_login()
+						// we build up this login form in the above loop.
+                        echo $login_form_actions;
 					}
 					include $SupportHub->get_template('shub_external_footer.php');
 					echo ob_get_clean();

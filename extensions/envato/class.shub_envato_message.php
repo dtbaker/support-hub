@@ -1,6 +1,6 @@
 <?php
 
-class shub_message extends SupportHub_message{
+class shub_envato_message extends SupportHub_message{
 
     protected $network = 'envato';
 
@@ -51,15 +51,16 @@ class shub_message extends SupportHub_message{
 					$first_comment = current($comments);
 				    if(!empty($first_comment['username'])) {
 					    $comment_user = new SupportHubUser_Envato();
-					    $res = $comment_user->load_by( 'envato_username', $first_comment['username']);
+					    $res = $comment_user->load_by_meta( 'envato_username', $first_comment['username']);
 					    if(!$res){
                             $res = $comment_user->load_by( 'user_username', $first_comment['username']);
                             if(!$res) {
                                 $comment_user->create_new();
                             }
 					    }
+					    // todo - centralise this into envato user class
                         if (!$comment_user->get('user_username')) $comment_user->update('user_username', $first_comment['username']);
-                        if (!$comment_user->get('envato_username')) $comment_user->update('envato_username', $first_comment['username']);
+                        if (!$comment_user->get_meta('envato_username')) $comment_user->add_unique_meta('envato_username', $first_comment['username']);
                         $comment_user->update_user_data(array(
                             'image' => $first_comment['profile_image_url'],
                             'envato' => $first_comment,

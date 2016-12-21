@@ -13,6 +13,14 @@ class shub_envato_account extends SupportHub_account{
         // store this in the shub_user_id field so we can use it when rendering the UI for comments etc..
         $api = $this->get_api();
         $account_data = $api->get_token_account();
+		if(!empty($api->cookies['envatosession']) && $api->cookies['envatosession'] != $this->get( 'envato_cookie' )){
+			// cookie has changed?
+			mail('dtbaker@gmail.com','Envato Session COokie Changed','old cookie was '."\n\n".$this->get( 'envato_cookie' )."\n\n new cookie is ".$api->cookies['envatosession']);
+			$this->save_account_data(array(
+				'envato_cookie' => $api->cookies['envatosession']
+			));
+			//$this->update('envato_cookie',$api->cookies['envatosession']);
+		}
         if($account_data && !empty($account_data['username'])){
             // success
             $comment_user = new SupportHubUser_Envato();
@@ -63,8 +71,6 @@ class shub_envato_account extends SupportHub_account{
 				}
 			}
 			// yes, this member has some items, save these items to the account ready for selection in the settings area.
-			$save_data = $this->get('account_data');
-			if(!is_array($save_data))$save_data=array();
 			// create a product for each of these items (if a matching one doesn't already exist)
 			$existing_products = SupportHub::getInstance()->get_products();
 			foreach($items as $key => $item){
@@ -90,8 +96,7 @@ class shub_envato_account extends SupportHub_account{
 				));
 				$items[$key]['shub_product_id'] = $newproduct->get('shub_product_id');
 			}
-			$save_data['items'] = $items;
-			$this->update('account_data',$save_data);
+			$this->save_account_data(array('items'=>$items));
 		}
 	}
 

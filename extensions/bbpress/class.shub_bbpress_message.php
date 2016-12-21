@@ -96,7 +96,22 @@ class shub_bbpress_message extends SupportHub_message{
 					$this->update('shub_data',$topic_data);
 					$this->update('shub_link',$topic_data['link'].'#post-'.(isset($comments[0]) ? $comments[0]['post_id'] : $topic_data['post_id']));
 					$this->update('network_key', $bbpress_id);
-                    if($this->get('shub_status')!=_shub_MESSAGE_STATUS_HIDDEN) $this->update('shub_status', _shub_MESSAGE_STATUS_UNANSWERED);
+					SupportHub::getInstance()->log_data(_SUPPORT_HUB_LOG_INFO,'bbpress','Updating message '.$bbpress_id.' from API.',array(
+						'Current Comment Count: ' => count($this->get_comments()),
+						'New Comment Count: ' => count($comments),
+						'Current Status: ' => $this->get('shub_status'),
+					));
+					if($this->get('shub_status')!=_shub_MESSAGE_STATUS_HIDDEN){
+						// we have to decide if we're updating the message status from answered to unanswered.
+						// if this message status is already answered and the existing comment count matches the new comment count then we don't update the status
+						// this is because we insert a placeholder "comment" into the db while the API does the push, and when we read again a few minutes later it overwrites this placeholder comment, so really it's not a new comment coming in just the one we posted through the API that takes a while to come back through.
+						if($this->get('shub_status') == _shub_MESSAGE_STATUS_ANSWERED && count($comments) == count($this->get_comments())){
+							// don't do anything
+						}else{
+							// comment count is different
+							$this->update('shub_status', _shub_MESSAGE_STATUS_UNANSWERED);
+						}
+					}
 					$this->update('comments',$comments);
 					// create/update a user entry for this comments.
 				    $shub_user_id = $this->account->get_api_user_to_id($topic_data['post_author']);
@@ -117,7 +132,7 @@ class shub_bbpress_message extends SupportHub_message{
         if(isset($user_data['reply_options']) && is_array($user_data['reply_options'])){
             foreach($user_data['reply_options'] as $reply_option){
                 if(isset($reply_option['title'])){
-                    echo '<div>';
+                    echo '<div class="shub_message_reply_action">';
                     echo '<label for="">'.htmlspecialchars($reply_option['title']).'</label>';
                     if(isset($reply_option['field']) && is_array($reply_option['field'])){
                         $reply_option['field']['name'] = 'extra-'.$reply_option['field']['name'];

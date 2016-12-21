@@ -17,6 +17,13 @@ class SupportHub_message{
     public $shub_message_id = false; // the current user id in our system.
     public $details = array();
 
+	/**
+	 * @var bool
+	 * this flag tells us if the messages we reply to are going to be "public" e.g. Facebook, Envato, Twitter.
+	 * if this flag is set true then we give the user the option of a "private"  message on composing a reply.
+	 */
+	public $messages_are_public = true;
+
     public $json_fields = array('shub_data','comments');
 
     private function reset(){
@@ -72,9 +79,18 @@ class SupportHub_message{
             $this->{$key} = $val;
         }
         if(!$this->account && $this->get('shub_account_id')){
-            $this->account = SupportHub::getInstance()->message_managers[$this->network]->get_account($this->get('shub_account_id'));
+	        if(!$this->network){
+		        // manually look up which network we are in
+		        $account_temp = shub_get_single('shub_account','shub_account_id',$this->get('shub_account_id'));
+		        if($account_temp && !empty($account_temp['shub_extension'])){
+			        $this->network = $account_temp['shub_extension'];
+		        }
+	        }
+	        if($this->network){
+		        $this->account = SupportHub::getInstance()->message_managers[$this->network]->get_account($this->get('shub_account_id'));
+	        }
         }
-        if(!$this->item && $this->get('shub_item_id')) {
+        if(!$this->item && $this->get('shub_item_id') && $this->account) {
             $this->item = $this->account->get_item($this->get('shub_item_id'));
         }
         return $this->shub_message_id;
@@ -258,7 +274,7 @@ class SupportHub_message{
     }
 
 
-    public function queue_reply($network_key, $message, $debug = false, $extra_data = array(), $shub_outbox_id = false){
+    public function queue_reply($network_key, $message, $debug = false, $extra_data = array(), $shub_outbox_id = false, $private = false){
         if($this->account && $this->shub_message_id) {
 
 
@@ -276,6 +292,7 @@ class SupportHub_message{
                 'shub_outbox_id' => $shub_outbox_id,
                 'network_key' => '',
                 'time' => time(),
+                'private' => $private ? 1 : 0,
                 'message_text' => $message,
                 'user_id' => get_current_user_id(),
             ));
@@ -322,6 +339,11 @@ class SupportHub_message{
         $data = SupportHub::getInstance()->get_message_user_summary($user_hints, $this->network, $this);
 
         if(!isset($data['message_details']))$data['message_details']=array();
+
+        $data['message_details']['status'] = array(
+            'Status',
+            $this->get_message_status_html(),
+        );
         $data['message_details']['subject'] = array(
             'Subject',
             '<a href="'.$this->get_link().'" target="_blank">'.htmlspecialchars( $this->get('title') ).'</a>'
@@ -336,6 +358,22 @@ class SupportHub_message{
         );
         return $data;
     }
+	public function get_message_status_html($status=false){
+		if($status===false)$status = $this->get('shub_status');
+		switch ( $status ) {
+			case _shub_MESSAGE_STATUS_ANSWERED:
+				return '<span class="message_status_archived">Archived</span>';
+				break;
+			case _shub_MESSAGE_STATUS_UNANSWERED:
+				return '<span class="message_status_inbox">Inbox</span>';
+				break;
+			case _shub_MESSAGE_STATUS_HIDDEN:
+				return '<span class="message_status_hidden">Hidden</span>';
+				break;
+			default:
+				return 'UNKNOWN?';
+		}
+	}
     public function get_user_hints($user_hints){
         $user_hints['shub_user_id'][] = $this->get('shub_user_id');
         /*
@@ -487,6 +525,7 @@ class SupportHub_message{
                             <?php
                         }
                         if(!empty($data['extra_datas'])) {
+	                        $extras = SupportHubExtra::get_all_extras();
                             ?>
                             <div class="message_sidebar_extra_data">
                             <?php
@@ -499,6 +538,7 @@ class SupportHub_message{
                                         switch ($extras[$extra_data->get('shub_extra_id')]->get('field_type')) {
                                             case 'encrypted':
                                                 echo '(encrypted)';
+												echo '<a class="shub_modal shub_extra_data_view" href="#" data-extra-data-id="'.(int)$extra_data->get('shub_extra_data_id').'" data-modaltitle="View">view</a>';
                                                 break;
                                             default:
                                                 echo shub_forum_text($extra_data->get('extra_value'), false);
@@ -524,45 +564,53 @@ class SupportHub_message{
                             </ul>
                             <?php
                         }
-                        if(!empty($data['other_messages'])) {
+                        if(!empty($data['other_messages']) || !empty($data['other_related_messages'])) {
+	                        // sort messages by time.
+	                        uasort($data['other_messages'], function($a,$b){
+		                        // sort by unanswered status first and then mesage time.
+		                        if ($a['message_status'] == _shub_MESSAGE_STATUS_UNANSWERED){
+			                        if ($b['message_status'] == _shub_MESSAGE_STATUS_UNANSWERED){
+				                        return $a['time'] < $b['time'] ? -1 : 1;
+			                        }
+			                        return -1;
+		                        }
+		                        if ($b['message_status'] == _shub_MESSAGE_STATUS_UNANSWERED){
+			                        return 1;
+		                        }
+		                        return $a['time'] < $b['time'] ? -1 : 1;
+	                        });
+	                        $count = !empty($data['other_messages']) ? count($data['other_messages']) : 0;
+	                        $count += !empty($data['other_related_messages']) ? count($data['other_related_messages']) : 0;
                             ?>
                             <div class="shub_other_messages">
-                                <strong><?php echo sprintf(_n('%d Other Message:', '%d Other Messages:', count($data['other_messages']), 'support_hub'), count($data['other_messages'])); ?></strong><br/>
+                                <strong><?php echo sprintf(_n('%d Other Message:', '%d Other Messages:', $count, 'support_hub'), $count); ?></strong><br/>
                                 <ul>
                                     <?php
-                                    foreach ($data['other_messages'] as $other_message) {
-                                        ?>
-                                        <li>
-                                            <span class="other_message_time"><?php echo shub_pretty_date($other_message['time']); ?></span>
+                                    if(!empty($data['other_messages'])) {
+	                                    foreach ( $data['other_messages'] as $other_message ) {
+		                                    ?>
+		                                    <li>
+			                                    <span
+				                                    class="other_message_time"><?php echo shub_pretty_date( $other_message['time'] ); ?></span>
                                             <span class="other_message_status"><?php
-                                                if (isset($other_message['message_status'])) {
-                                                    switch ($other_message['message_status']) {
-                                                        case _shub_MESSAGE_STATUS_ANSWERED:
-                                                            echo '<span class="message_status_archived">Archived</span>';
-                                                            break;
-                                                        case _shub_MESSAGE_STATUS_UNANSWERED:
-                                                            echo '<span class="message_status_inbox">Inbox</span>';
-                                                            break;
-                                                        case _shub_MESSAGE_STATUS_HIDDEN:
-                                                            echo '<span class="message_status_hidden">Hidden</span>';
-                                                            break;
-                                                        default:
-                                                            echo 'UNKNOWN?';
-                                                    }
-                                                }
-                                                ?>
+	                                            if ( isset( $other_message['message_status'] ) ) {
+		                                            echo $this->get_message_status_html($other_message['message_status']);
+	                                            }
+	                                            ?>
                                             </span>
                                             <span class="other_message_network">
                                                 <?php echo $other_message['icon']; ?>
                                             </span>
-                                            <br/>
-                                            <a href="<?php echo esc_attr($other_message['link']); ?>" target="_blank" class="shub_modal"
-                                               data-network="<?php echo esc_attr($other_message['network']); ?>"
-                                               data-message_id="<?php echo (int)$other_message['message_id']; ?>"
-                                               data-message_comment_id="<?php echo isset($other_message['message_comment_id']) ? (int)$other_message['message_comment_id'] : ''; ?>"
-                                               data-modaltitle="<?php echo esc_attr($other_message['summary']); ?>"><?php echo esc_html($other_message['summary']); ?></a>
-                                        </li>
-                                        <?php
+			                                    <br/>
+			                                    <a href="<?php echo esc_attr( $other_message['link'] ); ?>"
+			                                       target="_blank" class="shub_modal"
+			                                       data-network="<?php echo esc_attr( $other_message['network'] ); ?>"
+			                                       data-message_id="<?php echo (int) $other_message['message_id']; ?>"
+			                                       data-message_comment_id="<?php echo isset( $other_message['message_comment_id'] ) ? (int) $other_message['message_comment_id'] : ''; ?>"
+			                                       data-modaltitle="<?php echo esc_attr( $other_message['title'] ); ?>"><?php echo esc_html( $other_message['title'] ); ?></a>
+		                                    </li>
+		                                    <?php
+	                                    }
                                     }
                                     ?>
                                 </ul>
@@ -579,7 +627,7 @@ class SupportHub_message{
                     <?php
                     // we display the first "primary" message (from the ucm_message table) followed by comments from the ucm_message_comment table.
                     //$this->full_message_output(true);
-                    $this->output_message_list();
+                    $this->output_message_list( true, $data );
                     ?>
                 </section>
                 <section class="message_request_extra">
@@ -597,7 +645,7 @@ class SupportHub_message{
     }
 
 
-    public function output_message_list( $allow_reply = true ){
+    public function output_message_list( $allow_reply = true, $sidebar_data = array() ){
         $message_id = $this->get('shub_message_id');
         $comments         = $this->get_comments();
         $x=0;
@@ -690,11 +738,11 @@ class SupportHub_message{
                         <button data-post="<?php echo esc_attr(json_encode(array(
                             'action' => "support_hub_resend_outbox_message",
                             'shub_outbox_id' => $comment['shub_outbox_id'],
-                        ))); ?>" class="btn button shub_message_action_button"><?php _e('Re-Send'); ?></button>
+                        ))); ?>" class="btn button shub_message_action_button shub_button_loading"><?php _e('Re-Send'); ?></button>
                         <button data-post="<?php echo esc_attr(json_encode(array(
                             'action' => "support_hub_delete_outbox_message",
                             'shub_outbox_id' => $comment['shub_outbox_id'],
-                        ))); ?>" class="btn button shub_message_action_button"><?php _e('Delete Message'); ?></button>
+                        ))); ?>" class="btn button shub_message_action_button shub_button_loading"><?php _e('Delete Message'); ?></button>
                     <?php } ?>
                 </div>
             </div>
@@ -711,9 +759,11 @@ class SupportHub_message{
                      <?php echo $reply_shub_user->get_full_link(); ?>
                 </div>
                 <div class="shub_message_body">
-                    <textarea placeholder="Write a reply..."></textarea>
+	                <div class="shub_message_reply_header"></div>
+                    <textarea placeholder="Write a reply..." class="shub_message_reply_text"></textarea>
+	                <div class="shub_message_reply_footer"></div>
 
-                    <div class="shub_message_buttons">
+	                <div class="shub_message_buttons">
                         <a href="#" class="shub_request_extra btn btn-default btn-xs button"
                            data-modaltitle="<?php _e('Request Extra Details'); ?>" data-action="request_extra_details"
                            data-network="<?php echo $this->network; ?>"
@@ -729,28 +779,77 @@ class SupportHub_message{
                             'network' => $this->network,
                             'last_activity' => $this->get('last_active'),
                         ))); ?>" class="btn button shub_send_message_reply_button shub_hide_when_no_message shub_button_loading"><?php _e('Send'); ?></button>
-                    </div
+                    </div>
                 </div>
-                <div class="shub_message_actions shub_hide_when_no_message">
-                    <div>
+                <div class="shub_message_reply_actions shub_hide_when_no_message">
+                    <div class="shub_message_reply_action">
                         <label
-                            for="message_reply_archive_<?php echo $message_id; ?>"><?php _e('Archive After Reply', 'shub'); ?></label>
+                            for="message_reply_archive_<?php echo $message_id; ?>"><?php _e('Archive Message', 'shub'); ?></label>
                         <input id="message_reply_archive_<?php echo $message_id; ?>" type="checkbox" name="archive"
                                data-reply="yes" value="1" checked>
                     </div>
-                    <div>
-                        <label
-                            for="message_reply_private_<?php echo $message_id; ?>"><?php _e('Mark As Private', 'shub'); ?></label>
-                        <input id="message_reply_private_<?php echo $message_id; ?>" type="checkbox" name="private"
-                               data-reply="yes" value="1">
-                    </div>
-                    <div>
-                        <label
-                            for="message_reply_notify_email_<?php echo $message_id; ?>"><?php _e('Notify Via Email', 'shub'); ?></label>
-                        <input id="message_reply_notify_email_<?php echo $message_id; ?>" type="checkbox" name="notify_email"
-                               data-reply="yes" value="1">
-                    </div>
-                    <div>
+	                <?php if($this->messages_are_public) { ?>
+		                <div class="shub_message_reply_action shub_message_reply_action_has_options">
+			                <label
+				                for="message_reply_private_<?php echo $message_id; ?>"><?php _e( 'Mark As Private', 'shub' ); ?></label>
+			                <input id="message_reply_private_<?php echo $message_id; ?>" type="checkbox" name="private"
+			                       data-reply="yes" value="1">
+
+			                <div class="shub_message_reply_action_options">
+				                <div class="shub_message_reply_action shub_message_reply_action_has_options">
+					                <label
+						                for="message_reply_private_public_<?php echo $message_id; ?>"><?php _e( 'Send Public Link', 'shub' ); ?></label>
+					                <input id="message_reply_private_public_<?php echo $message_id; ?>" type="checkbox"
+					                       name="private_public_message"
+					                       data-reply="yes" value="1">
+
+					                <div class="shub_message_reply_action_options">
+						                <p> <?php _e( 'This message will be sent to the user so they can login to view the private message', 'shub' );?> </p>
+				                    <textarea placeholder="Write a reply..." data-reply="yes"
+				                              name="private_public_message_text">Hello, we have sent you a private reply. Please click here to read it: <?php
+					                    echo SupportHubExtra::build_message_link( array(
+						                    'network'    => $this->network,
+						                    'account_id' => (int) $this->get( 'shub_account_id' ),
+						                    'message_id' => (int) $message_id,
+						                    'extra_ids'  => array( '0' ), // as string so hash works.
+					                    ) ); ?> Thank You</textarea>
+					                </div>
+				                </div>
+			                </div>
+		                </div>
+		                <?php
+	                }
+	                // find all the email addresses linked to this particular message account.
+	                if($sidebar_data && !empty($sidebar_data['shub_user_id']) && is_array($sidebar_data['shub_user_id'])){
+		                foreach($sidebar_data['shub_user_id'] as $linked_shub_user_id){
+			                $linked_shub_user_id = (int)$linked_shub_user_id;
+			                if($linked_shub_user_id) {
+				                $linked_shub_user = new SupportHubUser( $linked_shub_user_id );
+				                if($linked_shub_user->get('user_email')) {
+					                ?>
+					                <div class="shub_message_reply_action shub_message_reply_action_has_options">
+						                <label
+							                for="message_reply_notify_email_<?php echo $message_id; ?>_<?php echo $linked_shub_user_id; ?>"><?php echo sprintf( __( 'Notify Via Email (%s)', 'shub' ), $linked_shub_user->get( 'user_email' ) ); ?></label>
+						                <input
+							                id="message_reply_notify_email_<?php echo $message_id; ?>_<?php echo $linked_shub_user_id; ?>"
+							                type="checkbox" name="notify_email"
+							                data-reply="yes" value="<?php echo $linked_shub_user_id; ?>">
+						                <div class="shub_message_reply_action_options">
+							                <textarea placeholder="Write a reply..." data-reply="yes" name="notify_email_text_<?php echo $linked_shub_user_id; ?>">Hello, we have sent you a private reply. Please click here to read it: <?php
+								                echo SupportHubExtra::build_message_link(array(
+									                'network' => $this->network,
+									                'account_id' => (int)$this->get('shub_account_id'),
+									                'message_id' => (int)$message_id,
+									                'extra_ids' => array('0'), // as string so hash works.
+								                )); ?> Thank You</textarea>
+						                </div>
+					                </div>
+					                <?php
+				                }
+			                }
+		                }
+	                } ?>
+                    <div class="shub_message_reply_action">
                         <label
                             for="message_reply_debug_<?php echo $message_id; ?>"><?php _e('Enable Debug Mode', 'shub'); ?></label>
                         <input id="message_reply_debug_<?php echo $message_id; ?>" type="checkbox" name="debug"
@@ -799,5 +898,9 @@ class SupportHub_message{
         }
         return $return;
     }
+
+	public function get_network(){
+		return $this->network;
+	}
 
 }

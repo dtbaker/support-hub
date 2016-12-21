@@ -12,7 +12,7 @@ class shub_envato_item extends SupportHub_item{
 		$now = time();
 		foreach($messages as $message){
 			if(isset($message['message_time']) && $message['message_time'] < $now){
-				$shub_message = new shub_message(false, $this, $message['shub_message_id']);
+				$shub_message = new shub_envato_message(false, $this, $message['shub_message_id']);
 				$shub_message->send_queued($debug);
 			}
 		}*/
@@ -58,7 +58,7 @@ class shub_envato_item extends SupportHub_item{
 				if($message_time <= $last_message_received)continue; // all done here.
 
 				// check if we have this message in our database already.
-				$envato_message = new shub_message($this->account, $this, false);
+				$envato_message = new shub_envato_message($this->account, $this, false);
 				$envato_message -> load_by_network_key($item_message['id'], $item_message, 'item_comment', $debug);
 				$count++;
 				if($debug) {

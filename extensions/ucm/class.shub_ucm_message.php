@@ -4,6 +4,8 @@ class shub_ucm_message extends SupportHub_message{
 
     protected $network = 'ucm';
 
+	public $messages_are_public = false;
+
 	public function load_by_network_key($network_key, $ticket, $type, $debug = false){
 
 		switch($type){
@@ -135,7 +137,7 @@ class shub_ucm_message extends SupportHub_message{
         if(isset($user_data['reply_options']) && is_array($user_data['reply_options'])){
             foreach($user_data['reply_options'] as $reply_option){
                 if(isset($reply_option['title'])){
-                    echo '<div>';
+                    echo '<div class="shub_message_reply_action">';
                     echo '<label for="">'.htmlspecialchars($reply_option['title']).'</label>';
                     if(isset($reply_option['field']) && is_array($reply_option['field'])){
                         $reply_option['field']['name'] = 'extra-'.$reply_option['field']['name'];
@@ -199,6 +201,10 @@ class shub_ucm_message extends SupportHub_message{
     public function get_message_sidebar_data($product_data, $item_data){
 
         $data = parent::get_message_sidebar_data($product_data, $item_data);
+	    $data['message_details']['ucm_ticket_id'] = array(
+		    'Ticket ID',
+		    '<a href="'.$this->get_link().'" target="_blank">'.htmlspecialchars( $this->get('network_key') ).'</a>'
+	    );
         if($item_data && !empty($item_data['item'])){
             $data['message_details']['item'] = array(
                 'Item',
